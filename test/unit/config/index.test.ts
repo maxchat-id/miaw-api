@@ -17,10 +17,10 @@ describe('Config', () => {
     // Reset env vars to original state
     process.env = { ...originalEnv };
     // Clear all env vars we might set
-    delete process.env.API_PORT;
-    delete process.env.API_HOST;
+    delete process.env.PORT;
+    delete process.env.HOST;
     delete process.env.API_KEY;
-    delete process.env.API_WEBHOOK_SECRET;
+    delete process.env.WEBHOOK_SECRET;
     delete process.env.CORS_ORIGIN;
     delete process.env.SESSION_PATH;
     delete process.env.WEBHOOK_TIMEOUT_MS;
@@ -90,14 +90,14 @@ describe('Config', () => {
   });
 
   describe('Environment variable overrides', () => {
-    it('should override port from API_PORT', async () => {
-      process.env.API_PORT = '8080';
+    it('should override port from PORT', async () => {
+      process.env.PORT = '8080';
       const { config } = await import('../../../src/config');
       expect(config.port).toBe(8080);
     });
 
-    it('should override host from API_HOST', async () => {
-      process.env.API_HOST = 'localhost';
+    it('should override host from HOST', async () => {
+      process.env.HOST = 'localhost';
       const { config } = await import('../../../src/config');
       expect(config.host).toBe('localhost');
     });
@@ -108,8 +108,8 @@ describe('Config', () => {
       expect(config.apiKey).toBe('custom-api-key');
     });
 
-    it('should override webhook secret from API_WEBHOOK_SECRET', async () => {
-      process.env.API_WEBHOOK_SECRET = 'custom-secret';
+    it('should override webhook secret from WEBHOOK_SECRET', async () => {
+      process.env.WEBHOOK_SECRET = 'custom-secret';
       const { config } = await import('../../../src/config');
       expect(config.webhookSecret).toBe('custom-secret');
     });
@@ -153,7 +153,7 @@ describe('Config', () => {
 
   describe('Type coercion', () => {
     it('should convert port string to number', async () => {
-      process.env.API_PORT = '3001';
+      process.env.PORT = '3001';
       const { config } = await import('../../../src/config');
       expect(typeof config.port).toBe('number');
       expect(config.port).toBe(3001);
@@ -201,7 +201,7 @@ describe('Config', () => {
       expect(warnSpy).toHaveBeenCalled();
       const warningCalls = warnSpy.mock.calls.flat().join(' ');
       expect(warningCalls).toContain('webhook secret');
-      expect(warningCalls).toContain('API_WEBHOOK_SECRET');
+      expect(warningCalls).toContain('WEBHOOK_SECRET');
     });
 
     it('should NOT warn when custom API key is set', async () => {
@@ -215,7 +215,7 @@ describe('Config', () => {
     });
 
     it('should NOT warn when custom webhook secret is set', async () => {
-      process.env.API_WEBHOOK_SECRET = 'custom-production-secret';
+      process.env.WEBHOOK_SECRET = 'custom-production-secret';
       const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
       await import('../../../src/config');
@@ -227,7 +227,7 @@ describe('Config', () => {
     it('should warn about wildcard CORS in production', async () => {
       process.env.NODE_ENV = 'production';
       process.env.API_KEY = 'prod-key';
-      process.env.API_WEBHOOK_SECRET = 'prod-secret';
+      process.env.WEBHOOK_SECRET = 'prod-secret';
       const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
       await import('../../../src/config');
@@ -240,7 +240,7 @@ describe('Config', () => {
     it('should NOT warn about CORS when restricted origin is set', async () => {
       process.env.NODE_ENV = 'production';
       process.env.API_KEY = 'prod-key';
-      process.env.API_WEBHOOK_SECRET = 'prod-secret';
+      process.env.WEBHOOK_SECRET = 'prod-secret';
       process.env.CORS_ORIGIN = 'https://app.example.com';
       const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
@@ -251,7 +251,7 @@ describe('Config', () => {
     });
 
     it('should warn about invalid port and default to 3000', async () => {
-      process.env.API_PORT = '99999'; // Invalid port > 65535
+      process.env.PORT = '99999'; // Invalid port > 65535
       const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
       const { config } = await import('../../../src/config');
@@ -262,7 +262,7 @@ describe('Config', () => {
     });
 
     it('should warn about port less than 1', async () => {
-      process.env.API_PORT = '0';
+      process.env.PORT = '0';
       const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
       const { config } = await import('../../../src/config');

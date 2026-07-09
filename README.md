@@ -147,6 +147,9 @@ API_KEY=your-secret-api-key-here
 
 # Webhook
 WEBHOOK_SECRET=your-webhook-secret-here
+WEBHOOK_TIMEOUT_MS=10000
+WEBHOOK_MAX_RETRIES=5
+WEBHOOK_RETRY_DELAY_MS=1000
 
 # Session Storage
 SESSION_PATH=./sessions
@@ -172,7 +175,7 @@ The API will be available at `http://localhost:3000`
 Open your browser:
 
 ```
-http://localhost:3000/
+http://localhost:3000/docs
 ```
 
 ## API Usage
@@ -492,18 +495,18 @@ npm run test:integration -- setup
 
 ## Configuration Reference
 
-| Variable              | Default    | Description                          |
-| --------------------- | ---------- | ------------------------------------ |
-| `PORT`                | 3000       | Server port                          |
-| `HOST`                | 0.0.0.0    | Server host                          |
-| `API_KEY`             | -          | API key for authentication           |
-| `WEBHOOK_SECRET`      | -          | Secret for webhook signature         |
-| `WEBHOOK_TIMEOUT`     | 10000      | Webhook delivery timeout (ms)        |
-| `WEBHOOK_MAX_RETRIES` | 5          | Max webhook retry attempts           |
-| `WEBHOOK_RETRY_DELAY` | 1000       | Initial retry delay (ms)             |
-| `SESSION_PATH`        | ./sessions | Session storage path                 |
-| `LOG_LEVEL`           | info       | Log level (debug, info, warn, error) |
-| `CORS_ORIGIN`         | \*         | CORS allowed origin                  |
+| Variable                 | Default    | Description                          |
+| ------------------------ | ---------- | ------------------------------------ |
+| `PORT`               | 3000       | Server port                          |
+| `HOST`               | 0.0.0.0    | Server host                          |
+| `API_KEY`                | -          | API key for authentication           |
+| `WEBHOOK_SECRET`     | -          | Secret for webhook signature         |
+| `WEBHOOK_TIMEOUT_MS`     | 10000      | Webhook delivery timeout (ms)        |
+| `WEBHOOK_MAX_RETRIES`    | 6          | Max webhook retry attempts           |
+| `WEBHOOK_RETRY_DELAY_MS` | 60000      | Initial retry delay (ms)             |
+| `SESSION_PATH`           | ./sessions | Session storage path                 |
+| `LOG_LEVEL`              | info       | Log level (debug, info, warn, error) |
+| `CORS_ORIGIN`            | \*         | CORS allowed origin                  |
 
 ## Limitations
 

@@ -95,10 +95,10 @@ Create `.env.test`:
 
 ```bash
 # API Configuration
-API_PORT=3000
-API_HOST=127.0.0.1
+PORT=3000
+HOST=127.0.0.1
 API_KEY=test-api-key-for-integration-tests
-API_WEBHOOK_SECRET=test-webhook-secret
+WEBHOOK_SECRET=test-webhook-secret
 
 # Test Instance
 TEST_INSTANCE_ID=integration-test-bot

@@ -1039,10 +1039,10 @@ After completing Phases 10-15, the API will have **100% coverage** of all miaw-c
 
 ```bash
 # API Configuration
-API_PORT=3000
-API_HOST=0.0.0.0
+PORT=3000
+HOST=0.0.0.0
 API_KEY=your-secret-api-key-here
-API_WEBHOOK_SECRET=your-webhook-secret-here
+WEBHOOK_SECRET=your-webhook-secret-here
 
 # CORS
 CORS_ORIGIN=*
@@ -1113,7 +1113,7 @@ services:
       - "3000:3000"
     environment:
       - API_KEY=${API_KEY}
-      - API_WEBHOOK_SECRET=${WEBHOOK_SECRET}
+      - WEBHOOK_SECRET=${WEBHOOK_SECRET}
       - NODE_ENV=production
     volumes:
       - ./sessions:/app/sessions

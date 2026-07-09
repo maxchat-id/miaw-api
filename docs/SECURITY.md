@@ -76,7 +76,7 @@ All webhook requests include a cryptographic signature to verify authenticity:
 openssl rand -hex 32
 
 # Set via environment variable
-export API_WEBHOOK_SECRET="your-webhook-secret-here"
+export WEBHOOK_SECRET="your-webhook-secret-here"
 ```
 
 ### Verifying Signatures (Node.js Example)
@@ -283,8 +283,8 @@ Session directories contain:
 When using a reverse proxy, bind the API to localhost only:
 
 ```bash
-export API_HOST="127.0.0.1"
-export API_PORT="3000"
+export HOST="127.0.0.1"
+export PORT="3000"
 ```
 
 ### Environment Variables
@@ -334,7 +334,7 @@ Use this checklist before deploying to production:
 
 ### Authentication
 - [ ] Set custom `API_KEY` (not default `miaw-api-key`)
-- [ ] Set custom `API_WEBHOOK_SECRET` (not default `webhook-secret`)
+- [ ] Set custom `WEBHOOK_SECRET` (not default `webhook-secret`)
 - [ ] Implemented webhook signature verification in your webhook handler
 
 ### Network

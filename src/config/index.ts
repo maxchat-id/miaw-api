@@ -30,10 +30,10 @@ interface Config {
 
 function loadConfig(): Config {
   const config: Config = {
-    port: parseInt(process.env.API_PORT || '3000', 10),
-    host: process.env.API_HOST || '0.0.0.0',
+    port: parseInt(process.env.PORT || '3000', 10),
+    host: process.env.HOST || '0.0.0.0',
     apiKey: process.env.API_KEY || DEFAULT_API_KEY,
-    webhookSecret: process.env.API_WEBHOOK_SECRET || DEFAULT_WEBHOOK_SECRET,
+    webhookSecret: process.env.WEBHOOK_SECRET || DEFAULT_WEBHOOK_SECRET,
     corsOrigin: process.env.CORS_ORIGIN || '*',
     sessionPath: process.env.SESSION_PATH || './sessions',
     webhookTimeout: parseInt(process.env.WEBHOOK_TIMEOUT_MS || '10000', 10),
@@ -63,7 +63,7 @@ function validateConfig(config: Config): void {
 
   if (config.webhookSecret === DEFAULT_WEBHOOK_SECRET) {
     warnings.push(
-      'Using default webhook secret. Set API_WEBHOOK_SECRET environment variable for production.'
+      'Using default webhook secret. Set WEBHOOK_SECRET environment variable for production.'
     );
   }
 
