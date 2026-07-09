@@ -13,6 +13,7 @@ import { registerSchemas } from './schemas';
 import { InstanceManager } from './services/InstanceManager';
 import { WebhookDispatcher } from './services/WebhookDispatcher';
 import { errorHandler } from './utils/errorHandler';
+import { createShutdownHandler } from './utils/shutdown';
 
 /**
  * Create and configure Fastify server
@@ -183,6 +184,17 @@ export async function startServer(): Promise<void> {
     server.log.error(err);
     process.exit(1);
   }
+
+  // Graceful shutdown on termination signals
+  const shutdown = createShutdownHandler({
+    server,
+    instanceManager: (server as any).instanceManager,
+    webhookDispatcher: (server as any).webhookDispatcher,
+    logger: server.log,
+    exit: (code) => process.exit(code),
+  });
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('SIGINT', () => shutdown('SIGINT'));
 }
 
 // Start server if run directly
