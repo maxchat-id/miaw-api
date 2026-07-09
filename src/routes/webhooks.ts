@@ -104,7 +104,7 @@ export async function webhookRoutes(server: FastifyInstance): Promise<void> {
       const params = request.params as { id: string };
       const body = request.body as { event?: string };
 
-      const instanceManager = (server as any).instanceManager;
+      const instanceManager = server.instanceManager;
       const instance = instanceManager.getInstance(params.id);
 
       if (!instance) {
@@ -128,7 +128,7 @@ export async function webhookRoutes(server: FastifyInstance): Promise<void> {
 
       try {
         // Get webhook dispatcher and queue test event
-        const webhookDispatcher = (server as any).webhookDispatcher;
+        const webhookDispatcher = server.webhookDispatcher;
         if (!webhookDispatcher) {
           throw new ServiceUnavailableError('Webhook dispatcher not available');
         }
@@ -219,7 +219,7 @@ export async function webhookRoutes(server: FastifyInstance): Promise<void> {
     async (request, reply) => {
       const params = request.params as { id: string };
 
-      const instanceManager = (server as any).instanceManager;
+      const instanceManager = server.instanceManager;
       const instance = instanceManager.getInstance(params.id);
 
       if (!instance) {
@@ -227,7 +227,7 @@ export async function webhookRoutes(server: FastifyInstance): Promise<void> {
       }
 
       try {
-        const webhookDispatcher = (server as any).webhookDispatcher;
+        const webhookDispatcher = server.webhookDispatcher;
         if (!webhookDispatcher) {
           throw new ServiceUnavailableError('Webhook dispatcher not available');
         }

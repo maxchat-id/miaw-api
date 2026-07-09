@@ -99,7 +99,7 @@ export async function presenceRoutes(server: FastifyInstance): Promise<void> {
       const params = request.params as { id: string };
       const body = request.body as { status: 'available' | 'unavailable' };
 
-      const instanceManager = (server as any).instanceManager;
+      const instanceManager = server.instanceManager;
       const client = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
@@ -201,7 +201,7 @@ export async function presenceRoutes(server: FastifyInstance): Promise<void> {
     async (request, reply) => {
       const params = request.params as { id: string; to: string };
 
-      const instanceManager = (server as any).instanceManager;
+      const instanceManager = server.instanceManager;
       const client = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
@@ -303,7 +303,7 @@ export async function presenceRoutes(server: FastifyInstance): Promise<void> {
     async (request, reply) => {
       const params = request.params as { id: string; to: string };
 
-      const instanceManager = (server as any).instanceManager;
+      const instanceManager = server.instanceManager;
       const client = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
@@ -405,7 +405,7 @@ export async function presenceRoutes(server: FastifyInstance): Promise<void> {
     async (request, reply) => {
       const params = request.params as { id: string; to: string };
 
-      const instanceManager = (server as any).instanceManager;
+      const instanceManager = server.instanceManager;
       const client = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
@@ -519,7 +519,7 @@ export async function presenceRoutes(server: FastifyInstance): Promise<void> {
       const params = request.params as { id: string };
       const body = request.body as { messageId: string; fromJid: string };
 
-      const instanceManager = (server as any).instanceManager;
+      const instanceManager = server.instanceManager;
       const client = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
@@ -632,7 +632,7 @@ export async function presenceRoutes(server: FastifyInstance): Promise<void> {
     async (request, reply) => {
       const params = request.params as { id: string; jid: string };
 
-      const instanceManager = (server as any).instanceManager;
+      const instanceManager = server.instanceManager;
       const client = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 

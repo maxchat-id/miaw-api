@@ -20,8 +20,8 @@
 - [x] CP3 — messaging migrated, build green
 
 ## Phase 3 — Close 002
-- [ ] T12 typed decorators + drop (server as any) + instances body casts
-- [ ] CP4 — full suite green, review, commit
+- [x] T12 typed decorators + drop (server as any) + instances body casts
+- [x] CP4 — full suite green, review, commit
 
 ## Follow-ups (separate issues)
 - [x] Restore quoted/reply support (done in this migration via chatJid)

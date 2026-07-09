@@ -181,7 +181,7 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
         quoted?: string;
       };
 
-      const instanceManager = (server as any).instanceManager;
+      const instanceManager = server.instanceManager;
       const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
@@ -306,7 +306,7 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
         quoted?: string;
       };
 
-      const instanceManager = (server as any).instanceManager;
+      const instanceManager = server.instanceManager;
       const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
@@ -451,7 +451,7 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
         chatJid?: string;
       };
 
-      const instanceManager = (server as any).instanceManager;
+      const instanceManager = server.instanceManager;
       const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
@@ -568,7 +568,7 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
       const params = request.params as { id: string; messageId: string };
       const query = request.query as { forMe?: boolean; chatJid?: string };
 
-      const instanceManager = (server as any).instanceManager;
+      const instanceManager = server.instanceManager;
       const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
@@ -686,7 +686,7 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
         chatJid?: string;
       };
 
-      const instanceManager = (server as any).instanceManager;
+      const instanceManager = server.instanceManager;
       const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
@@ -799,7 +799,7 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
       const params = request.params as { id: string; messageId: string };
       const query = request.query as { chatJid?: string };
 
-      const instanceManager = (server as any).instanceManager;
+      const instanceManager = server.instanceManager;
       const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
@@ -926,7 +926,7 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
       const params = request.params as { id: string; messageId: string };
       const query = request.query as { chatJid?: string; deleteMedia?: boolean };
 
-      const instanceManager = (server as any).instanceManager;
+      const instanceManager = server.instanceManager;
       const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
@@ -1060,7 +1060,7 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
         chatJid?: string;
       };
 
-      const instanceManager = (server as any).instanceManager;
+      const instanceManager = server.instanceManager;
       const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
@@ -1168,7 +1168,7 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
       const params = request.params as { id: string; messageId: string };
       const query = request.query as { chatJid?: string };
 
-      const instanceManager = (server as any).instanceManager;
+      const instanceManager = server.instanceManager;
       const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
@@ -1318,7 +1318,7 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
       const params = request.params as { id: string; jid: string };
       const query = request.query as { count?: number; timeout?: number };
 
-      const instanceManager = (server as any).instanceManager;
+      const instanceManager = server.instanceManager;
       const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
@@ -1439,7 +1439,7 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
         quoted?: string;
       };
 
-      const instanceManager = (server as any).instanceManager;
+      const instanceManager = server.instanceManager;
       const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
@@ -1573,7 +1573,7 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
         quoted?: string;
       };
 
-      const instanceManager = (server as any).instanceManager;
+      const instanceManager = server.instanceManager;
       const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
@@ -1707,7 +1707,7 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
         quoted?: string;
       };
 
-      const instanceManager = (server as any).instanceManager;
+      const instanceManager = server.instanceManager;
       const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
@@ -1840,7 +1840,7 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
         quoted?: string;
       };
 
-      const instanceManager = (server as any).instanceManager;
+      const instanceManager = server.instanceManager;
       const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 

@@ -2,8 +2,31 @@
 
 - **Type:** Bug (latent, runtime)
 - **Severity:** Critical
-- **Status:** Open
+- **Status:** Code fixed (2026-07-09) — needs live WhatsApp verification
 - **Found in:** While attempting [issue 002](./002-typed-server-decorators.md) (2026-07-09)
+
+## Resolution (2026-07-09)
+
+Migrated the route layer to the real miaw-core 1.9.2 API (Categories A–C):
+
+- **A**: renamed method calls (catalog/collections, profile picture, group
+  participants, newsletter messages, reactions).
+- **B**: fixed result/shape reads (`SendMessageResult` has no `to`/`timestamp`;
+  responses now use `body.to` + `Date.now()`; participant endpoints return the
+  array directly; label `predefinedId` typed via `Label['predefinedId']`).
+- **C**: message ops resolve a `messageId` to a real `MiawMessage` via the
+  existing (now typed) `findMessageById` before calling
+  edit/delete/react/forward; `send-media` dispatches by mimetype; `forward`
+  fans out per recipient. Reply (`quoted`) support restored via resolution.
+  Message-op requests take an optional `chatJid` (lookup hint).
+
+Then landed [002](./002-typed-server-decorators.md) (typed decorators) so this
+drift is caught by the compiler going forward.
+
+**Verified:** `tsc` clean, 148 unit tests, server boots, endpoints route
+correctly (503 not-connected, 400 invalid body, `chatJid` accepted).
+**Still required:** live WhatsApp pairing to confirm the runtime behaviour of
+every migrated message operation before release.
 
 ## Summary
 

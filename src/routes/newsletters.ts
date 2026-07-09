@@ -120,7 +120,7 @@ export async function newsletterRoutes(server: FastifyInstance): Promise<void> {
     async (request, reply) => {
       const params = request.params as { id: string; newsletterId: string };
 
-      const instanceManager = (server as any).instanceManager;
+      const instanceManager = server.instanceManager;
       const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
@@ -243,7 +243,7 @@ export async function newsletterRoutes(server: FastifyInstance): Promise<void> {
       const params = request.params as { id: string; newsletterId: string };
       const query = request.query as { limit?: number; count?: number };
 
-      const instanceManager = (server as any).instanceManager;
+      const instanceManager = server.instanceManager;
       const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
@@ -354,7 +354,7 @@ export async function newsletterRoutes(server: FastifyInstance): Promise<void> {
       const params = request.params as { id: string };
       const body = request.body as { name: string; description?: string };
 
-      const instanceManager = (server as any).instanceManager;
+      const instanceManager = server.instanceManager;
       const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
@@ -458,7 +458,7 @@ export async function newsletterRoutes(server: FastifyInstance): Promise<void> {
     async (request, reply) => {
       const params = request.params as { id: string; newsletterId: string };
 
-      const instanceManager = (server as any).instanceManager;
+      const instanceManager = server.instanceManager;
       const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
@@ -567,7 +567,7 @@ export async function newsletterRoutes(server: FastifyInstance): Promise<void> {
       const params = request.params as { id: string; newsletterId: string };
       const body = request.body as { text: string };
 
-      const instanceManager = (server as any).instanceManager;
+      const instanceManager = server.instanceManager;
       const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
@@ -676,7 +676,7 @@ export async function newsletterRoutes(server: FastifyInstance): Promise<void> {
       const params = request.params as { id: string; newsletterId: string };
       const body = request.body as { image: string; caption?: string };
 
-      const instanceManager = (server as any).instanceManager;
+      const instanceManager = server.instanceManager;
       const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
@@ -785,7 +785,7 @@ export async function newsletterRoutes(server: FastifyInstance): Promise<void> {
       const params = request.params as { id: string; newsletterId: string };
       const body = request.body as { video: string; caption?: string };
 
-      const instanceManager = (server as any).instanceManager;
+      const instanceManager = server.instanceManager;
       const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
@@ -889,7 +889,7 @@ export async function newsletterRoutes(server: FastifyInstance): Promise<void> {
     async (request, reply) => {
       const params = request.params as { id: string; newsletterId: string };
 
-      const instanceManager = (server as any).instanceManager;
+      const instanceManager = server.instanceManager;
       const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
@@ -993,7 +993,7 @@ export async function newsletterRoutes(server: FastifyInstance): Promise<void> {
     async (request, reply) => {
       const params = request.params as { id: string; newsletterId: string };
 
-      const instanceManager = (server as any).instanceManager;
+      const instanceManager = server.instanceManager;
       const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
@@ -1097,7 +1097,7 @@ export async function newsletterRoutes(server: FastifyInstance): Promise<void> {
     async (request, reply) => {
       const params = request.params as { id: string; newsletterId: string };
 
-      const instanceManager = (server as any).instanceManager;
+      const instanceManager = server.instanceManager;
       const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
@@ -1201,7 +1201,7 @@ export async function newsletterRoutes(server: FastifyInstance): Promise<void> {
     async (request, reply) => {
       const params = request.params as { id: string; newsletterId: string };
 
-      const instanceManager = (server as any).instanceManager;
+      const instanceManager = server.instanceManager;
       const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
@@ -1305,7 +1305,7 @@ export async function newsletterRoutes(server: FastifyInstance): Promise<void> {
     async (request, reply) => {
       const params = request.params as { id: string; newsletterId: string };
 
-      const instanceManager = (server as any).instanceManager;
+      const instanceManager = server.instanceManager;
       const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
@@ -1411,7 +1411,7 @@ export async function newsletterRoutes(server: FastifyInstance): Promise<void> {
       const params = request.params as { id: string; newsletterId: string };
       const body = request.body as { name: string };
 
-      const instanceManager = (server as any).instanceManager;
+      const instanceManager = server.instanceManager;
       const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
@@ -1517,7 +1517,7 @@ export async function newsletterRoutes(server: FastifyInstance): Promise<void> {
       const params = request.params as { id: string; newsletterId: string };
       const body = request.body as { description: string };
 
-      const instanceManager = (server as any).instanceManager;
+      const instanceManager = server.instanceManager;
       const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
@@ -1623,7 +1623,7 @@ export async function newsletterRoutes(server: FastifyInstance): Promise<void> {
       const params = request.params as { id: string; newsletterId: string };
       const body = request.body as { image: string };
 
-      const instanceManager = (server as any).instanceManager;
+      const instanceManager = server.instanceManager;
       const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
@@ -1727,7 +1727,7 @@ export async function newsletterRoutes(server: FastifyInstance): Promise<void> {
     async (request, reply) => {
       const params = request.params as { id: string; newsletterId: string };
 
-      const instanceManager = (server as any).instanceManager;
+      const instanceManager = server.instanceManager;
       const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
@@ -1834,7 +1834,7 @@ export async function newsletterRoutes(server: FastifyInstance): Promise<void> {
     async (request, reply) => {
       const params = request.params as { id: string; newsletterId: string };
 
-      const instanceManager = (server as any).instanceManager;
+      const instanceManager = server.instanceManager;
       const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
@@ -1938,7 +1938,7 @@ export async function newsletterRoutes(server: FastifyInstance): Promise<void> {
     async (request, reply) => {
       const params = request.params as { id: string; newsletterId: string };
 
-      const instanceManager = (server as any).instanceManager;
+      const instanceManager = server.instanceManager;
       const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
@@ -2044,7 +2044,7 @@ export async function newsletterRoutes(server: FastifyInstance): Promise<void> {
       const params = request.params as { id: string; newsletterId: string };
       const body = request.body as { newOwnerJid: string };
 
-      const instanceManager = (server as any).instanceManager;
+      const instanceManager = server.instanceManager;
       const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
@@ -2149,7 +2149,7 @@ export async function newsletterRoutes(server: FastifyInstance): Promise<void> {
     async (request, reply) => {
       const params = request.params as { id: string; newsletterId: string; adminJid: string };
 
-      const instanceManager = (server as any).instanceManager;
+      const instanceManager = server.instanceManager;
       const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
@@ -2256,7 +2256,7 @@ export async function newsletterRoutes(server: FastifyInstance): Promise<void> {
       const params = request.params as { id: string; newsletterId: string; messageId: string };
       const body = request.body as { emoji: string };
 
-      const instanceManager = (server as any).instanceManager;
+      const instanceManager = server.instanceManager;
       const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 

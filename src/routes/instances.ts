@@ -7,6 +7,7 @@
  */
 
 import { FastifyInstance } from 'fastify';
+import type { WebhookEvent } from '../types';
 import { createAuthMiddleware } from '../middleware/auth';
 import { ConflictError, NotFoundError } from '../utils/errorHandler';
 import { assertSafeWebhookUrl } from '../utils/ssrf';
@@ -71,10 +72,10 @@ export async function instanceRoutes(server: FastifyInstance): Promise<void> {
       const body = request.body as {
         instanceId: string;
         webhookUrl?: string;
-        webhookEvents?: string[];
+        webhookEvents?: WebhookEvent[];
       };
 
-      const instanceManager = (server as any).instanceManager;
+      const instanceManager = server.instanceManager;
 
       if (body.webhookUrl) {
         await assertSafeWebhookUrl(body.webhookUrl);
@@ -132,7 +133,7 @@ export async function instanceRoutes(server: FastifyInstance): Promise<void> {
       },
     },
     async (_request, reply) => {
-      const instanceManager = (server as any).instanceManager;
+      const instanceManager = server.instanceManager;
       const instances = instanceManager.listInstances();
 
       reply.send({
@@ -199,7 +200,7 @@ export async function instanceRoutes(server: FastifyInstance): Promise<void> {
     },
     async (request, reply) => {
       const params = request.params as { id: string };
-      const instanceManager = (server as any).instanceManager;
+      const instanceManager = server.instanceManager;
       const instance = instanceManager.getInstance(params.id);
 
       if (!instance) {
@@ -275,9 +276,9 @@ export async function instanceRoutes(server: FastifyInstance): Promise<void> {
       const params = request.params as { id: string };
       const body = request.body as {
         webhookUrl?: string | null;
-        webhookEvents?: string[];
+        webhookEvents?: WebhookEvent[];
       };
-      const instanceManager = (server as any).instanceManager;
+      const instanceManager = server.instanceManager;
 
       if (body.webhookUrl) {
         await assertSafeWebhookUrl(body.webhookUrl);
@@ -342,7 +343,7 @@ export async function instanceRoutes(server: FastifyInstance): Promise<void> {
     },
     async (request, reply) => {
       const params = request.params as { id: string };
-      const instanceManager = (server as any).instanceManager;
+      const instanceManager = server.instanceManager;
 
       try {
         await instanceManager.deleteInstance(params.id);

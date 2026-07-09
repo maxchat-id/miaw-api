@@ -2,8 +2,18 @@
 
 - **Type:** Architecture / Maintainability
 - **Severity:** Suggestion
-- **Status:** Blocked by [004](./004-route-layer-miaw-core-api-drift.md)
+- **Status:** Resolved (2026-07-09, after [004](./004-route-layer-miaw-core-api-drift.md))
 - **Found in:** Code review of `PATCH /instances/:id` (2026-07-09)
+
+## Resolution
+
+After 004 aligned the route layer with the real miaw-core API, added
+`src/types/fastify.d.ts` (module augmentation typing `instanceManager` /
+`webhookDispatcher` on `FastifyInstance`) and replaced every
+`(server as any).instanceManager/.webhookDispatcher` with the typed access.
+Added `"ts-node": { "files": true }` to `tsconfig.json` so `dev:start` loads
+the ambient augmentation (tsc build already picked it up). Build + 148 unit
+tests green; server boots.
 
 ## Update (2026-07-09) — blocked
 

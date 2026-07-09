@@ -121,7 +121,7 @@ export async function businessRoutes(server: FastifyInstance): Promise<void> {
         predefinedId?: string;
       };
 
-      const instanceManager = (server as any).instanceManager;
+      const instanceManager = server.instanceManager;
       const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
@@ -232,7 +232,7 @@ export async function businessRoutes(server: FastifyInstance): Promise<void> {
     async (request, reply) => {
       const params = request.params as { id: string; labelId: string };
 
-      const instanceManager = (server as any).instanceManager;
+      const instanceManager = server.instanceManager;
       const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
@@ -343,7 +343,7 @@ export async function businessRoutes(server: FastifyInstance): Promise<void> {
     async (request, reply) => {
       const params = request.params as { id: string; jid: string; labelId: string };
 
-      const instanceManager = (server as any).instanceManager;
+      const instanceManager = server.instanceManager;
       const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
@@ -448,7 +448,7 @@ export async function businessRoutes(server: FastifyInstance): Promise<void> {
     async (request, reply) => {
       const params = request.params as { id: string; jid: string; labelId: string };
 
-      const instanceManager = (server as any).instanceManager;
+      const instanceManager = server.instanceManager;
       const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
@@ -563,7 +563,7 @@ export async function businessRoutes(server: FastifyInstance): Promise<void> {
       const params = request.params as { id: string; messageId: string; labelId: string };
       const body = request.body as { jid: string };
 
-      const instanceManager = (server as any).instanceManager;
+      const instanceManager = server.instanceManager;
       const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
@@ -678,7 +678,7 @@ export async function businessRoutes(server: FastifyInstance): Promise<void> {
       const params = request.params as { id: string; messageId: string; labelId: string };
       const body = request.body as { jid: string };
 
-      const instanceManager = (server as any).instanceManager;
+      const instanceManager = server.instanceManager;
       const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
@@ -800,7 +800,7 @@ export async function businessRoutes(server: FastifyInstance): Promise<void> {
     async (request, reply) => {
       const params = request.params as { id: string; labelId: string };
 
-      const instanceManager = (server as any).instanceManager;
+      const instanceManager = server.instanceManager;
       const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
@@ -932,7 +932,7 @@ export async function businessRoutes(server: FastifyInstance): Promise<void> {
       const params = request.params as { id: string };
       const query = request.query as { businessJid?: string; limit?: number };
 
-      const instanceManager = (server as any).instanceManager;
+      const instanceManager = server.instanceManager;
       const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
@@ -1050,7 +1050,7 @@ export async function businessRoutes(server: FastifyInstance): Promise<void> {
       const params = request.params as { id: string };
       const query = request.query as { businessJid?: string };
 
-      const instanceManager = (server as any).instanceManager;
+      const instanceManager = server.instanceManager;
       const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
@@ -1166,7 +1166,7 @@ export async function businessRoutes(server: FastifyInstance): Promise<void> {
         originCountryCode?: string;
       };
 
-      const instanceManager = (server as any).instanceManager;
+      const instanceManager = server.instanceManager;
       const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
@@ -1299,7 +1299,7 @@ export async function businessRoutes(server: FastifyInstance): Promise<void> {
         originCountryCode?: string;
       };
 
-      const instanceManager = (server as any).instanceManager;
+      const instanceManager = server.instanceManager;
       const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
@@ -1423,7 +1423,7 @@ export async function businessRoutes(server: FastifyInstance): Promise<void> {
       const params = request.params as { id: string };
       const body = request.body as { productIds: string[] };
 
-      const instanceManager = (server as any).instanceManager;
+      const instanceManager = server.instanceManager;
       const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 

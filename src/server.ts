@@ -189,8 +189,8 @@ export async function startServer(): Promise<void> {
   // Graceful shutdown on termination signals
   const shutdown = createShutdownHandler({
     server,
-    instanceManager: (server as any).instanceManager,
-    webhookDispatcher: (server as any).webhookDispatcher,
+    instanceManager: server.instanceManager,
+    webhookDispatcher: server.webhookDispatcher,
     logger: server.log,
     exit: (code) => process.exit(code),
   });
