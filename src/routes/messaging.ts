@@ -17,26 +17,29 @@
  */
 
 import { FastifyInstance } from 'fastify';
+import type { MiawClient, MiawMessage } from 'miaw-core';
 import { createAuthMiddleware } from '../middleware/auth';
 import { NotFoundError, BadRequestError, ServiceUnavailableError } from '../utils/errorHandler';
 
 /**
- * Helper to find a message by ID across all chats or within a specific chat
+ * Helper to find a message by ID across all chats or within a specific chat.
+ * miaw-core's message operations need the full MiawMessage (with `raw`), so
+ * we reconstruct it from the in-memory message store.
  * @param client - MiawClient instance
  * @param messageId - Message ID to find
  * @param chatJid - Optional chat JID to search in (speeds up lookup)
  * @returns The message object or null if not found
  */
 async function findMessageById(
-  client: any,
+  client: MiawClient,
   messageId: string,
   chatJid?: string
-): Promise<any | null> {
+): Promise<MiawMessage | null> {
   if (chatJid) {
     // If chatJid is provided, search only in that chat
     const chatResult = await client.getChatMessages(chatJid);
     if (chatResult.success && chatResult.messages) {
-      return chatResult.messages.find((m: any) => m.id === messageId) || null;
+      return chatResult.messages.find((m) => m.id === messageId) || null;
     }
   } else {
     // Search through all chats (less efficient)
@@ -44,7 +47,7 @@ async function findMessageById(
     for (const jid of messageCounts.keys()) {
       const chatResult = await client.getChatMessages(jid);
       if (chatResult.success && chatResult.messages) {
-        const found = chatResult.messages.find((m: any) => m.id === messageId);
+        const found = chatResult.messages.find((m) => m.id === messageId);
         if (found) {
           return found;
         }
@@ -52,6 +55,35 @@ async function findMessageById(
     }
   }
   return null;
+}
+
+/**
+ * Resolve a message by ID or throw NotFound.
+ */
+async function requireMessage(
+  client: MiawClient,
+  messageId: string,
+  chatJid?: string
+): Promise<MiawMessage> {
+  const message = await findMessageById(client, messageId, chatJid);
+  if (!message) {
+    throw new NotFoundError('Message');
+  }
+  return message;
+}
+
+/**
+ * Resolve an optional `quoted` messageId to a MiawMessage for reply support.
+ */
+async function resolveQuotedMessage(
+  client: MiawClient,
+  quotedId: string | undefined,
+  chatJid?: string
+): Promise<MiawMessage | undefined> {
+  if (!quotedId) {
+    return undefined;
+  }
+  return requireMessage(client, quotedId, chatJid);
 }
 
 /**
@@ -145,11 +177,12 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
       const body = request.body as {
         to: string;
         text: string;
+        chatJid?: string;
         quoted?: string;
       };
 
       const instanceManager = (server as any).instanceManager;
-      const client = instanceManager.getClient(params.id);
+      const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
       if (!client || !instance) {
@@ -160,15 +193,17 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
         throw new ServiceUnavailableError('Instance is not connected');
       }
 
+      const quoted = await resolveQuotedMessage(client, body.quoted, body.chatJid);
+
       try {
-        const result = await client.sendText(body.to, body.text, body.quoted);
+        const result = await client.sendText(body.to, body.text, quoted ? { quoted } : undefined);
 
         reply.send({
           success: true,
           data: {
             messageId: result.messageId,
             to: body.to,
-            timestamp: result.timestamp,
+            timestamp: Date.now(),
           },
         });
       } catch (err: any) {
@@ -267,11 +302,12 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
         viewOnce?: boolean;
         ptt?: boolean;
         gifPlayback?: boolean;
+        chatJid?: string;
         quoted?: string;
       };
 
       const instanceManager = (server as any).instanceManager;
-      const client = instanceManager.getClient(params.id);
+      const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
       if (!client || !instance) {
@@ -282,23 +318,46 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
         throw new ServiceUnavailableError('Instance is not connected');
       }
 
+      const quoted = await resolveQuotedMessage(client, body.quoted, body.chatJid);
+      const mime = body.mimetype || '';
+
       try {
-        const result = await client.sendMedia(body.to, body.media, {
-          caption: body.caption,
-          fileName: body.fileName,
-          mimetype: body.mimetype,
-          viewOnce: body.viewOnce,
-          ptt: body.ptt,
-          gifPlayback: body.gifPlayback,
-          quoted: body.quoted,
-        });
+        // miaw-core has no generic sendMedia; dispatch by mimetype.
+        let result;
+        if (mime.startsWith('image/')) {
+          result = await client.sendImage(body.to, body.media, {
+            caption: body.caption,
+            viewOnce: body.viewOnce,
+            quoted,
+          });
+        } else if (mime.startsWith('video/')) {
+          result = await client.sendVideo(body.to, body.media, {
+            caption: body.caption,
+            viewOnce: body.viewOnce,
+            gifPlayback: body.gifPlayback,
+            quoted,
+          });
+        } else if (mime.startsWith('audio/')) {
+          result = await client.sendAudio(body.to, body.media, {
+            ptt: body.ptt,
+            mimetype: body.mimetype,
+            quoted,
+          });
+        } else {
+          result = await client.sendDocument(body.to, body.media, {
+            caption: body.caption,
+            fileName: body.fileName,
+            mimetype: body.mimetype,
+            quoted,
+          });
+        }
 
         reply.send({
           success: true,
           data: {
             messageId: result.messageId,
             to: body.to,
-            timestamp: result.timestamp,
+            timestamp: Date.now(),
           },
         });
       } catch (err: any) {
@@ -389,10 +448,11 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
       const body = request.body as {
         messageId: string;
         text: string;
+        chatJid?: string;
       };
 
       const instanceManager = (server as any).instanceManager;
-      const client = instanceManager.getClient(params.id);
+      const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
       if (!client || !instance) {
@@ -403,14 +463,16 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
         throw new ServiceUnavailableError('Instance is not connected');
       }
 
+      const message = await requireMessage(client, body.messageId, body.chatJid);
+
       try {
-        const result = await client.editMessage(body.messageId, body.text);
+        const result = await client.editMessage(message, body.text);
 
         reply.send({
           success: true,
           data: {
             messageId: result.messageId || body.messageId,
-            timestamp: result.timestamp || Date.now(),
+            timestamp: Date.now(),
           },
         });
       } catch (err: any) {
@@ -445,6 +507,10 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
               type: 'boolean',
               default: false,
               description: 'Delete only for me (true) or for everyone (false)',
+            },
+            chatJid: {
+              type: 'string',
+              description: 'Chat JID the message belongs to (speeds up lookup)',
             },
           },
         },
@@ -500,10 +566,10 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
     },
     async (request, reply) => {
       const params = request.params as { id: string; messageId: string };
-      const query = request.query as { forMe?: boolean };
+      const query = request.query as { forMe?: boolean; chatJid?: string };
 
       const instanceManager = (server as any).instanceManager;
-      const client = instanceManager.getClient(params.id);
+      const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
       if (!client || !instance) {
@@ -514,8 +580,14 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
         throw new ServiceUnavailableError('Instance is not connected');
       }
 
+      const message = await requireMessage(client, params.messageId, query.chatJid);
+
       try {
-        await client.deleteMessage(params.messageId, query.forMe);
+        if (query.forMe) {
+          await client.deleteMessageForMe(message);
+        } else {
+          await client.deleteMessage(message);
+        }
 
         reply.send({
           success: true,
@@ -611,10 +683,11 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
       const body = request.body as {
         messageId: string;
         emoji: string;
+        chatJid?: string;
       };
 
       const instanceManager = (server as any).instanceManager;
-      const client = instanceManager.getClient(params.id);
+      const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
       if (!client || !instance) {
@@ -625,8 +698,10 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
         throw new ServiceUnavailableError('Instance is not connected');
       }
 
+      const message = await requireMessage(client, body.messageId, body.chatJid);
+
       try {
-        await client.reactMessage(body.messageId, body.emoji);
+        await client.sendReaction(message, body.emoji);
 
         reply.send({
           success: true,
@@ -725,7 +800,7 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
       const query = request.query as { chatJid?: string };
 
       const instanceManager = (server as any).instanceManager;
-      const client = instanceManager.getClient(params.id);
+      const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
       if (!client || !instance) {
@@ -852,7 +927,7 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
       const query = request.query as { chatJid?: string; deleteMedia?: boolean };
 
       const instanceManager = (server as any).instanceManager;
-      const client = instanceManager.getClient(params.id);
+      const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
       if (!client || !instance) {
@@ -982,10 +1057,11 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
       const body = request.body as {
         messageId: string;
         to: string[];
+        chatJid?: string;
       };
 
       const instanceManager = (server as any).instanceManager;
-      const client = instanceManager.getClient(params.id);
+      const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
       if (!client || !instance) {
@@ -996,17 +1072,19 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
         throw new ServiceUnavailableError('Instance is not connected');
       }
 
+      const message = await requireMessage(client, body.messageId, body.chatJid);
+
       try {
-        const results = await client.forwardMessage(body.messageId, body.to);
+        // forwardMessage targets one recipient; fan out over the list.
+        const forwarded = [];
+        for (const recipient of body.to) {
+          const result = await client.forwardMessage(message, recipient);
+          forwarded.push({ to: recipient, messageId: result.messageId });
+        }
 
         reply.send({
           success: true,
-          data: {
-            forwarded: results.map((r: any) => ({
-              to: r.to || body.to[0],
-              messageId: r.messageId,
-            })),
-          },
+          data: { forwarded },
         });
       } catch (err: any) {
         throw new BadRequestError('Failed to forward message', { error: err.message });
@@ -1091,7 +1169,7 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
       const query = request.query as { chatJid?: string };
 
       const instanceManager = (server as any).instanceManager;
-      const client = instanceManager.getClient(params.id);
+      const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
       if (!client || !instance) {
@@ -1241,7 +1319,7 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
       const query = request.query as { count?: number; timeout?: number };
 
       const instanceManager = (server as any).instanceManager;
-      const client = instanceManager.getClient(params.id);
+      const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
       if (!client || !instance) {
@@ -1357,11 +1435,12 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
         image: string;
         caption?: string;
         viewOnce?: boolean;
+        chatJid?: string;
         quoted?: string;
       };
 
       const instanceManager = (server as any).instanceManager;
-      const client = instanceManager.getClient(params.id);
+      const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
       if (!client || !instance) {
@@ -1372,11 +1451,13 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
         throw new ServiceUnavailableError('Instance is not connected');
       }
 
+      const quoted = await resolveQuotedMessage(client, body.quoted, body.chatJid);
+
       try {
         const result = await client.sendImage(body.to, body.image, {
           caption: body.caption,
           viewOnce: body.viewOnce,
-          quoted: body.quoted,
+          quoted,
         });
 
         if (!result.success) {
@@ -1387,8 +1468,8 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
           success: true,
           data: {
             messageId: result.messageId,
-            to: result.to,
-            timestamp: result.timestamp,
+            to: body.to,
+            timestamp: Date.now(),
           },
         });
       } catch (err: any) {
@@ -1488,11 +1569,12 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
         viewOnce?: boolean;
         gifPlayback?: boolean;
         ptv?: boolean;
+        chatJid?: string;
         quoted?: string;
       };
 
       const instanceManager = (server as any).instanceManager;
-      const client = instanceManager.getClient(params.id);
+      const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
       if (!client || !instance) {
@@ -1503,13 +1585,15 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
         throw new ServiceUnavailableError('Instance is not connected');
       }
 
+      const quoted = await resolveQuotedMessage(client, body.quoted, body.chatJid);
+
       try {
         const result = await client.sendVideo(body.to, body.video, {
           caption: body.caption,
           viewOnce: body.viewOnce,
           gifPlayback: body.gifPlayback,
           ptv: body.ptv,
-          quoted: body.quoted,
+          quoted,
         });
 
         if (!result.success) {
@@ -1520,8 +1604,8 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
           success: true,
           data: {
             messageId: result.messageId,
-            to: result.to,
-            timestamp: result.timestamp,
+            to: body.to,
+            timestamp: Date.now(),
           },
         });
       } catch (err: any) {
@@ -1619,11 +1703,12 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
         audio: string;
         ptt?: boolean;
         mimetype?: string;
+        chatJid?: string;
         quoted?: string;
       };
 
       const instanceManager = (server as any).instanceManager;
-      const client = instanceManager.getClient(params.id);
+      const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
       if (!client || !instance) {
@@ -1634,11 +1719,13 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
         throw new ServiceUnavailableError('Instance is not connected');
       }
 
+      const quoted = await resolveQuotedMessage(client, body.quoted, body.chatJid);
+
       try {
         const result = await client.sendAudio(body.to, body.audio, {
           ptt: body.ptt,
           mimetype: body.mimetype,
-          quoted: body.quoted,
+          quoted,
         });
 
         if (!result.success) {
@@ -1649,8 +1736,8 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
           success: true,
           data: {
             messageId: result.messageId,
-            to: result.to,
-            timestamp: result.timestamp,
+            to: body.to,
+            timestamp: Date.now(),
           },
         });
       } catch (err: any) {
@@ -1749,11 +1836,12 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
         caption?: string;
         fileName?: string;
         mimetype?: string;
+        chatJid?: string;
         quoted?: string;
       };
 
       const instanceManager = (server as any).instanceManager;
-      const client = instanceManager.getClient(params.id);
+      const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
       if (!client || !instance) {
@@ -1764,12 +1852,14 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
         throw new ServiceUnavailableError('Instance is not connected');
       }
 
+      const quoted = await resolveQuotedMessage(client, body.quoted, body.chatJid);
+
       try {
         const result = await client.sendDocument(body.to, body.document, {
           caption: body.caption,
           fileName: body.fileName,
           mimetype: body.mimetype,
-          quoted: body.quoted,
+          quoted,
         });
 
         if (!result.success) {
@@ -1780,8 +1870,8 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
           success: true,
           data: {
             messageId: result.messageId,
-            to: result.to,
-            timestamp: result.timestamp,
+            to: body.to,
+            timestamp: Date.now(),
           },
         });
       } catch (err: any) {

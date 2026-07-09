@@ -81,6 +81,10 @@ export function registerSchemas(server: FastifyInstance): void {
         type: 'string',
         minLength: 1,
       },
+      chatJid: {
+        type: 'string',
+        nullable: true,
+      },
       quoted: {
         type: 'string',
         nullable: true,
@@ -126,6 +130,10 @@ export function registerSchemas(server: FastifyInstance): void {
         type: 'boolean',
         nullable: true,
       },
+      chatJid: {
+        type: 'string',
+        nullable: true,
+      },
       quoted: {
         type: 'string',
         nullable: true,
@@ -140,6 +148,10 @@ export function registerSchemas(server: FastifyInstance): void {
     properties: {
       messageId: {
         type: 'string',
+      },
+      chatJid: {
+        type: 'string',
+        nullable: true,
       },
       text: {
         type: 'string',
@@ -156,6 +168,10 @@ export function registerSchemas(server: FastifyInstance): void {
       messageId: {
         type: 'string',
       },
+      chatJid: {
+        type: 'string',
+        nullable: true,
+      },
       emoji: {
         type: 'string',
       },
@@ -169,6 +185,10 @@ export function registerSchemas(server: FastifyInstance): void {
     properties: {
       messageId: {
         type: 'string',
+      },
+      chatJid: {
+        type: 'string',
+        nullable: true,
       },
       to: {
         type: 'array',
@@ -201,6 +221,10 @@ export function registerSchemas(server: FastifyInstance): void {
       },
       viewOnce: {
         type: 'boolean',
+        nullable: true,
+      },
+      chatJid: {
+        type: 'string',
         nullable: true,
       },
       quoted: {
@@ -241,6 +265,10 @@ export function registerSchemas(server: FastifyInstance): void {
         nullable: true,
         description: 'Send as video note (circular video)',
       },
+      chatJid: {
+        type: 'string',
+        nullable: true,
+      },
       quoted: {
         type: 'string',
         nullable: true,
@@ -268,6 +296,10 @@ export function registerSchemas(server: FastifyInstance): void {
         description: 'Send as voice note (push-to-talk)',
       },
       mimetype: {
+        type: 'string',
+        nullable: true,
+      },
+      chatJid: {
         type: 'string',
         nullable: true,
       },
@@ -301,6 +333,10 @@ export function registerSchemas(server: FastifyInstance): void {
         nullable: true,
       },
       mimetype: {
+        type: 'string',
+        nullable: true,
+      },
+      chatJid: {
         type: 'string',
         nullable: true,
       },
