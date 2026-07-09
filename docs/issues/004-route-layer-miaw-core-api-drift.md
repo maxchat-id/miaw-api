@@ -28,6 +28,34 @@ correctly (503 not-connected, 400 invalid body, `chatJid` accepted).
 **Still required:** live WhatsApp pairing to confirm the runtime behaviour of
 every migrated message operation before release.
 
+### Code review — fixed
+
+- **send-text / send-media returned HTTP 200 on a soft failure.** They did not
+  check `result.success` (which the dedicated image/video/audio/document
+  handlers do), so a `SendMessageResult { success: false }` was reported as
+  `{ success: true, messageId: undefined }`. Added the `!result.success` guard
+  and an `instanceof BadRequestError` re-throw so it isn't re-wrapped.
+
+### Code review — deferred (accepted trade-offs / follow-ups)
+
+- **Unresolvable `quoted` fails the whole send with 404.** Defensible, but a
+  stale reply reference arguably should degrade to a non-reply send instead of
+  blocking. Behavioural choice — revisit if it bites.
+- **`forward` fan-out is non-atomic:** if recipient N fails, 1..N-1 were already
+  sent but the response is a single 400 with no partial data. Consider a
+  207-style per-recipient result.
+- **`predefinedId` accepts any string** (`as unknown as Label['predefinedId']`).
+  Add an `enum` to the label schema to validate against the allowed set.
+- **`send-media` with no `mimetype` is treated as a document.** Reasonable
+  default; document it for callers.
+- **No unit coverage** for `findMessageById` / mimetype dispatch / forward
+  fan-out (they're inline in messaging.ts). Extract + test, or add integration
+  coverage.
+- **Lockfile drift (pre-existing):** `package.json` wants `miaw-core@^1.9.2` but
+  `pnpm-lock.yaml` still pins `1.2.1`. Regenerate after publishing 1.9.2, else
+  `pnpm install --frozen-lockfile` (CI) fails. Tracked with the 001 residual
+  publish step.
+
 ## Summary
 
 Typing `server.instanceManager` (so `getClient()` returns a real `MiawClient`)

@@ -198,6 +198,10 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
       try {
         const result = await client.sendText(body.to, body.text, quoted ? { quoted } : undefined);
 
+        if (!result.success) {
+          throw new BadRequestError('Failed to send message', { error: result.error });
+        }
+
         reply.send({
           success: true,
           data: {
@@ -207,6 +211,9 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
           },
         });
       } catch (err: any) {
+        if (err instanceof BadRequestError) {
+          throw err;
+        }
         throw new BadRequestError('Failed to send message', { error: err.message });
       }
     }
@@ -352,6 +359,10 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
           });
         }
 
+        if (!result.success) {
+          throw new BadRequestError('Failed to send media', { error: result.error });
+        }
+
         reply.send({
           success: true,
           data: {
@@ -361,6 +372,9 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
           },
         });
       } catch (err: any) {
+        if (err instanceof BadRequestError) {
+          throw err;
+        }
         throw new BadRequestError('Failed to send media', { error: err.message });
       }
     }
