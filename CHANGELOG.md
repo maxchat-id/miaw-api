@@ -5,6 +5,52 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Graceful shutdown** on `SIGTERM`/`SIGINT`: stop accepting new requests
+  (`server.close`), then dispose WhatsApp clients and webhook retry timers,
+  then exit — with a watchdog force-exit on timeout and a double-signal guard.
+- **Reply/quoted support** on send endpoints — pass a `quoted` messageId (with
+  optional `chatJid`) and it is resolved to the original message.
+
+### Changed
+
+- **Aligned the route layer with the miaw-core 1.9.2 API.** The route handlers
+  had been written against an older miaw-core and called methods/shapes that no
+  longer exist (so several endpoints failed at runtime). Now:
+  - message operations (edit, delete, react, forward) resolve a messageId to a
+    full message before calling miaw-core; requests accept an optional `chatJid`
+    lookup hint;
+  - `send-media` dispatches to image/video/audio/document by `mimetype`;
+  - group-participant, catalog, profile-picture and newsletter calls use the
+    current method names.
+- Typed the Fastify `instanceManager` / `webhookDispatcher` decorators (removed
+  the `(server as any)` casts); added `"ts-node": { "files": true }` so
+  `dev:start` loads the type augmentation.
+
+### Fixed
+
+- Schema/validation and other client (4xx) errors now return their real status
+  code instead of being reported as `500`.
+- `send-text` / `send-media` no longer report a soft send failure (miaw-core
+  `success: false`) as HTTP `200`.
+- `/health` no longer shows an auth lock in the `/docs` UI (marked public in the
+  OpenAPI spec).
+
+### Security
+
+- **SSRF hardening for `webhookUrl`.** Reject non-`http(s)` schemes and hosts
+  that are (or resolve to) private / loopback / link-local (incl. cloud
+  metadata `169.254.169.254`) / CGNAT / unspecified addresses (IPv4, IPv6, and
+  IPv4-mapped) at write time. Webhook delivery no longer follows redirects
+  (`redirect: 'error'`), closing a redirect-to-internal bypass.
+
+> Note: the miaw-core API migration is verified by type-check, unit tests, and a
+> boot smoke test; the message operations still need live WhatsApp verification
+> before release (see `docs/issues/004`).
+
 ## [1.1.0] - 2026-07-09
 
 ### Added
