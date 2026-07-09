@@ -67,6 +67,22 @@ export async function createServer(): Promise<FastifyInstance> {
         { name: 'Business', description: 'WhatsApp Business features (labels, catalog, newsletters)' },
         { name: 'Health', description: 'API health check' },
       ],
+      components: {
+        securitySchemes: {
+          bearerAuth: {
+            type: 'http',
+            scheme: 'bearer',
+            description: 'API key sent as `Authorization: Bearer <key>`',
+          },
+          apiKey: {
+            type: 'apiKey',
+            in: 'header',
+            name: 'X-API-Key',
+            description: 'API key sent as `X-API-Key: <key>`',
+          },
+        },
+      },
+      security: [{ bearerAuth: [] }, { apiKey: [] }],
     },
   });
 
