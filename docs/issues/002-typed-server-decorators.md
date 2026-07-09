@@ -2,8 +2,22 @@
 
 - **Type:** Architecture / Maintainability
 - **Severity:** Suggestion
-- **Status:** Open
+- **Status:** Blocked by [004](./004-route-layer-miaw-core-api-drift.md)
 - **Found in:** Code review of `PATCH /instances/:id` (2026-07-09)
+
+## Update (2026-07-09) — blocked
+
+The decorator typing itself is a one-line augmentation and works. But once
+`server.instanceManager` is typed, `getClient()` returns a real `MiawClient`
+instead of `any`, and the build surfaces **~30 pre-existing type errors** in
+the route handlers: they call miaw-core methods/shapes that no longer exist
+(the route layer was written against an older miaw-core API). See
+[issue 004](./004-route-layer-miaw-core-api-drift.md).
+
+Merging this refactor is therefore blocked until 004 is resolved — otherwise
+the only way to make it compile is to re-introduce `as any` casts, which would
+hide the very same runtime bugs. The refactor was reverted; 004 must land
+first, then this becomes a clean mechanical change.
 
 ## Summary
 
