@@ -5,6 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- `PATCH /instances/:id` — update an instance's `webhookUrl` and/or
+  `webhookEvents` without recreating it (the WhatsApp session is preserved).
+- OpenAPI `securitySchemes` (Bearer token + `X-API-Key`) with a global security
+  requirement, so the Scalar `/docs` UI renders a central Authentication panel —
+  enter the API key once instead of on every request.
+
+### Changed
+
+- **BREAKING (config)**: dropped the generic `API_` prefix on server env vars —
+  `API_PORT` → `PORT`, `API_HOST` → `HOST`, `API_WEBHOOK_SECRET` →
+  `WEBHOOK_SECRET` (`API_KEY` unchanged). Aligns `PORT`/`HOST` with common PaaS
+  conventions.
+- Renamed webhook config env vars to match the code: `WEBHOOK_TIMEOUT` →
+  `WEBHOOK_TIMEOUT_MS`, `WEBHOOK_RETRY_DELAY` → `WEBHOOK_RETRY_DELAY_MS`.
+- Bumped `miaw-core` dependency to `^1.9.2`.
+
+### Fixed
+
+- `.env` was never loaded (no `dotenv` / no `--env-file`), so configuration
+  silently fell back to defaults. Added `--env-file-if-exists=.env` to the
+  `start`/`dev:start` scripts (native Node, no dotenv dependency).
+- Removed a debug `console.log` that leaked `apiKey`/`webhookSecret` to stdout
+  on startup.
+
+### Documentation
+
+- Documented all 11 webhook events (was 6) and the `webhookEvents` whitelist
+  behaviour.
+- Corrected the Swagger URL to `/docs` and env var names across README and docs.
+
 ## [1.0.0] - 2025-01-21
 
 ### Added
