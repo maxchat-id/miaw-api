@@ -271,14 +271,22 @@ When events occur, POST requests are sent to your configured webhook URL:
 
 ### Event Types
 
-| Event          | Description                    |
-| -------------- | ------------------------------ |
-| `qr`           | QR code available for scanning |
-| `ready`        | Instance connected and ready   |
-| `message`      | New message received           |
-| `connection`   | Connection state changed       |
-| `disconnected` | Instance disconnected          |
-| `error`        | Error occurred                 |
+| Event               | Description                                   |
+| ------------------- | --------------------------------------------- |
+| `qr`                | QR code available for scanning                |
+| `ready`             | Instance connected and ready                  |
+| `message`           | New inbound message received                  |
+| `message_edit`      | A message was edited                          |
+| `message_delete`    | A message was deleted/revoked                 |
+| `message_reaction`  | A message received an emoji reaction          |
+| `presence`          | Subscribed contact's presence changed         |
+| `connection`        | Connection state changed                      |
+| `disconnected`      | Instance disconnected                         |
+| `reconnecting`      | Reconnection attempt in progress              |
+| `error`             | Error occurred                                |
+
+When creating an instance, `webhookEvents` acts as a whitelist: list specific
+events to receive only those, or omit it / pass `[]` to receive all events.
 
 ## Docker Deployment
 
@@ -377,10 +385,11 @@ npm run test:integration -- setup
 
 | Method | Endpoint         | Description          |
 | ------ | ---------------- | -------------------- |
-| POST   | `/instances`     | Create new instance  |
-| GET    | `/instances`     | List all instances   |
-| GET    | `/instances/:id` | Get instance details |
-| DELETE | `/instances/:id` | Delete instance      |
+| POST   | `/instances`     | Create new instance          |
+| GET    | `/instances`     | List all instances           |
+| GET    | `/instances/:id` | Get instance details         |
+| PATCH  | `/instances/:id` | Update webhook URL/events    |
+| DELETE | `/instances/:id` | Delete instance              |
 
 ### Connection
 
