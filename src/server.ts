@@ -109,6 +109,7 @@ export async function createServer(): Promise<FastifyInstance> {
       tags: ['Health'],
       summary: 'Health check',
       description: 'Check if the API is running',
+      security: [], // public endpoint — no auth (overrides global security)
       response: {
         200: {
           type: 'object',

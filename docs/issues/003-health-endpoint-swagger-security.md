@@ -2,8 +2,15 @@
 
 - **Type:** Documentation / DX
 - **Severity:** Suggestion (cosmetic)
-- **Status:** Open
+- **Status:** Resolved (2026-07-09)
 - **Found in:** Code review of OpenAPI security scheme (2026-07-09)
+
+## Resolution
+
+Added `security: []` to the `/health` route schema in `src/server.ts`, which
+overrides the global security requirement for that operation only. Verified via
+the generated spec: `/health` → `security: []`, while other operations still
+inherit the global requirement.
 
 ## Summary
 
