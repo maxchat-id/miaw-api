@@ -42,6 +42,27 @@ export function registerSchemas(server: FastifyInstance): void {
     },
   });
 
+  server.addSchema({
+    $id: 'updateInstance',
+    type: 'object',
+    additionalProperties: false,
+    properties: {
+      webhookUrl: {
+        type: 'string',
+        format: 'uri',
+        nullable: true,
+      },
+      webhookEvents: {
+        type: 'array',
+        items: {
+          type: 'string',
+          enum: ['qr', 'ready', 'message', 'message_edit', 'message_delete', 'message_reaction', 'presence', 'connection', 'disconnected', 'reconnecting', 'error'],
+        },
+        nullable: true,
+      },
+    },
+  });
+
   // ============================================================================
   // Messaging Schemas
   // ============================================================================

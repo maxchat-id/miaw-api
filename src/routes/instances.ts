@@ -209,6 +209,87 @@ export async function instanceRoutes(server: FastifyInstance): Promise<void> {
   );
 
   /**
+   * PATCH /instances/:id
+   * Update instance webhook settings without recreating it
+   */
+  server.patch(
+    '/instances/:id',
+    {
+      schema: {
+        description: 'Update instance webhook settings (URL and/or events)',
+        tags: ['Instances'],
+        summary: 'Update instance',
+        params: {
+          type: 'object',
+          properties: {
+            id: { type: 'string' },
+          },
+          required: ['id'],
+        },
+        body: {
+          $ref: 'updateInstance#',
+        },
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              success: { type: 'boolean' },
+              data: {
+                type: 'object',
+                properties: {
+                  instanceId: { type: 'string' },
+                  status: { type: 'string' },
+                  webhookUrl: { type: 'string', nullable: true },
+                  webhookEvents: { type: 'array', items: { type: 'string' } },
+                  webhookEnabled: { type: 'boolean' },
+                  createdAt: { type: 'string', format: 'date-time' },
+                  lastActivity: { type: 'string', format: 'date-time' },
+                  connectedAt: { type: 'string', format: 'date-time', nullable: true },
+                  phoneNumber: { type: 'string', nullable: true },
+                },
+              },
+            },
+          },
+          404: {
+            type: 'object',
+            properties: {
+              success: { type: 'boolean' },
+              error: {
+                type: 'object',
+                properties: {
+                  code: { type: 'string' },
+                  message: { type: 'string' },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      const params = request.params as { id: string };
+      const body = request.body as {
+        webhookUrl?: string | null;
+        webhookEvents?: string[];
+      };
+      const instanceManager = (server as any).instanceManager;
+
+      try {
+        const state = instanceManager.updateWebhook(params.id, body);
+        reply.send({
+          success: true,
+          data: state,
+        });
+      } catch (err: any) {
+        if (err.message?.includes('not found')) {
+          throw new NotFoundError('Instance');
+        }
+        throw err;
+      }
+    }
+  );
+
+  /**
    * DELETE /instances/:id
    * Delete instance
    */

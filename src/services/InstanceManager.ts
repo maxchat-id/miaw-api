@@ -132,6 +132,39 @@ export class InstanceManager extends EventEmitter {
   }
 
   /**
+   * Update an instance's webhook settings without recreating it.
+   * Only the fields present in `updates` are changed; passing
+   * `webhookUrl: null` clears the webhook and disables delivery.
+   */
+  updateWebhook(
+    instanceId: string,
+    updates: { webhookUrl?: string | null; webhookEvents?: WebhookEvent[] }
+  ): InstanceState {
+    const managed = this.instances.get(instanceId);
+
+    if (!managed) {
+      throw new Error(`Instance ${instanceId} not found`);
+    }
+
+    const patch: Partial<InstanceState> = {};
+
+    if ('webhookUrl' in updates) {
+      const url = updates.webhookUrl || undefined;
+      patch.webhookUrl = url;
+      patch.webhookEnabled = !!url;
+    }
+
+    if ('webhookEvents' in updates) {
+      patch.webhookEvents = updates.webhookEvents || [];
+    }
+
+    this.updateState(instanceId, patch);
+    this.logger.info({ instanceId }, 'Webhook updated');
+
+    return managed.state;
+  }
+
+  /**
    * Get MiawClient for instance
    */
   getClient(instanceId: string): MiawClient | null {
