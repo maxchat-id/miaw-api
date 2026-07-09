@@ -1,0 +1,29 @@
+# TODO — Issue 004 migration
+
+## Phase 0 — Infrastructure
+- [x] T1 `resolveStoredMessage(client, chatJid, messageId)` util + unit tests
+
+## Phase 1 — Category A renames
+- [ ] T2 business.ts — getCatalog / getCollections / predefinedId
+- [ ] T3 contacts.ts — getProfilePicture
+- [ ] T4 groups.ts — addParticipants / removeParticipants / promoteToAdmin / demoteFromAdmin
+- [ ] T5 newsletters.ts — fetchNewsletterMessages
+- [ ] CP2 — build green, all Category A done
+
+## Phase 2 — messaging.ts
+- [ ] T6 send-text — drop quoted; body.to + Date.now()
+- [ ] T7 send-media — dispatch by type/mimetype
+- [ ] T8 edit — add chatJid; resolve; editMessage(msg, text)
+- [ ] T9 delete / deleteForMe — resolve via chatJid
+- [ ] T10 reaction / remove-reaction — add chatJid; resolve
+- [ ] T11 forward — resolve; loop recipients
+- [ ] CP3 — messaging migrated, build green
+
+## Phase 3 — Close 002
+- [ ] T12 typed decorators + drop (server as any) + instances body casts
+- [ ] CP4 — full suite green, review, commit
+
+## Follow-ups (separate issues)
+- [ ] Restore quoted/reply support (chatJid + resolver)
+- [ ] Issue 001 residual: DNS-rebinding IP-pinning
+- [ ] Live WhatsApp verification per endpoint
