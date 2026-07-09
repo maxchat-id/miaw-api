@@ -2,8 +2,31 @@
 
 - **Type:** Security
 - **Severity:** Important
-- **Status:** Open
+- **Status:** Mostly resolved (write-time validation done; DNS-rebinding hardening deferred)
 - **Found in:** Code review of `PATCH /instances/:id` (2026-07-09)
+
+## Resolution (2026-07-09)
+
+Write-time validation implemented in `src/utils/ssrf.ts` and wired into
+`POST /instances` and `PATCH /instances/:id`:
+
+- Only `http`/`https` schemes accepted.
+- IP-literal hosts checked against blocked ranges (loopback, private,
+  link-local incl. cloud metadata `169.254.169.254`, CGNAT, unspecified) for
+  both IPv4 and IPv6 (incl. IPv4-mapped).
+- Hostnames are DNS-resolved and rejected if any resolved address is blocked.
+- Violations return `400` before the URL is stored.
+- Unit tests: `test/unit/utils/ssrf.test.ts`.
+
+### Deferred (still open)
+
+**Delivery-time IP-pinning against DNS rebinding.** Write-time validation
+resolves the host once; a hostname could re-resolve to a private IP between
+validation and delivery (TOCTOU). Fully closing this requires pinning the
+connection to the validated IP at send time (custom `lookup`/agent in
+`WebhookDispatcher.deliver`), not just re-resolving. Tracked here as remaining
+work — a naive re-`lookup` in the dispatcher was rejected because it still has
+the TOCTOU gap and would force real DNS in the dispatcher unit tests.
 
 ## Summary
 
