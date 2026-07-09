@@ -17,6 +17,7 @@
  */
 
 import { FastifyInstance } from 'fastify';
+import type { MiawClient } from 'miaw-core';
 import { createAuthMiddleware } from '../middleware/auth';
 import { NotFoundError, BadRequestError, ServiceUnavailableError } from '../utils/errorHandler';
 
@@ -130,7 +131,7 @@ export async function groupRoutes(server: FastifyInstance): Promise<void> {
       const body = request.body as { name: string; participants: string[] };
 
       const instanceManager = (server as any).instanceManager;
-      const client = instanceManager.getClient(params.id);
+      const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
       if (!client || !instance) {
@@ -247,7 +248,7 @@ export async function groupRoutes(server: FastifyInstance): Promise<void> {
       const params = request.params as { id: string; groupJid: string };
 
       const instanceManager = (server as any).instanceManager;
-      const client = instanceManager.getClient(params.id);
+      const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
       if (!client || !instance) {
@@ -357,7 +358,7 @@ export async function groupRoutes(server: FastifyInstance): Promise<void> {
       const body = request.body as { name?: string; description?: string };
 
       const instanceManager = (server as any).instanceManager;
-      const client = instanceManager.getClient(params.id);
+      const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
       if (!client || !instance) {
@@ -476,7 +477,7 @@ export async function groupRoutes(server: FastifyInstance): Promise<void> {
       const params = request.params as { id: string; groupJid: string };
 
       const instanceManager = (server as any).instanceManager;
-      const client = instanceManager.getClient(params.id);
+      const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
       if (!client || !instance) {
@@ -597,7 +598,7 @@ export async function groupRoutes(server: FastifyInstance): Promise<void> {
       const body = request.body as { participants: string[] };
 
       const instanceManager = (server as any).instanceManager;
-      const client = instanceManager.getClient(params.id);
+      const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
       if (!client || !instance) {
@@ -609,11 +610,11 @@ export async function groupRoutes(server: FastifyInstance): Promise<void> {
       }
 
       try {
-        const result = await client.addGroupParticipants(params.groupJid, body.participants);
+        const result = await client.addParticipants(params.groupJid, body.participants);
 
         reply.send({
           success: true,
-          data: result.results,
+          data: result,
         });
       } catch (err: any) {
         throw new BadRequestError('Failed to add participants', { error: err.message });
@@ -708,7 +709,7 @@ export async function groupRoutes(server: FastifyInstance): Promise<void> {
       const body = request.body as { participants: string[] };
 
       const instanceManager = (server as any).instanceManager;
-      const client = instanceManager.getClient(params.id);
+      const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
       if (!client || !instance) {
@@ -720,11 +721,11 @@ export async function groupRoutes(server: FastifyInstance): Promise<void> {
       }
 
       try {
-        const result = await client.removeGroupParticipants(params.groupJid, body.participants);
+        const result = await client.removeParticipants(params.groupJid, body.participants);
 
         reply.send({
           success: true,
-          data: result.results,
+          data: result,
         });
       } catch (err: any) {
         throw new BadRequestError('Failed to remove participants', { error: err.message });
@@ -819,7 +820,7 @@ export async function groupRoutes(server: FastifyInstance): Promise<void> {
       const body = request.body as { participants: string[] };
 
       const instanceManager = (server as any).instanceManager;
-      const client = instanceManager.getClient(params.id);
+      const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
       if (!client || !instance) {
@@ -831,11 +832,11 @@ export async function groupRoutes(server: FastifyInstance): Promise<void> {
       }
 
       try {
-        const result = await client.promoteGroupAdmin(params.groupJid, body.participants);
+        const result = await client.promoteToAdmin(params.groupJid, body.participants);
 
         reply.send({
           success: true,
-          data: result.results,
+          data: result,
         });
       } catch (err: any) {
         throw new BadRequestError('Failed to promote admin', { error: err.message });
@@ -930,7 +931,7 @@ export async function groupRoutes(server: FastifyInstance): Promise<void> {
       const body = request.body as { participants: string[] };
 
       const instanceManager = (server as any).instanceManager;
-      const client = instanceManager.getClient(params.id);
+      const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
       if (!client || !instance) {
@@ -942,11 +943,11 @@ export async function groupRoutes(server: FastifyInstance): Promise<void> {
       }
 
       try {
-        const result = await client.demoteGroupAdmin(params.groupJid, body.participants);
+        const result = await client.demoteFromAdmin(params.groupJid, body.participants);
 
         reply.send({
           success: true,
-          data: result.results,
+          data: result,
         });
       } catch (err: any) {
         throw new BadRequestError('Failed to demote admin', { error: err.message });
@@ -1043,7 +1044,7 @@ export async function groupRoutes(server: FastifyInstance): Promise<void> {
       const body = request.body as { url: string };
 
       const instanceManager = (server as any).instanceManager;
-      const client = instanceManager.getClient(params.id);
+      const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
       if (!client || !instance) {
@@ -1145,7 +1146,7 @@ export async function groupRoutes(server: FastifyInstance): Promise<void> {
       const params = request.params as { id: string; groupJid: string };
 
       const instanceManager = (server as any).instanceManager;
-      const client = instanceManager.getClient(params.id);
+      const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
       if (!client || !instance) {
@@ -1249,7 +1250,7 @@ export async function groupRoutes(server: FastifyInstance): Promise<void> {
       const params = request.params as { id: string; groupJid: string };
 
       const instanceManager = (server as any).instanceManager;
-      const client = instanceManager.getClient(params.id);
+      const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
       if (!client || !instance) {
@@ -1358,7 +1359,7 @@ export async function groupRoutes(server: FastifyInstance): Promise<void> {
       const params = request.params as { id: string; code: string };
 
       const instanceManager = (server as any).instanceManager;
-      const client = instanceManager.getClient(params.id);
+      const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
       if (!client || !instance) {
@@ -1467,7 +1468,7 @@ export async function groupRoutes(server: FastifyInstance): Promise<void> {
       const params = request.params as { id: string; inviteCode: string };
 
       const instanceManager = (server as any).instanceManager;
-      const client = instanceManager.getClient(params.id);
+      const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
       if (!client || !instance) {
@@ -1571,7 +1572,7 @@ export async function groupRoutes(server: FastifyInstance): Promise<void> {
       const params = request.params as { id: string; groupJid: string };
 
       const instanceManager = (server as any).instanceManager;
-      const client = instanceManager.getClient(params.id);
+      const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
       if (!client || !instance) {

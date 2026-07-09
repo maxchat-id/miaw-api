@@ -11,6 +11,7 @@
  */
 
 import { FastifyInstance } from 'fastify';
+import type { MiawClient } from 'miaw-core';
 import { createAuthMiddleware } from '../middleware/auth';
 import { NotFoundError, BadRequestError, ServiceUnavailableError } from '../utils/errorHandler';
 
@@ -103,7 +104,7 @@ export async function contactRoutes(server: FastifyInstance): Promise<void> {
       const body = request.body as { phone: string };
 
       const instanceManager = (server as any).instanceManager;
-      const client = instanceManager.getClient(params.id);
+      const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
       if (!client || !instance) {
@@ -216,7 +217,7 @@ export async function contactRoutes(server: FastifyInstance): Promise<void> {
       const body = request.body as { phones: string[] };
 
       const instanceManager = (server as any).instanceManager;
-      const client = instanceManager.getClient(params.id);
+      const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
       if (!client || !instance) {
@@ -321,7 +322,7 @@ export async function contactRoutes(server: FastifyInstance): Promise<void> {
       const params = request.params as { id: string; jid: string };
 
       const instanceManager = (server as any).instanceManager;
-      const client = instanceManager.getClient(params.id);
+      const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
       if (!client || !instance) {
@@ -440,7 +441,7 @@ export async function contactRoutes(server: FastifyInstance): Promise<void> {
       const params = request.params as { id: string; jid: string };
 
       const instanceManager = (server as any).instanceManager;
-      const client = instanceManager.getClient(params.id);
+      const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
       if (!client || !instance) {
@@ -542,7 +543,7 @@ export async function contactRoutes(server: FastifyInstance): Promise<void> {
       const params = request.params as { id: string; jid: string };
 
       const instanceManager = (server as any).instanceManager;
-      const client = instanceManager.getClient(params.id);
+      const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
       if (!client || !instance) {
@@ -554,7 +555,7 @@ export async function contactRoutes(server: FastifyInstance): Promise<void> {
       }
 
       try {
-        const pictureUrl = await client.getProfilePictureUrl(params.jid);
+        const pictureUrl = await client.getProfilePicture(params.jid);
 
         reply.send({
           success: true,
@@ -651,7 +652,7 @@ export async function contactRoutes(server: FastifyInstance): Promise<void> {
       const params = request.params as { id: string; jid: string };
 
       const instanceManager = (server as any).instanceManager;
-      const client = instanceManager.getClient(params.id);
+      const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
       if (!client || !instance) {
@@ -764,7 +765,7 @@ export async function contactRoutes(server: FastifyInstance): Promise<void> {
       };
 
       const instanceManager = (server as any).instanceManager;
-      const client = instanceManager.getClient(params.id);
+      const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
       if (!client || !instance) {
@@ -884,7 +885,7 @@ export async function contactRoutes(server: FastifyInstance): Promise<void> {
       const params = request.params as { id: string; phone: string };
 
       const instanceManager = (server as any).instanceManager;
-      const client = instanceManager.getClient(params.id);
+      const client: MiawClient | null = instanceManager.getClient(params.id);
       const instance = instanceManager.getInstance(params.id);
 
       if (!client || !instance) {

@@ -4,11 +4,11 @@
 - [x] T1 `resolveStoredMessage(client, chatJid, messageId)` util + unit tests
 
 ## Phase 1 — Category A renames
-- [ ] T2 business.ts — getCatalog / getCollections / predefinedId
-- [ ] T3 contacts.ts — getProfilePicture
-- [ ] T4 groups.ts — addParticipants / removeParticipants / promoteToAdmin / demoteFromAdmin
-- [ ] T5 newsletters.ts — fetchNewsletterMessages
-- [ ] CP2 — build green, all Category A done
+- [x] T2 business.ts — getCatalog / getCollections / predefinedId
+- [x] T3 contacts.ts — getProfilePicture
+- [x] T4 groups.ts — addParticipants / removeParticipants / promoteToAdmin / demoteFromAdmin
+- [x] T5 newsletters.ts — fetchNewsletterMessages
+- [x] CP2 — build green, all Category A done
 
 ## Phase 2 — messaging.ts
 - [ ] T6 send-text — drop quoted; body.to + Date.now()
