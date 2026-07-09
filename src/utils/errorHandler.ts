@@ -79,6 +79,28 @@ export function errorHandler(
     return;
   }
 
+  // Fastify framework errors (validation, empty body, etc.) carry their own
+  // statusCode/code. Preserve client errors (4xx) instead of masking them as 500.
+  const fastifyError = error as { statusCode?: number; code?: string };
+  if (
+    typeof fastifyError.statusCode === 'number' &&
+    fastifyError.statusCode >= 400 &&
+    fastifyError.statusCode < 500
+  ) {
+    const correlationId = crypto.randomUUID();
+    request.log.error({ correlationId, error });
+
+    reply.status(fastifyError.statusCode).send({
+      success: false,
+      error: {
+        code: fastifyError.code || 'INVALID_REQUEST',
+        message: error.message,
+        correlationId,
+      },
+    });
+    return;
+  }
+
   // Handle unknown errors with a generated correlation ID for tracking
   const correlationId = crypto.randomUUID();
   request.log.error({ correlationId, error });

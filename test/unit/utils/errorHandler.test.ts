@@ -313,6 +313,46 @@ describe('errorHandler', () => {
     });
   });
 
+  describe('handling Fastify framework errors', () => {
+    it('should respect the statusCode of a client validation error', () => {
+      const error = Object.assign(new Error('body must be object'), {
+        statusCode: 400,
+        code: 'FST_ERR_VALIDATION',
+      });
+
+      errorHandler(error, mockRequest, mockReply);
+
+      expect(mockReply.status).toHaveBeenCalledWith(400);
+      const sentPayload = mockReply.send.mock.calls[0][0];
+      expect(sentPayload.error.code).toBe('FST_ERR_VALIDATION');
+      expect(sentPayload.error.message).toBe('body must be object');
+    });
+
+    it('should respect the statusCode of an empty-body error', () => {
+      const error = Object.assign(new Error('Body cannot be empty'), {
+        statusCode: 400,
+        code: 'FST_ERR_CTP_EMPTY_JSON_BODY',
+      });
+
+      errorHandler(error, mockRequest, mockReply);
+
+      expect(mockReply.status).toHaveBeenCalledWith(400);
+    });
+
+    it('should NOT expose 5xx framework errors as client errors', () => {
+      const error = Object.assign(new Error('upstream exploded'), {
+        statusCode: 502,
+      });
+
+      errorHandler(error, mockRequest, mockReply);
+
+      expect(mockReply.status).toHaveBeenCalledWith(500);
+      const sentPayload = mockReply.send.mock.calls[0][0];
+      expect(sentPayload.error.message).toBe('An unexpected error occurred');
+      expect(sentPayload.error.message).not.toContain('upstream');
+    });
+  });
+
   describe('error inheritance', () => {
     it('should identify all custom errors as ApiError instances', () => {
       expect(new UnauthorizedError()).toBeInstanceOf(ApiError);
