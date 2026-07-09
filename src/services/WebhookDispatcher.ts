@@ -151,6 +151,9 @@ export class WebhookDispatcher {
         },
         body: JSON.stringify(delivery.payload),
         signal: controller.signal,
+        // Don't follow redirects: a redirect to an internal address would
+        // bypass the write-time SSRF validation of the webhook URL.
+        redirect: 'error',
       });
 
       clearTimeout(timeoutId);

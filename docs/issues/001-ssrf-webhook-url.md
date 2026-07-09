@@ -18,6 +18,12 @@ Write-time validation implemented in `src/utils/ssrf.ts` and wired into
 - Violations return `400` before the URL is stored.
 - Unit tests: `test/unit/utils/ssrf.test.ts`.
 
+### Also hardened
+
+- **Redirect following disabled** in `WebhookDispatcher` (`redirect: 'error'`)
+  — a public webhook endpoint could otherwise `302` to an internal address and
+  bypass the write-time validation.
+
 ### Deferred (still open)
 
 **Delivery-time IP-pinning against DNS rebinding.** Write-time validation
