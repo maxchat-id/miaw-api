@@ -1,5 +1,6 @@
 import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
+import eslintConfigPrettier from 'eslint-config-prettier';
 
 export default [
   js.configs.recommended,
@@ -23,6 +24,8 @@ export default [
       '@typescript-eslint/no-non-null-assertion': 'off',
     },
   },
+  // Must come last: disables ESLint rules that conflict with Prettier.
+  eslintConfigPrettier,
   {
     ignores: ['dist/**', 'node_modules/**', 'test-sessions/**', 'sessions/**'],
   },
