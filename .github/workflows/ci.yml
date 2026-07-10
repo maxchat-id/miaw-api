@@ -1,0 +1,43 @@
+# CI quality gate: format, lint, build, unit tests.
+#
+# NOTE: this requires `pnpm install` to succeed in CI. While package.json points
+# `miaw-core` at `file:../miaw-core` (a local sibling repo not present in CI),
+# the install step will fail. This passes once miaw-core@1.9.2 is published to
+# npm and the dependency is switched back to `^1.9.2`. See
+# docs/issues/004 / the release-blocker notes.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check formatting
+        run: pnpm format:check
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Build
+        run: pnpm build
+
+      - name: Unit tests
+        run: pnpm test:unit
