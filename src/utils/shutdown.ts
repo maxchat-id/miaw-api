@@ -10,7 +10,10 @@ export interface ShutdownDeps {
   server: { close: () => Promise<void> };
   instanceManager: { dispose: () => Promise<void> };
   webhookDispatcher: { dispose: () => void };
-  logger: { info: (obj: unknown, msg?: string) => void; error: (obj: unknown, msg?: string) => void };
+  logger: {
+    info: (obj: unknown, msg?: string) => void;
+    error: (obj: unknown, msg?: string) => void;
+  };
   exit: (code: number) => void;
   timeoutMs?: number;
 }

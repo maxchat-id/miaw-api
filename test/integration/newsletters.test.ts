@@ -90,7 +90,7 @@ describe('Phase 12 Newsletter Tests', () => {
 
       // Note: This requires a newsletter you own
       const response = await client.delete(
-        `/instances/${testInstanceId}/newsletters/${testNewsletterId}`
+        `/instances/${testInstanceId}/newsletters/${testNewsletterId}`,
       );
 
       // May fail if newsletter doesn't exist or not owned
@@ -106,7 +106,7 @@ describe('Phase 12 Newsletter Tests', () => {
       }
 
       const response = await client.get(
-        `/instances/${testInstanceId}/newsletters/${testNewsletterId}`
+        `/instances/${testInstanceId}/newsletters/${testNewsletterId}`,
       );
 
       expect([200, 400, 404]).toContain(response.status);
@@ -127,7 +127,7 @@ describe('Phase 12 Newsletter Tests', () => {
       }
 
       const response = await client.get(
-        `/instances/${testInstanceId}/newsletters/${testNewsletterId}/messages?limit=10`
+        `/instances/${testInstanceId}/newsletters/${testNewsletterId}/messages?limit=10`,
       );
 
       expect([200, 400, 404]).toContain(response.status);
@@ -140,7 +140,7 @@ describe('Phase 12 Newsletter Tests', () => {
 
     it.skip('should reject when instance is not connected', async () => {
       const response = await client.get(
-        `/instances/${testInstanceId}/newsletters/${testNewsletterId}`
+        `/instances/${testInstanceId}/newsletters/${testNewsletterId}`,
       );
 
       expect(response.status).toBe(503);
@@ -161,7 +161,7 @@ describe('Phase 12 Newsletter Tests', () => {
         `/instances/${testInstanceId}/newsletters/${testNewsletterId}/messages/text`,
         {
           text: `Test message ${Date.now()}`,
-        }
+        },
       );
 
       // May fail if not newsletter owner
@@ -186,7 +186,7 @@ describe('Phase 12 Newsletter Tests', () => {
         {
           image: 'https://via.placeholder.com/300x200.png',
           caption: 'Test image caption',
-        }
+        },
       );
 
       // May fail if not newsletter owner
@@ -204,9 +204,10 @@ describe('Phase 12 Newsletter Tests', () => {
       const response = await client.post(
         `/instances/${testInstanceId}/newsletters/${testNewsletterId}/messages/video`,
         {
-          video: 'https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s_1MB.mp4',
+          video:
+            'https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s_1MB.mp4',
           caption: 'Test video caption',
-        }
+        },
       );
 
       // May fail if not newsletter owner
@@ -218,7 +219,7 @@ describe('Phase 12 Newsletter Tests', () => {
         `/instances/${testInstanceId}/newsletters/${testNewsletterId}/messages/text`,
         {
           text: 'Test message',
-        }
+        },
       );
 
       expect(response.status).toBe(503);
@@ -236,7 +237,7 @@ describe('Phase 12 Newsletter Tests', () => {
       }
 
       const response = await client.post(
-        `/instances/${testInstanceId}/newsletters/${testNewsletterId}/follow`
+        `/instances/${testInstanceId}/newsletters/${testNewsletterId}/follow`,
       );
 
       expect([200, 400]).toContain(response.status);
@@ -256,7 +257,7 @@ describe('Phase 12 Newsletter Tests', () => {
       }
 
       const response = await client.delete(
-        `/instances/${testInstanceId}/newsletters/${testNewsletterId}/follow`
+        `/instances/${testInstanceId}/newsletters/${testNewsletterId}/follow`,
       );
 
       expect([200, 400]).toContain(response.status);
@@ -271,7 +272,7 @@ describe('Phase 12 Newsletter Tests', () => {
       }
 
       const response = await client.post(
-        `/instances/${testInstanceId}/newsletters/${testNewsletterId}/mute`
+        `/instances/${testInstanceId}/newsletters/${testNewsletterId}/mute`,
       );
 
       expect([200, 400]).toContain(response.status);
@@ -286,7 +287,7 @@ describe('Phase 12 Newsletter Tests', () => {
       }
 
       const response = await client.delete(
-        `/instances/${testInstanceId}/newsletters/${testNewsletterId}/mute`
+        `/instances/${testInstanceId}/newsletters/${testNewsletterId}/mute`,
       );
 
       expect([200, 400]).toContain(response.status);
@@ -301,7 +302,7 @@ describe('Phase 12 Newsletter Tests', () => {
       }
 
       const response = await client.post(
-        `/instances/${testInstanceId}/newsletters/${testNewsletterId}/subscribe`
+        `/instances/${testInstanceId}/newsletters/${testNewsletterId}/subscribe`,
       );
 
       expect([200, 400]).toContain(response.status);
@@ -321,7 +322,7 @@ describe('Phase 12 Newsletter Tests', () => {
         `/instances/${testInstanceId}/newsletters/${testNewsletterId}/name`,
         {
           name: `Updated Name ${Date.now()}`,
-        }
+        },
       );
 
       // May fail if not newsletter owner
@@ -340,7 +341,7 @@ describe('Phase 12 Newsletter Tests', () => {
         `/instances/${testInstanceId}/newsletters/${testNewsletterId}/description`,
         {
           description: `Updated description ${Date.now()}`,
-        }
+        },
       );
 
       // May fail if not newsletter owner
@@ -359,7 +360,7 @@ describe('Phase 12 Newsletter Tests', () => {
         `/instances/${testInstanceId}/newsletters/${testNewsletterId}/picture`,
         {
           image: 'https://via.placeholder.com/500x500.png',
-        }
+        },
       );
 
       // May fail if not newsletter owner
@@ -375,7 +376,7 @@ describe('Phase 12 Newsletter Tests', () => {
       }
 
       const response = await client.delete(
-        `/instances/${testInstanceId}/newsletters/${testNewsletterId}/picture`
+        `/instances/${testInstanceId}/newsletters/${testNewsletterId}/picture`,
       );
 
       // May fail if not newsletter owner
@@ -393,7 +394,7 @@ describe('Phase 12 Newsletter Tests', () => {
       }
 
       const response = await client.get(
-        `/instances/${testInstanceId}/newsletters/${testNewsletterId}/subscribers`
+        `/instances/${testInstanceId}/newsletters/${testNewsletterId}/subscribers`,
       );
 
       // May fail if not newsletter owner
@@ -414,7 +415,7 @@ describe('Phase 12 Newsletter Tests', () => {
       }
 
       const response = await client.get(
-        `/instances/${testInstanceId}/newsletters/${testNewsletterId}/admins/count`
+        `/instances/${testInstanceId}/newsletters/${testNewsletterId}/admins/count`,
       );
 
       expect([200, 400]).toContain(response.status);
@@ -440,7 +441,7 @@ describe('Phase 12 Newsletter Tests', () => {
         `/instances/${testInstanceId}/newsletters/${testNewsletterId}/owner`,
         {
           newOwnerJid: testAdminJid,
-        }
+        },
       );
 
       // This is a destructive operation, so it may fail for safety
@@ -456,7 +457,7 @@ describe('Phase 12 Newsletter Tests', () => {
       }
 
       const response = await client.delete(
-        `/instances/${testInstanceId}/newsletters/${testNewsletterId}/admins/${testAdminJid}`
+        `/instances/${testInstanceId}/newsletters/${testNewsletterId}/admins/${testAdminJid}`,
       );
 
       // May fail if not newsletter owner or admin doesn't exist
@@ -477,7 +478,7 @@ describe('Phase 12 Newsletter Tests', () => {
         `/instances/${testInstanceId}/newsletters/${testNewsletterId}/messages/${testMessageId}/reaction`,
         {
           emoji: '👍',
-        }
+        },
       );
 
       expect([200, 400]).toContain(response.status);
@@ -495,7 +496,7 @@ describe('Phase 12 Newsletter Tests', () => {
         `/instances/${testInstanceId}/newsletters/${testNewsletterId}/messages/${testMessageId}/reaction`,
         {
           emoji: '',
-        }
+        },
       );
 
       expect([200, 400]).toContain(response.status);
@@ -505,7 +506,7 @@ describe('Phase 12 Newsletter Tests', () => {
   describe('Error Handling', () => {
     it('should return 404 for non-existent instance', async () => {
       const response = await client.get(
-        '/instances/non-existent-instance/newsletters/some-newsletter'
+        '/instances/non-existent-instance/newsletters/some-newsletter',
       );
 
       expect(response.status).toBe(404);
@@ -515,7 +516,7 @@ describe('Phase 12 Newsletter Tests', () => {
     it('should return 503 when instance is not connected', async () => {
       // Instance exists but not connected
       const response = await client.get(
-        `/instances/${testInstanceId}/newsletters/${testNewsletterId}`
+        `/instances/${testInstanceId}/newsletters/${testNewsletterId}`,
       );
 
       expect(response.status).toBe(503);
@@ -531,7 +532,7 @@ describe('Phase 12 Newsletter Tests', () => {
       }
 
       const response = await client.get(
-        `/instances/${testInstanceId}/newsletters/invalid-newsletter-id`
+        `/instances/${testInstanceId}/newsletters/invalid-newsletter-id`,
       );
 
       // API may still accept and return error from WhatsApp

@@ -12,7 +12,7 @@ export class ApiError extends Error {
     public statusCode: number,
     public code: string,
     message: string,
-    public details?: any
+    public details?: any,
   ) {
     super(message);
     this.name = 'ApiError';
@@ -59,11 +59,7 @@ export class ValidationError extends ApiError {
 /**
  * Global error handler
  */
-export function errorHandler(
-  error: Error,
-  request: any,
-  reply: FastifyReply
-): void {
+export function errorHandler(error: Error, request: any, reply: FastifyReply): void {
   if (error instanceof ApiError) {
     request.log.error({ correlationId: error.correlationId, error });
 

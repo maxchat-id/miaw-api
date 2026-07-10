@@ -31,14 +31,14 @@ describe('isBlockedAddress', () => {
     'allows public IPv4 %s',
     (ip) => {
       expect(isBlockedAddress(ip)).toBe(false);
-    }
+    },
   );
 
   it.each(['::1', '::', 'fe80::1', 'fc00::1', 'fd12:3456::1', '::ffff:127.0.0.1'])(
     'blocks loopback/link-local/ULA/mapped IPv6 %s',
     (ip) => {
       expect(isBlockedAddress(ip)).toBe(true);
-    }
+    },
   );
 
   it('allows public IPv6', () => {
@@ -60,9 +60,7 @@ describe('assertSafeWebhookUrl', () => {
   });
 
   it('rejects an IP-literal in a blocked range (metadata)', async () => {
-    await expect(assertSafeWebhookUrl('http://169.254.169.254/latest')).rejects.toThrow(
-      /blocked/
-    );
+    await expect(assertSafeWebhookUrl('http://169.254.169.254/latest')).rejects.toThrow(/blocked/);
     expect(mockLookup).not.toHaveBeenCalled();
   });
 

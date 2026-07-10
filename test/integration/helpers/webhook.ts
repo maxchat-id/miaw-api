@@ -134,10 +134,7 @@ export class WebhookTestServer {
     this.failMode = enabled;
   }
 
-  waitForEvent(
-    eventType: string,
-    timeout: number = 10000
-  ): Promise<WebhookEvent | null> {
+  waitForEvent(eventType: string, timeout: number = 10000): Promise<WebhookEvent | null> {
     return new Promise((resolve) => {
       const startTime = Date.now();
 
@@ -154,10 +151,7 @@ export class WebhookTestServer {
     });
   }
 
-  waitForEvents(
-    eventTypes: string[],
-    timeout: number = 10000
-  ): Promise<boolean> {
+  waitForEvents(eventTypes: string[], timeout: number = 10000): Promise<boolean> {
     return new Promise((resolve) => {
       const startTime = Date.now();
 

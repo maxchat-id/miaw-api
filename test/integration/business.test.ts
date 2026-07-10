@@ -206,7 +206,7 @@ describe('Phase 8 Business Features Tests', () => {
 
       // Add label to chat
       const response = await client.post(
-        `/instances/${testInstanceId}/chats/${testChatJid}/labels/${testLabelId}`
+        `/instances/${testInstanceId}/chats/${testChatJid}/labels/${testLabelId}`,
       );
 
       expect(response.status).toBe(200);
@@ -236,16 +236,14 @@ describe('Phase 8 Business Features Tests', () => {
       const labelId = createResponse.data.data.labelId;
 
       // Add label to chat
-      await client.post(
-        `/instances/${testInstanceId}/chats/${testChatJid}/labels/${labelId}`
-      );
+      await client.post(`/instances/${testInstanceId}/chats/${testChatJid}/labels/${labelId}`);
 
       // Wait a moment
       await new Promise((resolve) => setTimeout(resolve, 500));
 
       // Remove label from chat
       const response = await client.delete(
-        `/instances/${testInstanceId}/chats/${testChatJid}/labels/${labelId}`
+        `/instances/${testInstanceId}/chats/${testChatJid}/labels/${labelId}`,
       );
 
       expect(response.status).toBe(200);
@@ -254,7 +252,7 @@ describe('Phase 8 Business Features Tests', () => {
 
     it.skip('should reject when instance is not connected', async () => {
       const response = await client.post(
-        `/instances/${testInstanceId}/chats/${testChatJid}/labels/test-label-id`
+        `/instances/${testInstanceId}/chats/${testChatJid}/labels/test-label-id`,
       );
 
       expect(response.status).toBe(503);
@@ -297,7 +295,7 @@ describe('Phase 8 Business Features Tests', () => {
         `/instances/${testInstanceId}/messages/${testMessageId}/labels/${testLabelId}`,
         {
           jid: testChatJid,
-        }
+        },
       );
 
       // May succeed or fail depending on if message exists
@@ -331,7 +329,7 @@ describe('Phase 8 Business Features Tests', () => {
         `/instances/${testInstanceId}/messages/${messageId}/labels/${labelId}`,
         {
           jid: testChatJid,
-        }
+        },
       );
 
       // May succeed or fail depending on if message exists
@@ -348,7 +346,7 @@ describe('Phase 8 Business Features Tests', () => {
 
       const response = await client.post(
         `/instances/${testInstanceId}/messages/test-msg-id/labels/test-label-id`,
-        {}
+        {},
       );
 
       expect(response.status).toBe(400);
@@ -428,9 +426,7 @@ describe('Phase 8 Business Features Tests', () => {
         return;
       }
 
-      const response = await client.get(
-        `/instances/${testInstanceId}/products/catalog?limit=200`
-      );
+      const response = await client.get(`/instances/${testInstanceId}/products/catalog?limit=200`);
 
       expect(response.status).toBe(400);
       expect(response.data.success).toBe(false);
@@ -450,7 +446,7 @@ describe('Phase 8 Business Features Tests', () => {
       }
 
       const response = await client.get(
-        `/instances/${testInstanceId}/newsletters/${testNewsletterId}`
+        `/instances/${testInstanceId}/newsletters/${testNewsletterId}`,
       );
 
       // Response will vary depending on if newsletter exists and is accessible
@@ -472,7 +468,7 @@ describe('Phase 8 Business Features Tests', () => {
       }
 
       const response = await client.get(
-        `/instances/${testInstanceId}/newsletters/${testNewsletterId}/messages?limit=10`
+        `/instances/${testInstanceId}/newsletters/${testNewsletterId}/messages?limit=10`,
       );
 
       // Response will vary depending on if newsletter exists
@@ -486,7 +482,7 @@ describe('Phase 8 Business Features Tests', () => {
 
     it.skip('should reject when instance is not connected', async () => {
       const response = await client.get(
-        `/instances/${testInstanceId}/newsletters/${testNewsletterId}`
+        `/instances/${testInstanceId}/newsletters/${testNewsletterId}`,
       );
 
       expect(response.status).toBe(503);
@@ -502,7 +498,7 @@ describe('Phase 8 Business Features Tests', () => {
       }
 
       const response = await client.get(
-        `/instances/${testInstanceId}/newsletters/invalid-newsletter-id`
+        `/instances/${testInstanceId}/newsletters/invalid-newsletter-id`,
       );
 
       // API may still accept and return error from WhatsApp
@@ -537,14 +533,14 @@ describe('Phase 8 Business Features Tests', () => {
       const chatB = `${TEST_CONFIG.TEST_CONTACT_B}@s.whatsapp.net`;
 
       const response1 = await client.post(
-        `/instances/${testInstanceId}/chats/${chatA}/labels/${labelId}`
+        `/instances/${testInstanceId}/chats/${chatA}/labels/${labelId}`,
       );
       expect(response1.status).toBe(200);
 
       await new Promise((resolve) => setTimeout(resolve, 500));
 
       const response2 = await client.post(
-        `/instances/${testInstanceId}/chats/${chatB}/labels/${labelId}`
+        `/instances/${testInstanceId}/chats/${chatB}/labels/${labelId}`,
       );
       expect(response2.status).toBe(200);
     });

@@ -21,7 +21,10 @@ import { sessionRoutes } from './session';
 /**
  * Register all routes
  */
-export async function registerRoutes(server: FastifyInstance, instanceManager: InstanceManager): Promise<void> {
+export async function registerRoutes(
+  server: FastifyInstance,
+  instanceManager: InstanceManager,
+): Promise<void> {
   // Instance management routes
   await server.register(instanceRoutes);
 

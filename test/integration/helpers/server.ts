@@ -39,8 +39,8 @@ export function createTestClient(): HttpClient {
     'http://127.0.0.1:3000',
     {
       'Content-Type': 'application/json',
-      'Authorization': 'Bearer test-api-key-for-integration-tests',
+      Authorization: 'Bearer test-api-key-for-integration-tests',
     },
-    30000
+    30000,
   );
 }

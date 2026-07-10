@@ -33,7 +33,7 @@ describe('Error Classes', () => {
 
       expect(error.correlationId).toBeDefined();
       expect(error.correlationId).toMatch(
-        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
       );
     });
 
@@ -218,7 +218,7 @@ describe('errorHandler', () => {
             code: 'UNAUTHORIZED',
             message: 'Missing API key',
           }),
-        })
+        }),
       );
     });
 
@@ -235,7 +235,7 @@ describe('errorHandler', () => {
             code: 'NOT_FOUND',
             message: 'Instance not found',
           }),
-        })
+        }),
       );
     });
 
@@ -253,7 +253,7 @@ describe('errorHandler', () => {
             message: 'Invalid schema',
             details: { field: 'email' },
           }),
-        })
+        }),
       );
     });
   });
@@ -272,7 +272,7 @@ describe('errorHandler', () => {
             code: 'INTERNAL_ERROR',
             message: 'An unexpected error occurred',
           }),
-        })
+        }),
       );
     });
 
@@ -295,7 +295,7 @@ describe('errorHandler', () => {
       const sentPayload = mockReply.send.mock.calls[0][0];
       expect(sentPayload.error.correlationId).toBeDefined();
       expect(sentPayload.error.correlationId).toMatch(
-        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
       );
     });
 
@@ -308,7 +308,7 @@ describe('errorHandler', () => {
         expect.objectContaining({
           correlationId: expect.any(String),
           error,
-        })
+        }),
       );
     });
   });

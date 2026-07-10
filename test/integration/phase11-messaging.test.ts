@@ -81,7 +81,7 @@ describe('Phase 11 Advanced Messaging Tests', () => {
 
       // Remove the reaction using the new endpoint
       const removeResponse = await client.delete(
-        `/instances/${testInstanceId}/messages/${messageId}/reaction`
+        `/instances/${testInstanceId}/messages/${messageId}/reaction`,
       );
 
       expect(removeResponse.status).toBe(200);
@@ -113,7 +113,7 @@ describe('Phase 11 Advanced Messaging Tests', () => {
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       const removeResponse = await client.delete(
-        `/instances/${testInstanceId}/messages/${messageId}/reaction?chatJid=${encodeURIComponent(chatJid)}`
+        `/instances/${testInstanceId}/messages/${messageId}/reaction?chatJid=${encodeURIComponent(chatJid)}`,
       );
 
       expect(removeResponse.status).toBe(200);
@@ -129,7 +129,7 @@ describe('Phase 11 Advanced Messaging Tests', () => {
       }
 
       const response = await client.delete(
-        `/instances/${testInstanceId}/messages/non-existent-message-id/reaction`
+        `/instances/${testInstanceId}/messages/non-existent-message-id/reaction`,
       );
 
       expect(response.status).toBe(404);
@@ -139,7 +139,7 @@ describe('Phase 11 Advanced Messaging Tests', () => {
 
     it.skip('should reject when instance is not connected', async () => {
       const response = await client.delete(
-        `/instances/${testInstanceId}/messages/fake-message-id/reaction`
+        `/instances/${testInstanceId}/messages/fake-message-id/reaction`,
       );
 
       expect(response.status).toBe(503);
@@ -170,7 +170,7 @@ describe('Phase 11 Advanced Messaging Tests', () => {
 
       // Delete locally
       const deleteResponse = await client.delete(
-        `/instances/${testInstanceId}/messages/${messageId}/local`
+        `/instances/${testInstanceId}/messages/${messageId}/local`,
       );
 
       expect(deleteResponse.status).toBe(200);
@@ -197,7 +197,7 @@ describe('Phase 11 Advanced Messaging Tests', () => {
       await new Promise((resolve) => setTimeout(resolve, 2000));
 
       const deleteResponse = await client.delete(
-        `/instances/${testInstanceId}/messages/${messageId}/local?chatJid=${encodeURIComponent(chatJid)}`
+        `/instances/${testInstanceId}/messages/${messageId}/local?chatJid=${encodeURIComponent(chatJid)}`,
       );
 
       expect(deleteResponse.status).toBe(200);
@@ -224,7 +224,7 @@ describe('Phase 11 Advanced Messaging Tests', () => {
 
       // Delete locally but keep media
       const deleteResponse = await client.delete(
-        `/instances/${testInstanceId}/messages/${messageId}/local?deleteMedia=false`
+        `/instances/${testInstanceId}/messages/${messageId}/local?deleteMedia=false`,
       );
 
       expect(deleteResponse.status).toBe(200);
@@ -240,7 +240,7 @@ describe('Phase 11 Advanced Messaging Tests', () => {
       }
 
       const response = await client.delete(
-        `/instances/${testInstanceId}/messages/non-existent-message-id/local`
+        `/instances/${testInstanceId}/messages/non-existent-message-id/local`,
       );
 
       expect(response.status).toBe(404);
@@ -250,7 +250,7 @@ describe('Phase 11 Advanced Messaging Tests', () => {
 
     it.skip('should reject when instance is not connected', async () => {
       const response = await client.delete(
-        `/instances/${testInstanceId}/messages/fake-message-id/local`
+        `/instances/${testInstanceId}/messages/fake-message-id/local`,
       );
 
       expect(response.status).toBe(503);
@@ -271,7 +271,7 @@ describe('Phase 11 Advanced Messaging Tests', () => {
       const chatJid = `${TEST_CONFIG.TEST_CONTACT_A}@s.whatsapp.net`;
 
       const response = await client.get(
-        `/instances/${testInstanceId}/chats/${encodeURIComponent(chatJid)}/messages/load`
+        `/instances/${testInstanceId}/chats/${encodeURIComponent(chatJid)}/messages/load`,
       );
 
       expect(response.status).toBe(200);
@@ -293,7 +293,7 @@ describe('Phase 11 Advanced Messaging Tests', () => {
       const chatJid = `${TEST_CONFIG.TEST_CONTACT_A}@s.whatsapp.net`;
 
       const response = await client.get(
-        `/instances/${testInstanceId}/chats/${encodeURIComponent(chatJid)}/messages/load?count=10`
+        `/instances/${testInstanceId}/chats/${encodeURIComponent(chatJid)}/messages/load?count=10`,
       );
 
       expect(response.status).toBe(200);
@@ -311,7 +311,7 @@ describe('Phase 11 Advanced Messaging Tests', () => {
       const chatJid = `${TEST_CONFIG.TEST_CONTACT_A}@s.whatsapp.net`;
 
       const response = await client.get(
-        `/instances/${testInstanceId}/chats/${encodeURIComponent(chatJid)}/messages/load?count=5&timeout=10000`
+        `/instances/${testInstanceId}/chats/${encodeURIComponent(chatJid)}/messages/load?count=5&timeout=10000`,
       );
 
       expect(response.status).toBe(200);
@@ -322,7 +322,7 @@ describe('Phase 11 Advanced Messaging Tests', () => {
       const chatJid = `${TEST_CONFIG.TEST_CONTACT_A}@s.whatsapp.net`;
 
       const response = await client.get(
-        `/instances/${testInstanceId}/chats/${encodeURIComponent(chatJid)}/messages/load?count=100`
+        `/instances/${testInstanceId}/chats/${encodeURIComponent(chatJid)}/messages/load?count=100`,
       );
 
       expect(response.status).toBe(400);
@@ -333,7 +333,7 @@ describe('Phase 11 Advanced Messaging Tests', () => {
       const chatJid = `${TEST_CONFIG.TEST_CONTACT_A}@s.whatsapp.net`;
 
       const response = await client.get(
-        `/instances/${testInstanceId}/chats/${encodeURIComponent(chatJid)}/messages/load`
+        `/instances/${testInstanceId}/chats/${encodeURIComponent(chatJid)}/messages/load`,
       );
 
       expect(response.status).toBe(503);
@@ -345,7 +345,7 @@ describe('Phase 11 Advanced Messaging Tests', () => {
       const chatJid = `${TEST_CONFIG.TEST_CONTACT_A}@s.whatsapp.net`;
 
       const response = await client.get(
-        `/instances/non-existent-instance/chats/${encodeURIComponent(chatJid)}/messages/load`
+        `/instances/non-existent-instance/chats/${encodeURIComponent(chatJid)}/messages/load`,
       );
 
       expect(response.status).toBe(404);

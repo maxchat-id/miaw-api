@@ -192,7 +192,9 @@ describe('Phase 5 Profile Management Tests', () => {
 
       // Store original name for restoration
       try {
-        const currentProfile = await client.get(`/instances/${testInstanceId}/contacts/self@s.whatsapp.net`);
+        const currentProfile = await client.get(
+          `/instances/${testInstanceId}/contacts/self@s.whatsapp.net`,
+        );
         if (currentProfile.data.data?.name) {
           originalName = currentProfile.data.data.name;
         }
@@ -270,7 +272,9 @@ describe('Phase 5 Profile Management Tests', () => {
 
       // Store original status for restoration
       try {
-        const currentProfile = await client.get(`/instances/${testInstanceId}/contacts/self@s.whatsapp.net`);
+        const currentProfile = await client.get(
+          `/instances/${testInstanceId}/contacts/self@s.whatsapp.net`,
+        );
         if (currentProfile.data.data?.status) {
           originalStatus = currentProfile.data.data.status;
         }
@@ -298,7 +302,9 @@ describe('Phase 5 Profile Management Tests', () => {
 
       // Store original status
       try {
-        const currentProfile = await client.get(`/instances/${testInstanceId}/contacts/self@s.whatsapp.net`);
+        const currentProfile = await client.get(
+          `/instances/${testInstanceId}/contacts/self@s.whatsapp.net`,
+        );
         if (currentProfile.data.data?.status) {
           originalStatus = currentProfile.data.data.status;
         }
@@ -358,7 +364,9 @@ describe('Phase 5 Profile Management Tests', () => {
 
       // Store original values
       try {
-        const currentProfile = await client.get(`/instances/${testInstanceId}/contacts/self@s.whatsapp.net`);
+        const currentProfile = await client.get(
+          `/instances/${testInstanceId}/contacts/self@s.whatsapp.net`,
+        );
         if (currentProfile.data.data?.name) {
           originalName = currentProfile.data.data.name;
         }
@@ -378,12 +386,9 @@ describe('Phase 5 Profile Management Tests', () => {
       expect(nameResponse.data.success).toBe(true);
 
       const newStatus = `Running automated tests ${Date.now()}`;
-      const statusResponse2 = await client.patch(
-        `/instances/${testInstanceId}/profile/status`,
-        {
-          status: newStatus,
-        }
-      );
+      const statusResponse2 = await client.patch(`/instances/${testInstanceId}/profile/status`, {
+        status: newStatus,
+      });
 
       expect(statusResponse2.status).toBe(200);
       expect(statusResponse2.data.success).toBe(true);
@@ -399,7 +404,9 @@ describe('Phase 5 Profile Management Tests', () => {
 
       // Store original status
       try {
-        const currentProfile = await client.get(`/instances/${testInstanceId}/contacts/self@s.whatsapp.net`);
+        const currentProfile = await client.get(
+          `/instances/${testInstanceId}/contacts/self@s.whatsapp.net`,
+        );
         if (currentProfile.data.data?.status) {
           originalStatus = currentProfile.data.data.status;
         }
@@ -410,12 +417,9 @@ describe('Phase 5 Profile Management Tests', () => {
       // Rapid updates
       const updates = ['Test 1', 'Test 2', 'Test 3'];
       for (const status of updates) {
-        const response = await client.patch(
-          `/instances/${testInstanceId}/profile/status`,
-          {
-            status: status,
-          }
-        );
+        const response = await client.patch(`/instances/${testInstanceId}/profile/status`, {
+          status: status,
+        });
 
         expect(response.status).toBe(200);
         expect(response.data.success).toBe(true);

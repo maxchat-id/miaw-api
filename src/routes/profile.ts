@@ -119,7 +119,7 @@ export async function profileRoutes(server: FastifyInstance): Promise<void> {
       } catch (err: any) {
         throw new BadRequestError('Failed to update profile picture', { error: err.message });
       }
-    }
+    },
   );
 
   /**
@@ -220,7 +220,7 @@ export async function profileRoutes(server: FastifyInstance): Promise<void> {
       } catch (err: any) {
         throw new BadRequestError('Failed to remove profile picture', { error: err.message });
       }
-    }
+    },
   );
 
   /**
@@ -325,7 +325,7 @@ export async function profileRoutes(server: FastifyInstance): Promise<void> {
       } catch (err: any) {
         throw new BadRequestError('Failed to update profile name', { error: err.message });
       }
-    }
+    },
   );
 
   /**
@@ -430,6 +430,6 @@ export async function profileRoutes(server: FastifyInstance): Promise<void> {
       } catch (err: any) {
         throw new BadRequestError('Failed to update profile status', { error: err.message });
       }
-    }
+    },
   );
 }

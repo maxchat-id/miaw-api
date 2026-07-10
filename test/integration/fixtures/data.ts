@@ -25,10 +25,10 @@ export const TEST_CONFIG = {
 
 export const VALID_HEADERS = {
   'Content-Type': 'application/json',
-  'Authorization': `Bearer ${TEST_CONFIG.API_KEY}`,
+  Authorization: `Bearer ${TEST_CONFIG.API_KEY}`,
 };
 
 export const INVALID_HEADERS = {
   'Content-Type': 'application/json',
-  'Authorization': 'Bearer invalid-key',
+  Authorization: 'Bearer invalid-key',
 };

@@ -209,11 +209,7 @@ describe('Phase 3 Contacts & Validation Tests', () => {
       }
 
       const response = await client.post(`/instances/${testInstanceId}/check-batch`, {
-        phones: [
-          TEST_CONFIG.TEST_CONTACT_A,
-          '999999999999',
-          TEST_CONFIG.TEST_CONTACT_B,
-        ],
+        phones: [TEST_CONFIG.TEST_CONTACT_A, '999999999999', TEST_CONFIG.TEST_CONTACT_B],
       });
 
       expect(response.status).toBe(200);
@@ -236,12 +232,9 @@ describe('Phase 3 Contacts & Validation Tests', () => {
       }
 
       // First check number to get JID
-      const checkResponse = await client.post(
-        `/instances/${testInstanceId}/check-number`,
-        {
-          phone: TEST_CONFIG.TEST_CONTACT_A,
-        }
-      );
+      const checkResponse = await client.post(`/instances/${testInstanceId}/check-number`, {
+        phone: TEST_CONFIG.TEST_CONTACT_A,
+      });
 
       if (!checkResponse.data.data.exists) {
         console.log('Skipping test - no valid contact');
@@ -268,7 +261,7 @@ describe('Phase 3 Contacts & Validation Tests', () => {
       // Use phone directly (should auto-convert to JID)
       const phoneJid = `${TEST_CONFIG.TEST_CONTACT_A}@s.whatsapp.net`;
       const response = await client.get(
-        `/instances/${testInstanceId}/contacts/${encodeURIComponent(phoneJid)}`
+        `/instances/${testInstanceId}/contacts/${encodeURIComponent(phoneJid)}`,
       );
 
       expect(response.status).toBe(200);
@@ -277,7 +270,7 @@ describe('Phase 3 Contacts & Validation Tests', () => {
 
     it.skip('should reject when instance is not connected', async () => {
       const response = await client.get(
-        `/instances/${testInstanceId}/contacts/6281234567890@s.whatsapp.net`
+        `/instances/${testInstanceId}/contacts/6281234567890@s.whatsapp.net`,
       );
 
       expect(response.status).toBe(503);
@@ -297,7 +290,7 @@ describe('Phase 3 Contacts & Validation Tests', () => {
       // Use test contact
       const jid = `${TEST_CONFIG.TEST_CONTACT_A}@s.whatsapp.net`;
       const response = await client.get(
-        `/instances/${testInstanceId}/contacts/${encodeURIComponent(jid)}/picture`
+        `/instances/${testInstanceId}/contacts/${encodeURIComponent(jid)}/picture`,
       );
 
       expect(response.status).toBe(200);
@@ -318,7 +311,7 @@ describe('Phase 3 Contacts & Validation Tests', () => {
       // Use a number that might not have picture
       const jid = '999999999999@s.whatsapp.net';
       const response = await client.get(
-        `/instances/${testInstanceId}/contacts/${encodeURIComponent(jid)}/picture`
+        `/instances/${testInstanceId}/contacts/${encodeURIComponent(jid)}/picture`,
       );
 
       expect(response.status).toBe(200);
@@ -329,7 +322,7 @@ describe('Phase 3 Contacts & Validation Tests', () => {
 
     it.skip('should reject when instance is not connected', async () => {
       const response = await client.get(
-        `/instances/${testInstanceId}/contacts/6281234567890@s.whatsapp.net/picture`
+        `/instances/${testInstanceId}/contacts/6281234567890@s.whatsapp.net/picture`,
       );
 
       expect(response.status).toBe(503);
@@ -347,7 +340,7 @@ describe('Phase 3 Contacts & Validation Tests', () => {
       // Use a test group JID if available
       const groupJid = TEST_CONFIG.TEST_GROUP_JID || '123456789@g.us';
       const response = await client.get(
-        `/instances/${testInstanceId}/contacts/${encodeURIComponent(groupJid)}/picture`
+        `/instances/${testInstanceId}/contacts/${encodeURIComponent(groupJid)}/picture`,
       );
 
       expect(response.status).toBe(200);
@@ -372,12 +365,9 @@ describe('Phase 3 Contacts & Validation Tests', () => {
       ];
 
       for (const phone of formats) {
-        const response = await client.post(
-          `/instances/${testInstanceId}/check-number`,
-          {
-            phone,
-          }
-        );
+        const response = await client.post(`/instances/${testInstanceId}/check-number`, {
+          phone,
+        });
 
         expect(response.status).toBe(200);
         expect(response.data.success).toBe(true);
@@ -515,7 +505,7 @@ describe('Phase 3 Contacts & Validation Tests', () => {
 
       // Then remove
       const response = await client.delete(
-        `/instances/${testInstanceId}/contacts/${TEST_CONFIG.TEST_CONTACT_A}`
+        `/instances/${testInstanceId}/contacts/${TEST_CONFIG.TEST_CONTACT_A}`,
       );
 
       expect(response.status).toBe(200);
@@ -526,7 +516,7 @@ describe('Phase 3 Contacts & Validation Tests', () => {
 
     it.skip('should reject remove when instance is not connected', async () => {
       const response = await client.delete(
-        `/instances/${testInstanceId}/contacts/${TEST_CONFIG.TEST_CONTACT_A}`
+        `/instances/${testInstanceId}/contacts/${TEST_CONFIG.TEST_CONTACT_A}`,
       );
 
       expect(response.status).toBe(503);

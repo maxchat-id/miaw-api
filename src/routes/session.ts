@@ -100,7 +100,7 @@ export async function sessionRoutes(server: FastifyInstance): Promise<void> {
       } catch (err: any) {
         throw new ServiceUnavailableError(err.message);
       }
-    }
+    },
   );
 
   /**
@@ -186,7 +186,7 @@ export async function sessionRoutes(server: FastifyInstance): Promise<void> {
       } catch (err: any) {
         throw new ServiceUnavailableError(err.message);
       }
-    }
+    },
   );
 
   /**
@@ -260,7 +260,7 @@ export async function sessionRoutes(server: FastifyInstance): Promise<void> {
         message: cleared ? 'Session cleared successfully.' : 'No session to clear.',
         data: { cleared },
       });
-    }
+    },
   );
 
   /**
@@ -347,7 +347,7 @@ export async function sessionRoutes(server: FastifyInstance): Promise<void> {
           totalMessages,
         },
       });
-    }
+    },
   );
 
   /**
@@ -424,6 +424,6 @@ export async function sessionRoutes(server: FastifyInstance): Promise<void> {
           lastSyncTime: labelsInfo.lastSyncTime?.toISOString() || null,
         },
       });
-    }
+    },
   );
 }

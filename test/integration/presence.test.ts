@@ -133,9 +133,7 @@ describe('Phase 6 Presence & UX Tests', () => {
         return;
       }
 
-      const response = await client.post(
-        `/instances/${testInstanceId}/typing/${testContactJid}`
-      );
+      const response = await client.post(`/instances/${testInstanceId}/typing/${testContactJid}`);
 
       expect(response.status).toBe(200);
       expect(response.data.success).toBe(true);
@@ -143,9 +141,7 @@ describe('Phase 6 Presence & UX Tests', () => {
     });
 
     it.skip('should reject when instance is not connected', async () => {
-      const response = await client.post(
-        `/instances/${testInstanceId}/typing/${testContactJid}`
-      );
+      const response = await client.post(`/instances/${testInstanceId}/typing/${testContactJid}`);
 
       expect(response.status).toBe(503);
       expect(response.data.success).toBe(false);
@@ -176,7 +172,7 @@ describe('Phase 6 Presence & UX Tests', () => {
       }
 
       const response = await client.post(
-        `/instances/${testInstanceId}/recording/${testContactJid}`
+        `/instances/${testInstanceId}/recording/${testContactJid}`,
       );
 
       expect(response.status).toBe(200);
@@ -186,7 +182,7 @@ describe('Phase 6 Presence & UX Tests', () => {
 
     it.skip('should reject when instance is not connected', async () => {
       const response = await client.post(
-        `/instances/${testInstanceId}/recording/${testContactJid}`
+        `/instances/${testInstanceId}/recording/${testContactJid}`,
       );
 
       expect(response.status).toBe(503);
@@ -201,9 +197,7 @@ describe('Phase 6 Presence & UX Tests', () => {
         return;
       }
 
-      const response = await client.post(
-        `/instances/${testInstanceId}/recording/invalid-jid`
-      );
+      const response = await client.post(`/instances/${testInstanceId}/recording/invalid-jid`);
 
       // Should either work or return error, depending on baileys behavior
       expect([200, 400, 500]).toContain(response.status);
@@ -227,7 +221,7 @@ describe('Phase 6 Presence & UX Tests', () => {
 
       // Then stop it
       const response = await client.post(
-        `/instances/${testInstanceId}/stop-typing/${testContactJid}`
+        `/instances/${testInstanceId}/stop-typing/${testContactJid}`,
       );
 
       expect(response.status).toBe(200);
@@ -251,7 +245,7 @@ describe('Phase 6 Presence & UX Tests', () => {
 
       // Then stop it
       const response = await client.post(
-        `/instances/${testInstanceId}/stop-typing/${testContactJid}`
+        `/instances/${testInstanceId}/stop-typing/${testContactJid}`,
       );
 
       expect(response.status).toBe(200);
@@ -261,7 +255,7 @@ describe('Phase 6 Presence & UX Tests', () => {
 
     it.skip('should reject when instance is not connected', async () => {
       const response = await client.post(
-        `/instances/${testInstanceId}/stop-typing/${testContactJid}`
+        `/instances/${testInstanceId}/stop-typing/${testContactJid}`,
       );
 
       expect(response.status).toBe(503);
@@ -345,7 +339,7 @@ describe('Phase 6 Presence & UX Tests', () => {
       }
 
       const response = await client.post(
-        `/instances/${testInstanceId}/subscribe/${testContactJid}`
+        `/instances/${testInstanceId}/subscribe/${testContactJid}`,
       );
 
       expect(response.status).toBe(200);
@@ -355,7 +349,7 @@ describe('Phase 6 Presence & UX Tests', () => {
 
     it.skip('should reject when instance is not connected', async () => {
       const response = await client.post(
-        `/instances/${testInstanceId}/subscribe/${testContactJid}`
+        `/instances/${testInstanceId}/subscribe/${testContactJid}`,
       );
 
       expect(response.status).toBe(503);
@@ -370,9 +364,7 @@ describe('Phase 6 Presence & UX Tests', () => {
         return;
       }
 
-      const response = await client.post(
-        `/instances/${testInstanceId}/subscribe/invalid-jid`
-      );
+      const response = await client.post(`/instances/${testInstanceId}/subscribe/invalid-jid`);
 
       // Should either work or return error, depending on baileys behavior
       expect([200, 400, 500]).toContain(response.status);
@@ -390,14 +382,12 @@ describe('Phase 6 Presence & UX Tests', () => {
 
       // Subscribe to first contact
       const response1 = await client.post(
-        `/instances/${testInstanceId}/subscribe/${testContactJid}`
+        `/instances/${testInstanceId}/subscribe/${testContactJid}`,
       );
       expect(response1.status).toBe(200);
 
       // Subscribe to second contact
-      const response2 = await client.post(
-        `/instances/${testInstanceId}/subscribe/${contactB}`
-      );
+      const response2 = await client.post(`/instances/${testInstanceId}/subscribe/${contactB}`);
       expect(response2.status).toBe(200);
     });
   });
@@ -413,7 +403,7 @@ describe('Phase 6 Presence & UX Tests', () => {
 
       // Send typing
       const typingResponse = await client.post(
-        `/instances/${testInstanceId}/typing/${testContactJid}`
+        `/instances/${testInstanceId}/typing/${testContactJid}`,
       );
       expect(typingResponse.status).toBe(200);
 
@@ -422,7 +412,7 @@ describe('Phase 6 Presence & UX Tests', () => {
 
       // Stop typing
       const stopResponse = await client.post(
-        `/instances/${testInstanceId}/stop-typing/${testContactJid}`
+        `/instances/${testInstanceId}/stop-typing/${testContactJid}`,
       );
       expect(stopResponse.status).toBe(200);
     });
@@ -445,24 +435,18 @@ describe('Phase 6 Presence & UX Tests', () => {
       await new Promise((resolve) => setTimeout(resolve, 500));
 
       // Set unavailable
-      const unavailableResponse = await client.post(
-        `/instances/${testInstanceId}/presence`,
-        {
-          status: 'unavailable',
-        }
-      );
+      const unavailableResponse = await client.post(`/instances/${testInstanceId}/presence`, {
+        status: 'unavailable',
+      });
       expect(unavailableResponse.status).toBe(200);
 
       // Wait a moment
       await new Promise((resolve) => setTimeout(resolve, 500));
 
       // Set available again
-      const availableAgainResponse = await client.post(
-        `/instances/${testInstanceId}/presence`,
-        {
-          status: 'available',
-        }
-      );
+      const availableAgainResponse = await client.post(`/instances/${testInstanceId}/presence`, {
+        status: 'available',
+      });
       expect(availableAgainResponse.status).toBe(200);
     });
 

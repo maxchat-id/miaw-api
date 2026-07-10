@@ -52,7 +52,9 @@ describe('Phase 4 Group Management Tests', () => {
     // Cleanup: Leave test group and delete instance
     if (testGroupJid) {
       try {
-        await client.delete(`/instances/${testInstanceId}/groups/${encodeURIComponent(testGroupJid)}`);
+        await client.delete(
+          `/instances/${testInstanceId}/groups/${encodeURIComponent(testGroupJid)}`,
+        );
       } catch {
         // Ignore if already left or group doesn't exist
       }
@@ -161,7 +163,7 @@ describe('Phase 4 Group Management Tests', () => {
       testGroupJid = createResponse.data.data.groupJid;
 
       const response = await client.get(
-        `/instances/${testInstanceId}/groups/${encodeURIComponent(testGroupJid)}`
+        `/instances/${testInstanceId}/groups/${encodeURIComponent(testGroupJid)}`,
       );
 
       expect(response.status).toBe(200);
@@ -173,9 +175,7 @@ describe('Phase 4 Group Management Tests', () => {
     });
 
     it.skip('should reject when instance is not connected', async () => {
-      const response = await client.get(
-        `/instances/${testInstanceId}/groups/123456789@g.us`
-      );
+      const response = await client.get(`/instances/${testInstanceId}/groups/123456789@g.us`);
 
       expect(response.status).toBe(503);
       expect(response.data.success).toBe(false);
@@ -189,9 +189,7 @@ describe('Phase 4 Group Management Tests', () => {
         return;
       }
 
-      const response = await client.get(
-        `/instances/${testInstanceId}/groups/invalid-group-jid`
-      );
+      const response = await client.get(`/instances/${testInstanceId}/groups/invalid-group-jid`);
 
       expect(response.status).toBe(400);
       expect(response.data.success).toBe(false);
@@ -224,7 +222,7 @@ describe('Phase 4 Group Management Tests', () => {
         `/instances/${testInstanceId}/groups/${encodeURIComponent(testGroupJid)}`,
         {
           name: `Updated Group ${Date.now()}`,
-        }
+        },
       );
 
       expect(response.status).toBe(200);
@@ -247,7 +245,7 @@ describe('Phase 4 Group Management Tests', () => {
         `/instances/${testInstanceId}/groups/${encodeURIComponent(groupJid)}`,
         {
           description: 'Test group description',
-        }
+        },
       );
 
       expect(response.status).toBe(200);
@@ -280,7 +278,7 @@ describe('Phase 4 Group Management Tests', () => {
         {
           name: `Updated ${Date.now()}`,
           description: 'Updated description',
-        }
+        },
       );
 
       expect(response.status).toBe(200);
@@ -288,12 +286,9 @@ describe('Phase 4 Group Management Tests', () => {
     });
 
     it.skip('should reject when instance is not connected', async () => {
-      const response = await client.patch(
-        `/instances/${testInstanceId}/groups/123456789@g.us`,
-        {
-          name: 'New Name',
-        }
-      );
+      const response = await client.patch(`/instances/${testInstanceId}/groups/123456789@g.us`, {
+        name: 'New Name',
+      });
 
       expect(response.status).toBe(503);
       expect(response.data.success).toBe(false);
@@ -316,7 +311,7 @@ describe('Phase 4 Group Management Tests', () => {
         `/instances/${testInstanceId}/groups/${encodeURIComponent(groupJid)}/participants`,
         {
           participants: [TEST_CONFIG.TEST_CONTACT_B],
-        }
+        },
       );
 
       expect(response.status).toBe(200);
@@ -350,7 +345,7 @@ describe('Phase 4 Group Management Tests', () => {
         `/instances/${testInstanceId}/groups/${encodeURIComponent(testGroupJid)}/participants`,
         {
           participants: [TEST_CONFIG.TEST_CONTACT_B],
-        }
+        },
       );
 
       expect(response.status).toBe(200);
@@ -364,7 +359,7 @@ describe('Phase 4 Group Management Tests', () => {
         `/instances/${testInstanceId}/groups/123456789@g.us/participants`,
         {
           participants: [TEST_CONFIG.TEST_CONTACT_A],
-        }
+        },
       );
 
       expect(response.status).toBe(503);
@@ -376,7 +371,7 @@ describe('Phase 4 Group Management Tests', () => {
         `/instances/${testInstanceId}/groups/123456789@g.us/participants`,
         {
           participants: [],
-        }
+        },
       );
 
       expect(response.status).toBe(400);
@@ -400,7 +395,7 @@ describe('Phase 4 Group Management Tests', () => {
         `/instances/${testInstanceId}/groups/${encodeURIComponent(groupJid)}/admins`,
         {
           participants: [TEST_CONFIG.TEST_CONTACT_A],
-        }
+        },
       );
 
       expect(response.status).toBe(200);
@@ -424,7 +419,7 @@ describe('Phase 4 Group Management Tests', () => {
         `/instances/${testInstanceId}/groups/${encodeURIComponent(groupJid)}/admins`,
         {
           participants: [TEST_CONFIG.TEST_CONTACT_A],
-        }
+        },
       );
 
       expect(response.status).toBe(200);
@@ -438,7 +433,7 @@ describe('Phase 4 Group Management Tests', () => {
         `/instances/${testInstanceId}/groups/123456789@g.us/admins`,
         {
           participants: [TEST_CONFIG.TEST_CONTACT_A],
-        }
+        },
       );
 
       expect(response.status).toBe(503);
@@ -472,7 +467,7 @@ describe('Phase 4 Group Management Tests', () => {
         `/instances/${testInstanceId}/groups/${encodeURIComponent(testGroupJid)}/picture`,
         {
           url: 'https://picsum.photos/500',
-        }
+        },
       );
 
       expect(response.status).toBe(200);
@@ -492,7 +487,7 @@ describe('Phase 4 Group Management Tests', () => {
         `/instances/${testInstanceId}/groups/123456789@g.us/picture`,
         {
           url: 'not-a-valid-url',
-        }
+        },
       );
 
       expect(response.status).toBe(400);
@@ -504,7 +499,7 @@ describe('Phase 4 Group Management Tests', () => {
         `/instances/${testInstanceId}/groups/123456789@g.us/picture`,
         {
           url: 'https://example.com/image.jpg',
-        }
+        },
       );
 
       expect(response.status).toBe(503);
@@ -525,7 +520,7 @@ describe('Phase 4 Group Management Tests', () => {
       const groupJid = TEST_CONFIG.TEST_GROUP_JID || '123456789@g.us';
 
       const response = await client.get(
-        `/instances/${testInstanceId}/groups/${encodeURIComponent(groupJid)}/invite`
+        `/instances/${testInstanceId}/groups/${encodeURIComponent(groupJid)}/invite`,
       );
 
       expect(response.status).toBe(200);
@@ -556,7 +551,7 @@ describe('Phase 4 Group Management Tests', () => {
       testGroupJid = createResponse.data.data.groupJid;
 
       const response = await client.post(
-        `/instances/${testInstanceId}/groups/${encodeURIComponent(testGroupJid)}/revoke-invite`
+        `/instances/${testInstanceId}/groups/${encodeURIComponent(testGroupJid)}/revoke-invite`,
       );
 
       expect(response.status).toBe(200);
@@ -576,9 +571,7 @@ describe('Phase 4 Group Management Tests', () => {
       // This requires a valid invite code from another group
       const inviteCode = TEST_CONFIG.TEST_GROUP_INVITE || 'ABC123';
 
-      const response = await client.post(
-        `/instances/${testInstanceId}/groups/join/${inviteCode}`
-      );
+      const response = await client.post(`/instances/${testInstanceId}/groups/join/${inviteCode}`);
 
       // May fail if invite code is invalid, but endpoint should work
       expect([200, 400, 503]).toContain(response.status);
@@ -587,7 +580,7 @@ describe('Phase 4 Group Management Tests', () => {
 
     it.skip('should reject when instance is not connected', async () => {
       const response = await client.get(
-        `/instances/${testInstanceId}/groups/123456789@g.us/invite`
+        `/instances/${testInstanceId}/groups/123456789@g.us/invite`,
       );
 
       expect(response.status).toBe(503);
@@ -618,7 +611,7 @@ describe('Phase 4 Group Management Tests', () => {
       testGroupJid = createResponse.data.data.groupJid;
 
       const response = await client.delete(
-        `/instances/${testInstanceId}/groups/${encodeURIComponent(testGroupJid)}`
+        `/instances/${testInstanceId}/groups/${encodeURIComponent(testGroupJid)}`,
       );
 
       expect(response.status).toBe(200);
@@ -630,9 +623,7 @@ describe('Phase 4 Group Management Tests', () => {
     });
 
     it.skip('should reject when instance is not connected', async () => {
-      const response = await client.delete(
-        `/instances/${testInstanceId}/groups/123456789@g.us`
-      );
+      const response = await client.delete(`/instances/${testInstanceId}/groups/123456789@g.us`);
 
       expect(response.status).toBe(503);
       expect(response.data.success).toBe(false);
@@ -648,9 +639,7 @@ describe('Phase 4 Group Management Tests', () => {
         return;
       }
 
-      const response = await client.get(
-        `/instances/${testInstanceId}/groups/invalid-jid-format`
-      );
+      const response = await client.get(`/instances/${testInstanceId}/groups/invalid-jid-format`);
 
       expect(response.status).toBe(400);
       expect(response.data.success).toBe(false);
@@ -664,9 +653,7 @@ describe('Phase 4 Group Management Tests', () => {
         return;
       }
 
-      const response = await client.get(
-        `/instances/${testInstanceId}/groups/999999999@g.us`
-      );
+      const response = await client.get(`/instances/${testInstanceId}/groups/999999999@g.us`);
 
       // Should return error or not found
       expect([400, 404, 500]).toContain(response.status);

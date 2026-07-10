@@ -2,16 +2,7 @@
  * Unit tests for WebhookDispatcher service
  */
 
-import {
-  describe,
-  it,
-  expect,
-  vi,
-  beforeEach,
-  afterEach,
-  beforeAll,
-  afterAll,
-} from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
 import { WebhookDispatcher } from '../../../src/services/WebhookDispatcher';
 
 // Mock fetch globally
@@ -93,7 +84,7 @@ describe('WebhookDispatcher', () => {
         payload,
         'sha256=abc123',
         timestamp,
-        'secret'
+        'secret',
       );
 
       // Even with wrong signature, format should be checked
@@ -110,13 +101,13 @@ describe('WebhookDispatcher', () => {
         payload,
         'sha256=invalid',
         timestamp,
-        secret
+        secret,
       );
       const result2 = WebhookDispatcher.verifySignature(
         payload,
         'sha256=invalid',
         timestamp,
-        secret
+        secret,
       );
 
       // Both should fail with same invalid signature
@@ -143,12 +134,7 @@ describe('WebhookDispatcher', () => {
       const timestamp = Date.now();
       const signature = computeSignature(payload, timestamp);
 
-      const result = WebhookDispatcher.verifySignature(
-        payload,
-        signature,
-        timestamp,
-        secret
-      );
+      const result = WebhookDispatcher.verifySignature(payload, signature, timestamp, secret);
 
       expect(result).toBe(true);
     });
@@ -160,7 +146,7 @@ describe('WebhookDispatcher', () => {
         payload,
         'sha256=invalid_signature_here',
         timestamp,
-        secret
+        secret,
       );
 
       expect(result).toBe(false);
@@ -175,7 +161,7 @@ describe('WebhookDispatcher', () => {
         signature,
         oldTimestamp,
         secret,
-        300000 // 5 minutes max age
+        300000, // 5 minutes max age
       );
 
       expect(result).toBe(false);
@@ -190,7 +176,7 @@ describe('WebhookDispatcher', () => {
         signature,
         recentTimestamp,
         secret,
-        300000 // 5 minutes max age
+        300000, // 5 minutes max age
       );
 
       expect(result).toBe(true);
@@ -210,7 +196,7 @@ describe('WebhookDispatcher', () => {
         payload,
         rawSignature, // Missing sha256= prefix
         timestamp,
-        secret
+        secret,
       );
 
       expect(result).toBe(false);
@@ -230,7 +216,7 @@ describe('WebhookDispatcher', () => {
         payload,
         `md5=${rawSignature}`, // Wrong prefix
         timestamp,
-        secret
+        secret,
       );
 
       expect(result).toBe(false);
@@ -245,7 +231,7 @@ describe('WebhookDispatcher', () => {
         tamperedPayload,
         signature,
         timestamp,
-        secret
+        secret,
       );
 
       expect(result).toBe(false);
@@ -259,7 +245,7 @@ describe('WebhookDispatcher', () => {
         payload,
         signature,
         timestamp,
-        'wrong-secret'
+        'wrong-secret',
       );
 
       expect(result).toBe(false);
@@ -273,7 +259,7 @@ describe('WebhookDispatcher', () => {
         payload,
         signature,
         timestamp,
-        secret
+        secret,
         // No maxAge specified, should default to 300000
       );
 
@@ -287,7 +273,7 @@ describe('WebhookDispatcher', () => {
         payload,
         'sha256=short', // Shorter than actual signature
         timestamp,
-        secret
+        secret,
       );
 
       expect(result).toBe(false);
@@ -471,7 +457,7 @@ describe('WebhookDispatcher', () => {
             'User-Agent': 'Miaw-Webhook/1.0',
           }),
           body: JSON.stringify(payload),
-        })
+        }),
       );
     });
 

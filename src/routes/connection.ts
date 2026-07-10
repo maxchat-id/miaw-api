@@ -25,7 +25,8 @@ export async function connectionRoutes(server: FastifyInstance): Promise<void> {
     '/instances/:id/connect',
     {
       schema: {
-        description: 'Connect instance to WhatsApp (returns QR code if needed). Scan the QR code with WhatsApp to authenticate. Listen to webhooks for the QR code.',
+        description:
+          'Connect instance to WhatsApp (returns QR code if needed). Scan the QR code with WhatsApp to authenticate. Listen to webhooks for the QR code.',
         tags: ['Connection'],
         summary: 'Connect instance',
         params: {
@@ -128,7 +129,7 @@ export async function connectionRoutes(server: FastifyInstance): Promise<void> {
       } catch (err: any) {
         throw new ServiceUnavailableError(err.message);
       }
-    }
+    },
   );
 
   /**
@@ -139,7 +140,8 @@ export async function connectionRoutes(server: FastifyInstance): Promise<void> {
     '/instances/:id/disconnect',
     {
       schema: {
-        description: 'Disconnect instance from WhatsApp. You can reconnect later using the connect endpoint.',
+        description:
+          'Disconnect instance from WhatsApp. You can reconnect later using the connect endpoint.',
         tags: ['Connection'],
         summary: 'Disconnect instance',
         params: {
@@ -188,7 +190,7 @@ export async function connectionRoutes(server: FastifyInstance): Promise<void> {
         success: true,
         message: 'Instance disconnected successfully',
       });
-    }
+    },
   );
 
   /**
@@ -199,7 +201,8 @@ export async function connectionRoutes(server: FastifyInstance): Promise<void> {
     '/instances/:id/restart',
     {
       schema: {
-        description: 'Restart instance connection. Useful when the connection is stale or having issues.',
+        description:
+          'Restart instance connection. Useful when the connection is stale or having issues.',
         tags: ['Connection'],
         summary: 'Restart instance',
         params: {
@@ -256,7 +259,7 @@ export async function connectionRoutes(server: FastifyInstance): Promise<void> {
         success: true,
         message: 'Instance restarted successfully',
       });
-    }
+    },
   );
 
   /**
@@ -295,7 +298,13 @@ export async function connectionRoutes(server: FastifyInstance): Promise<void> {
                   instanceId: { type: 'string' },
                   status: {
                     type: 'string',
-                    enum: ['disconnected', 'connecting', 'connected', 'reconnecting', 'qr_required'],
+                    enum: [
+                      'disconnected',
+                      'connecting',
+                      'connected',
+                      'reconnecting',
+                      'qr_required',
+                    ],
                   },
                   phoneNumber: { type: 'string', nullable: true },
                   connectedAt: { type: 'string', format: 'date-time', nullable: true },
@@ -337,6 +346,6 @@ export async function connectionRoutes(server: FastifyInstance): Promise<void> {
           connectedAt: instance.connectedAt,
         },
       });
-    }
+    },
   );
 }

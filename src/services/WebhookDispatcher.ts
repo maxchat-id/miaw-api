@@ -63,10 +63,7 @@ export class WebhookDispatcher {
     });
 
     this.stats.queued++;
-    this.logger.debug(
-      { deliveryId, url, event: payload.event },
-      'Webhook queued'
-    );
+    this.logger.debug({ deliveryId, url, event: payload.event }, 'Webhook queued');
   }
 
   /**
@@ -100,7 +97,7 @@ export class WebhookDispatcher {
           // Max retries reached, give up
           this.logger.warn(
             { deliveryId, attempt: delivery.attempt },
-            'Webhook delivery failed, max retries reached'
+            'Webhook delivery failed, max retries reached',
           );
           this.deliveryQueue.delete(deliveryId);
         } else {
@@ -114,7 +111,7 @@ export class WebhookDispatcher {
       // Log error but don't crash the processing loop
       this.logger.error(
         { error: err instanceof Error ? err.message : 'Unknown error' },
-        'Error in webhook processing queue'
+        'Error in webhook processing queue',
       );
     }
   }
@@ -131,7 +128,7 @@ export class WebhookDispatcher {
         attempt: delivery.attempt,
         url: delivery.url,
       },
-      'Delivering webhook'
+      'Delivering webhook',
     );
 
     try {
@@ -167,7 +164,7 @@ export class WebhookDispatcher {
             attempt: delivery.attempt,
             status: response.status,
           },
-          'Webhook delivered successfully'
+          'Webhook delivered successfully',
         );
         return true;
       }
@@ -178,7 +175,7 @@ export class WebhookDispatcher {
           attempt: delivery.attempt,
           status: response.status,
         },
-        'Webhook delivery failed with non-OK status'
+        'Webhook delivery failed with non-OK status',
       );
       return false;
     } catch (err: any) {
@@ -190,7 +187,7 @@ export class WebhookDispatcher {
           attempt: delivery.attempt,
           error: err.message,
         },
-        'Webhook delivery failed'
+        'Webhook delivery failed',
       );
       return false;
     }
@@ -227,7 +224,7 @@ export class WebhookDispatcher {
     signature: string,
     timestamp: number,
     secret: string,
-    maxAge: number = 300000 // 5 minutes default
+    maxAge: number = 300000, // 5 minutes default
   ): boolean {
     // Check timestamp age (replay prevention)
     const now = Date.now();
@@ -253,10 +250,7 @@ export class WebhookDispatcher {
     if (expectedSignature.length !== computedSignature.length) {
       return false;
     }
-    return crypto.timingSafeEqual(
-      Buffer.from(expectedSignature),
-      Buffer.from(computedSignature)
-    );
+    return crypto.timingSafeEqual(Buffer.from(expectedSignature), Buffer.from(computedSignature));
   }
 
   /**

@@ -58,14 +58,24 @@ export async function createServer(): Promise<FastifyInstance> {
       tags: [
         { name: 'Instances', description: 'Create and manage WhatsApp instances' },
         { name: 'Connection', description: 'Connect, disconnect, and check instance status' },
-        { name: 'Data', description: 'Fetch contacts, groups, profile, labels, chats, and messages from in-memory store' },
-        { name: 'Messaging', description: 'Send text, media, and manage messages (edit, delete, react, forward)' },
+        {
+          name: 'Data',
+          description:
+            'Fetch contacts, groups, profile, labels, chats, and messages from in-memory store',
+        },
+        {
+          name: 'Messaging',
+          description: 'Send text, media, and manage messages (edit, delete, react, forward)',
+        },
         { name: 'Contacts', description: 'Check phone numbers and get contact information' },
         { name: 'Groups', description: 'Create and manage WhatsApp groups' },
         { name: 'Profile', description: 'Update profile picture, name, and status' },
         { name: 'Presence', description: 'Presence, typing indicators, and read receipts' },
         { name: 'Webhooks', description: 'Configure webhooks for real-time events' },
-        { name: 'Business', description: 'WhatsApp Business features (labels, catalog, newsletters)' },
+        {
+          name: 'Business',
+          description: 'WhatsApp Business features (labels, catalog, newsletters)',
+        },
         { name: 'Health', description: 'API health check' },
       ],
       components: {
@@ -104,25 +114,29 @@ export async function createServer(): Promise<FastifyInstance> {
   setErrorHandler(server);
 
   // Register health check
-  server.get('/health', {
-    schema: {
-      tags: ['Health'],
-      summary: 'Health check',
-      description: 'Check if the API is running',
-      security: [], // public endpoint — no auth (overrides global security)
-      response: {
-        200: {
-          type: 'object',
-          properties: {
-            status: { type: 'string' },
-            timestamp: { type: 'number' },
+  server.get(
+    '/health',
+    {
+      schema: {
+        tags: ['Health'],
+        summary: 'Health check',
+        description: 'Check if the API is running',
+        security: [], // public endpoint — no auth (overrides global security)
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              status: { type: 'string' },
+              timestamp: { type: 'number' },
+            },
           },
         },
       },
     },
-  }, async (_request, _reply) => {
-    return { status: 'ok', timestamp: Date.now() };
-  });
+    async (_request, _reply) => {
+      return { status: 'ok', timestamp: Date.now() };
+    },
+  );
 
   // Serve OpenAPI JSON spec
   server.get('/documentation/json', async (_request, _reply) => {

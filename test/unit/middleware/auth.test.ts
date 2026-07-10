@@ -44,9 +44,7 @@ describe('Auth Middleware', () => {
         authorization: 'Bearer test-api-key-12345',
       };
 
-      await expect(
-        authMiddleware(mockRequest, mockReply)
-      ).resolves.toBeUndefined();
+      await expect(authMiddleware(mockRequest, mockReply)).resolves.toBeUndefined();
     });
 
     it('should accept valid API key from X-API-Key header', async () => {
@@ -54,9 +52,7 @@ describe('Auth Middleware', () => {
         'x-api-key': 'test-api-key-12345',
       };
 
-      await expect(
-        authMiddleware(mockRequest, mockReply)
-      ).resolves.toBeUndefined();
+      await expect(authMiddleware(mockRequest, mockReply)).resolves.toBeUndefined();
     });
 
     it('should prefer Authorization header over X-API-Key', async () => {
@@ -66,9 +62,7 @@ describe('Auth Middleware', () => {
       };
 
       // Should succeed because Authorization header has correct key
-      await expect(
-        authMiddleware(mockRequest, mockReply)
-      ).resolves.toBeUndefined();
+      await expect(authMiddleware(mockRequest, mockReply)).resolves.toBeUndefined();
     });
 
     it('should fall back to X-API-Key when Authorization header is missing', async () => {
@@ -76,9 +70,7 @@ describe('Auth Middleware', () => {
         'x-api-key': 'test-api-key-12345',
       };
 
-      await expect(
-        authMiddleware(mockRequest, mockReply)
-      ).resolves.toBeUndefined();
+      await expect(authMiddleware(mockRequest, mockReply)).resolves.toBeUndefined();
     });
 
     it('should handle Authorization header without Bearer prefix', async () => {
@@ -87,9 +79,7 @@ describe('Auth Middleware', () => {
       };
 
       // Without Bearer prefix, it won't extract the key, falling back to x-api-key
-      await expect(authMiddleware(mockRequest, mockReply)).rejects.toThrow(
-        UnauthorizedError
-      );
+      await expect(authMiddleware(mockRequest, mockReply)).rejects.toThrow(UnauthorizedError);
     });
   });
 
@@ -97,12 +87,8 @@ describe('Auth Middleware', () => {
     it('should throw UnauthorizedError when no headers provided', async () => {
       mockRequest.headers = {};
 
-      await expect(authMiddleware(mockRequest, mockReply)).rejects.toThrow(
-        UnauthorizedError
-      );
-      await expect(authMiddleware(mockRequest, mockReply)).rejects.toThrow(
-        'Missing API key'
-      );
+      await expect(authMiddleware(mockRequest, mockReply)).rejects.toThrow(UnauthorizedError);
+      await expect(authMiddleware(mockRequest, mockReply)).rejects.toThrow('Missing API key');
     });
 
     it('should log audit event for missing API key', async () => {
@@ -122,7 +108,7 @@ describe('Auth Middleware', () => {
           method: 'GET',
           url: '/test',
         }),
-        expect.stringContaining('Missing API key')
+        expect.stringContaining('Missing API key'),
       );
     });
   });
@@ -133,12 +119,8 @@ describe('Auth Middleware', () => {
         authorization: 'Bearer wrong-api-key',
       };
 
-      await expect(authMiddleware(mockRequest, mockReply)).rejects.toThrow(
-        UnauthorizedError
-      );
-      await expect(authMiddleware(mockRequest, mockReply)).rejects.toThrow(
-        'Invalid API key'
-      );
+      await expect(authMiddleware(mockRequest, mockReply)).rejects.toThrow(UnauthorizedError);
+      await expect(authMiddleware(mockRequest, mockReply)).rejects.toThrow('Invalid API key');
     });
 
     it('should throw UnauthorizedError for empty API key', async () => {
@@ -146,9 +128,7 @@ describe('Auth Middleware', () => {
         authorization: 'Bearer ',
       };
 
-      await expect(authMiddleware(mockRequest, mockReply)).rejects.toThrow(
-        UnauthorizedError
-      );
+      await expect(authMiddleware(mockRequest, mockReply)).rejects.toThrow(UnauthorizedError);
     });
 
     it('should log audit event for invalid API key', async () => {
@@ -170,7 +150,7 @@ describe('Auth Middleware', () => {
           method: 'GET',
           url: '/test',
         }),
-        expect.stringContaining('Invalid API key')
+        expect.stringContaining('Invalid API key'),
       );
     });
 
@@ -202,9 +182,7 @@ describe('Auth Middleware', () => {
         authorization: 'Bearer short',
       };
 
-      await expect(authMiddleware(mockRequest, mockReply)).rejects.toThrow(
-        UnauthorizedError
-      );
+      await expect(authMiddleware(mockRequest, mockReply)).rejects.toThrow(UnauthorizedError);
     });
 
     it('should reject keys with same length but different content', async () => {
@@ -213,9 +191,7 @@ describe('Auth Middleware', () => {
         authorization: 'Bearer test-api-key-99999',
       };
 
-      await expect(authMiddleware(mockRequest, mockReply)).rejects.toThrow(
-        UnauthorizedError
-      );
+      await expect(authMiddleware(mockRequest, mockReply)).rejects.toThrow(UnauthorizedError);
     });
 
     it('should accept exact match', async () => {
@@ -223,9 +199,7 @@ describe('Auth Middleware', () => {
         authorization: 'Bearer test-api-key-12345',
       };
 
-      await expect(
-        authMiddleware(mockRequest, mockReply)
-      ).resolves.toBeUndefined();
+      await expect(authMiddleware(mockRequest, mockReply)).resolves.toBeUndefined();
     });
   });
 
@@ -244,7 +218,7 @@ describe('Auth Middleware', () => {
         expect.objectContaining({
           ip: '192.168.1.100',
         }),
-        expect.any(String)
+        expect.any(String),
       );
     });
 
@@ -262,7 +236,7 @@ describe('Auth Middleware', () => {
         expect.objectContaining({
           method: 'POST',
         }),
-        expect.any(String)
+        expect.any(String),
       );
     });
 
@@ -280,7 +254,7 @@ describe('Auth Middleware', () => {
         expect.objectContaining({
           url: '/api/instances/123',
         }),
-        expect.any(String)
+        expect.any(String),
       );
     });
   });

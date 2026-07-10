@@ -152,7 +152,7 @@ export async function groupRoutes(server: FastifyInstance): Promise<void> {
       } catch (err: any) {
         throw new BadRequestError('Failed to create group', { error: err.message });
       }
-    }
+    },
   );
 
   /**
@@ -273,7 +273,7 @@ export async function groupRoutes(server: FastifyInstance): Promise<void> {
       } catch (err: any) {
         throw new BadRequestError('Failed to get group info', { error: err.message });
       }
-    }
+    },
   );
 
   /**
@@ -385,7 +385,7 @@ export async function groupRoutes(server: FastifyInstance): Promise<void> {
       } catch (err: any) {
         throw new BadRequestError('Failed to update group', { error: err.message });
       }
-    }
+    },
   );
 
   /**
@@ -508,7 +508,7 @@ export async function groupRoutes(server: FastifyInstance): Promise<void> {
         }
         throw new BadRequestError('Failed to get group participants', { error: err.message });
       }
-    }
+    },
   );
 
   /**
@@ -619,7 +619,7 @@ export async function groupRoutes(server: FastifyInstance): Promise<void> {
       } catch (err: any) {
         throw new BadRequestError('Failed to add participants', { error: err.message });
       }
-    }
+    },
   );
 
   /**
@@ -730,7 +730,7 @@ export async function groupRoutes(server: FastifyInstance): Promise<void> {
       } catch (err: any) {
         throw new BadRequestError('Failed to remove participants', { error: err.message });
       }
-    }
+    },
   );
 
   /**
@@ -841,7 +841,7 @@ export async function groupRoutes(server: FastifyInstance): Promise<void> {
       } catch (err: any) {
         throw new BadRequestError('Failed to promote admin', { error: err.message });
       }
-    }
+    },
   );
 
   /**
@@ -952,7 +952,7 @@ export async function groupRoutes(server: FastifyInstance): Promise<void> {
       } catch (err: any) {
         throw new BadRequestError('Failed to demote admin', { error: err.message });
       }
-    }
+    },
   );
 
   /**
@@ -1065,7 +1065,7 @@ export async function groupRoutes(server: FastifyInstance): Promise<void> {
       } catch (err: any) {
         throw new BadRequestError('Failed to update group picture', { error: err.message });
       }
-    }
+    },
   );
 
   /**
@@ -1169,7 +1169,7 @@ export async function groupRoutes(server: FastifyInstance): Promise<void> {
       } catch (err: any) {
         throw new BadRequestError('Failed to get invite link', { error: err.message });
       }
-    }
+    },
   );
 
   /**
@@ -1273,7 +1273,7 @@ export async function groupRoutes(server: FastifyInstance): Promise<void> {
       } catch (err: any) {
         throw new BadRequestError('Failed to revoke invite', { error: err.message });
       }
-    }
+    },
   );
 
   /**
@@ -1387,7 +1387,7 @@ export async function groupRoutes(server: FastifyInstance): Promise<void> {
         }
         throw new BadRequestError('Failed to get group invite info', { error: err.message });
       }
-    }
+    },
   );
 
   /**
@@ -1491,7 +1491,7 @@ export async function groupRoutes(server: FastifyInstance): Promise<void> {
       } catch (err: any) {
         throw new BadRequestError('Failed to join group', { error: err.message });
       }
-    }
+    },
   );
 
   /**
@@ -1593,6 +1593,6 @@ export async function groupRoutes(server: FastifyInstance): Promise<void> {
       } catch (err: any) {
         throw new BadRequestError('Failed to leave group', { error: err.message });
       }
-    }
+    },
   );
 }

@@ -225,7 +225,7 @@ describe('Basic GET Operations (v0.9.0)', () => {
           headers: {
             Authorization: `Bearer ${API_KEY}`,
           },
-        }
+        },
       );
 
       expect(response.status).toBe(200);
@@ -242,7 +242,7 @@ describe('Basic GET Operations (v0.9.0)', () => {
           headers: {
             Authorization: `Bearer ${API_KEY}`,
           },
-        }
+        },
       );
 
       expect(response.status).toBe(404);

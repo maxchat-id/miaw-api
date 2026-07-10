@@ -152,7 +152,7 @@ export async function businessRoutes(server: FastifyInstance): Promise<void> {
       } catch (err: any) {
         throw new BadRequestError('Failed to create label', { error: err.message });
       }
-    }
+    },
   );
 
   /**
@@ -262,7 +262,7 @@ export async function businessRoutes(server: FastifyInstance): Promise<void> {
       } catch (err: any) {
         throw new BadRequestError('Failed to delete label', { error: err.message });
       }
-    }
+    },
   );
 
   /**
@@ -367,7 +367,7 @@ export async function businessRoutes(server: FastifyInstance): Promise<void> {
       } catch (err: any) {
         throw new BadRequestError('Failed to add label to chat', { error: err.message });
       }
-    }
+    },
   );
 
   /**
@@ -474,7 +474,7 @@ export async function businessRoutes(server: FastifyInstance): Promise<void> {
           error: err.message,
         });
       }
-    }
+    },
   );
 
   /**
@@ -589,7 +589,7 @@ export async function businessRoutes(server: FastifyInstance): Promise<void> {
           error: err.message,
         });
       }
-    }
+    },
   );
 
   /**
@@ -704,7 +704,7 @@ export async function businessRoutes(server: FastifyInstance): Promise<void> {
           error: err.message,
         });
       }
-    }
+    },
   );
 
   /**
@@ -826,7 +826,7 @@ export async function businessRoutes(server: FastifyInstance): Promise<void> {
       } catch (err: any) {
         throw new BadRequestError('Failed to get chats by label', { error: err.message });
       }
-    }
+    },
   );
 
   // ===================== PRODUCT CATALOG =====================
@@ -954,7 +954,7 @@ export async function businessRoutes(server: FastifyInstance): Promise<void> {
       } catch (err: any) {
         throw new BadRequestError('Failed to get product catalog', { error: err.message });
       }
-    }
+    },
   );
 
   /**
@@ -1074,7 +1074,7 @@ export async function businessRoutes(server: FastifyInstance): Promise<void> {
           error: err.message,
         });
       }
-    }
+    },
   );
 
   /**
@@ -1206,7 +1206,7 @@ export async function businessRoutes(server: FastifyInstance): Promise<void> {
         if (err instanceof BadRequestError) throw err;
         throw new BadRequestError('Failed to create product', { error: err.message });
       }
-    }
+    },
   );
 
   /**
@@ -1341,7 +1341,7 @@ export async function businessRoutes(server: FastifyInstance): Promise<void> {
         if (err instanceof BadRequestError) throw err;
         throw new BadRequestError('Failed to update product', { error: err.message });
       }
-    }
+    },
   );
 
   /**
@@ -1453,7 +1453,7 @@ export async function businessRoutes(server: FastifyInstance): Promise<void> {
         if (err instanceof BadRequestError) throw err;
         throw new BadRequestError('Failed to delete products', { error: err.message });
       }
-    }
+    },
   );
 
   // Newsletter endpoints moved to src/routes/newsletters.ts (Phase 12)

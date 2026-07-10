@@ -33,7 +33,7 @@ import { NotFoundError, BadRequestError, ServiceUnavailableError } from '../util
 async function findMessageById(
   client: MiawClient,
   messageId: string,
-  chatJid?: string
+  chatJid?: string,
 ): Promise<MiawMessage | null> {
   if (chatJid) {
     // If chatJid is provided, search only in that chat
@@ -63,7 +63,7 @@ async function findMessageById(
 async function requireMessage(
   client: MiawClient,
   messageId: string,
-  chatJid?: string
+  chatJid?: string,
 ): Promise<MiawMessage> {
   const message = await findMessageById(client, messageId, chatJid);
   if (!message) {
@@ -78,7 +78,7 @@ async function requireMessage(
 async function resolveQuotedMessage(
   client: MiawClient,
   quotedId: string | undefined,
-  chatJid?: string
+  chatJid?: string,
 ): Promise<MiawMessage | undefined> {
   if (!quotedId) {
     return undefined;
@@ -210,13 +210,13 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
             timestamp: Date.now(),
           },
         });
-      } catch (err: any) {
+      } catch (err: unknown) {
         if (err instanceof BadRequestError) {
           throw err;
         }
-        throw new BadRequestError('Failed to send message', { error: err.message });
+        throw new BadRequestError('Failed to send message', { error: (err as Error).message });
       }
-    }
+    },
   );
 
   /**
@@ -377,7 +377,7 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
         }
         throw new BadRequestError('Failed to send media', { error: err.message });
       }
-    }
+    },
   );
 
   /**
@@ -492,7 +492,7 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
       } catch (err: any) {
         throw new BadRequestError('Failed to edit message', { error: err.message });
       }
-    }
+    },
   );
 
   /**
@@ -605,14 +605,12 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
 
         reply.send({
           success: true,
-          message: query.forMe
-            ? 'Message deleted for me'
-            : 'Message deleted for everyone',
+          message: query.forMe ? 'Message deleted for me' : 'Message deleted for everyone',
         });
       } catch (err: any) {
         throw new BadRequestError('Failed to delete message', { error: err.message });
       }
-    }
+    },
   );
 
   /**
@@ -727,7 +725,7 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
       } catch (err: any) {
         throw new BadRequestError('Failed to react to message', { error: err.message });
       }
-    }
+    },
   );
 
   /**
@@ -849,7 +847,7 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
         }
         throw new BadRequestError('Failed to remove reaction', { error: err.message });
       }
-    }
+    },
   );
 
   /**
@@ -860,7 +858,8 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
     '/instances/:id/messages/:messageId/local',
     {
       schema: {
-        description: 'Delete a message for yourself only (local deletion, does not affect other participants)',
+        description:
+          'Delete a message for yourself only (local deletion, does not affect other participants)',
         tags: ['Messaging'],
         summary: 'Delete message locally',
         params: {
@@ -977,7 +976,7 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
         }
         throw new BadRequestError('Failed to delete message locally', { error: err.message });
       }
-    }
+    },
   );
 
   /**
@@ -1103,7 +1102,7 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
       } catch (err: any) {
         throw new BadRequestError('Failed to forward message', { error: err.message });
       }
-    }
+    },
   );
 
   /**
@@ -1228,7 +1227,8 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
           document: 'application/octet-stream',
           sticker: 'image/webp',
         };
-        const contentType = message.media?.mimetype || mimetypeMap[message.type] || 'application/octet-stream';
+        const contentType =
+          message.media?.mimetype || mimetypeMap[message.type] || 'application/octet-stream';
 
         // Set appropriate headers
         reply.header('Content-Type', contentType);
@@ -1244,7 +1244,7 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
         }
         throw new BadRequestError('Failed to download media', { error: err.message });
       }
-    }
+    },
   );
 
   /**
@@ -1255,7 +1255,8 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
     '/instances/:id/chats/:jid/messages/load',
     {
       schema: {
-        description: 'Load more messages from chat history (pagination). Fetches older messages beyond what is currently in memory.',
+        description:
+          'Load more messages from chat history (pagination). Fetches older messages beyond what is currently in memory.',
         tags: ['Messaging'],
         summary: 'Load more messages',
         params: {
@@ -1360,7 +1361,7 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
       } catch (err: any) {
         throw new BadRequestError('Failed to load more messages', { error: err.message });
       }
-    }
+    },
   );
 
   /**
@@ -1492,7 +1493,7 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
         }
         throw new BadRequestError('Failed to send image', { error: err.message });
       }
-    }
+    },
   );
 
   /**
@@ -1628,7 +1629,7 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
         }
         throw new BadRequestError('Failed to send video', { error: err.message });
       }
-    }
+    },
   );
 
   /**
@@ -1760,7 +1761,7 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
         }
         throw new BadRequestError('Failed to send audio', { error: err.message });
       }
-    }
+    },
   );
 
   /**
@@ -1894,6 +1895,6 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
         }
         throw new BadRequestError('Failed to send document', { error: err.message });
       }
-    }
+    },
   );
 }

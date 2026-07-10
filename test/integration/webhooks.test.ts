@@ -402,9 +402,7 @@ describe('Phase 7 Webhook Tests', () => {
 
       it('should update stats after webhook delivery', async () => {
         // Get initial stats
-        const beforeResponse = await client.get(
-          `/instances/${testInstanceId}/webhook/status`
-        );
+        const beforeResponse = await client.get(`/instances/${testInstanceId}/webhook/status`);
         const beforeStats = beforeResponse.data.data.stats;
 
         // Send test webhook

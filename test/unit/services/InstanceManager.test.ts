@@ -82,8 +82,8 @@ describe('InstanceManager.updateWebhook', () => {
   });
 
   it('throws when the instance does not exist', () => {
-    expect(() =>
-      manager.updateWebhook('missing', { webhookUrl: 'https://x.test' })
-    ).toThrow('not found');
+    expect(() => manager.updateWebhook('missing', { webhookUrl: 'https://x.test' })).toThrow(
+      'not found',
+    );
   });
 });

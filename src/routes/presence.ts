@@ -121,7 +121,7 @@ export async function presenceRoutes(server: FastifyInstance): Promise<void> {
       } catch (err: any) {
         throw new BadRequestError('Failed to set presence', { error: err.message });
       }
-    }
+    },
   );
 
   /**
@@ -223,7 +223,7 @@ export async function presenceRoutes(server: FastifyInstance): Promise<void> {
       } catch (err: any) {
         throw new BadRequestError('Failed to send typing indicator', { error: err.message });
       }
-    }
+    },
   );
 
   /**
@@ -325,7 +325,7 @@ export async function presenceRoutes(server: FastifyInstance): Promise<void> {
       } catch (err: any) {
         throw new BadRequestError('Failed to send recording indicator', { error: err.message });
       }
-    }
+    },
   );
 
   /**
@@ -427,7 +427,7 @@ export async function presenceRoutes(server: FastifyInstance): Promise<void> {
       } catch (err: any) {
         throw new BadRequestError('Failed to stop typing indicator', { error: err.message });
       }
-    }
+    },
   );
 
   /**
@@ -552,7 +552,7 @@ export async function presenceRoutes(server: FastifyInstance): Promise<void> {
       } catch (err: any) {
         throw new BadRequestError('Failed to mark as read', { error: err.message });
       }
-    }
+    },
   );
 
   /**
@@ -654,6 +654,6 @@ export async function presenceRoutes(server: FastifyInstance): Promise<void> {
       } catch (err: any) {
         throw new BadRequestError('Failed to subscribe to presence', { error: err.message });
       }
-    }
+    },
   );
 }

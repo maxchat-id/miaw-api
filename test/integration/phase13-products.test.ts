@@ -178,7 +178,7 @@ describe('Phase 13 Product Management Tests', () => {
           name: `Updated Product ${Date.now()}`,
           description: 'Updated description',
           price: 2000,
-        }
+        },
       );
 
       expect(updateResponse.status).toBe(200);
@@ -214,7 +214,7 @@ describe('Phase 13 Product Management Tests', () => {
         `/instances/${testInstanceId}/products/${productId}`,
         {
           price: 2500,
-        }
+        },
       );
 
       expect(updateResponse.status).toBe(200);
@@ -222,12 +222,9 @@ describe('Phase 13 Product Management Tests', () => {
     });
 
     it.skip('should reject update when instance is not connected', async () => {
-      const response = await client.patch(
-        `/instances/${testInstanceId}/products/test-product-id`,
-        {
-          price: 3000,
-        }
-      );
+      const response = await client.patch(`/instances/${testInstanceId}/products/test-product-id`, {
+        price: 3000,
+      });
 
       expect(response.status).toBe(503);
       expect(response.data.success).toBe(false);
@@ -377,9 +374,7 @@ describe('Phase 13 Product Management Tests', () => {
       const labelId = createLabelResponse.data.data.labelId;
 
       // Get chats by this label
-      const response = await client.get(
-        `/instances/${testInstanceId}/labels/${labelId}/chats`
-      );
+      const response = await client.get(`/instances/${testInstanceId}/labels/${labelId}/chats`);
 
       expect(response.status).toBe(200);
       expect(response.data.success).toBe(true);
@@ -411,9 +406,7 @@ describe('Phase 13 Product Management Tests', () => {
       const labelId = createLabelResponse.data.data.labelId;
 
       // Get chats - should be empty
-      const response = await client.get(
-        `/instances/${testInstanceId}/labels/${labelId}/chats`
-      );
+      const response = await client.get(`/instances/${testInstanceId}/labels/${labelId}/chats`);
 
       expect(response.status).toBe(200);
       expect(response.data.success).toBe(true);
@@ -430,7 +423,7 @@ describe('Phase 13 Product Management Tests', () => {
       }
 
       const response = await client.get(
-        `/instances/${testInstanceId}/labels/non-existent-label-id/chats`
+        `/instances/${testInstanceId}/labels/non-existent-label-id/chats`,
       );
 
       expect(response.status).toBe(200);
@@ -440,9 +433,7 @@ describe('Phase 13 Product Management Tests', () => {
     });
 
     it.skip('should reject when instance is not connected', async () => {
-      const response = await client.get(
-        `/instances/${testInstanceId}/labels/test-label-id/chats`
-      );
+      const response = await client.get(`/instances/${testInstanceId}/labels/test-label-id/chats`);
 
       expect(response.status).toBe(503);
       expect(response.data.success).toBe(false);
@@ -472,7 +463,7 @@ describe('Phase 13 Product Management Tests', () => {
         `/instances/non-existent/products/test-product-id`,
         {
           price: 2000,
-        }
+        },
       );
       expect(updateResponse.status).toBe(404);
 

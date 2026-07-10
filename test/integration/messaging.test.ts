@@ -213,7 +213,7 @@ describe('Messaging Tests', () => {
         client.post(`/instances/${testInstanceId}/send-text`, {
           to: TEST_CONFIG.TEST_CONTACT_A,
           text: `Concurrent message ${i + 1}`,
-        })
+        }),
       );
 
       const responses = await Promise.all(messagePromises);

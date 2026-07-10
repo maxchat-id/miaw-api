@@ -190,7 +190,7 @@ describe('Phase 2 Messaging Tests', () => {
 
       // Delete the message
       const deleteResponse = await client.delete(
-        `/instances/${testInstanceId}/messages/${messageId}`
+        `/instances/${testInstanceId}/messages/${messageId}`,
       );
 
       expect(deleteResponse.status).toBe(200);
@@ -216,7 +216,7 @@ describe('Phase 2 Messaging Tests', () => {
 
       // Delete for me only
       const deleteResponse = await client.delete(
-        `/instances/${testInstanceId}/messages/${messageId}?forMe=true`
+        `/instances/${testInstanceId}/messages/${messageId}?forMe=true`,
       );
 
       expect(deleteResponse.status).toBe(200);
@@ -225,9 +225,7 @@ describe('Phase 2 Messaging Tests', () => {
     });
 
     it.skip('should reject delete when instance is not connected', async () => {
-      const response = await client.delete(
-        `/instances/${testInstanceId}/messages/fake-message-id`
-      );
+      const response = await client.delete(`/instances/${testInstanceId}/messages/fake-message-id`);
 
       expect(response.status).toBe(503);
       expect(response.data.success).toBe(false);
@@ -252,13 +250,10 @@ describe('Phase 2 Messaging Tests', () => {
       const messageId = sendResponse.data.data.messageId;
 
       // React with emoji
-      const reactionResponse = await client.post(
-        `/instances/${testInstanceId}/messages/reaction`,
-        {
-          messageId,
-          emoji: '👍',
-        }
-      );
+      const reactionResponse = await client.post(`/instances/${testInstanceId}/messages/reaction`, {
+        messageId,
+        emoji: '👍',
+      });
 
       expect(reactionResponse.status).toBe(200);
       expect(reactionResponse.data.success).toBe(true);
@@ -287,13 +282,10 @@ describe('Phase 2 Messaging Tests', () => {
       });
 
       // Remove reaction
-      const reactionResponse = await client.post(
-        `/instances/${testInstanceId}/messages/reaction`,
-        {
-          messageId,
-          emoji: '',
-        }
-      );
+      const reactionResponse = await client.post(`/instances/${testInstanceId}/messages/reaction`, {
+        messageId,
+        emoji: '',
+      });
 
       expect(reactionResponse.status).toBe(200);
       expect(reactionResponse.data.success).toBe(true);
@@ -328,13 +320,10 @@ describe('Phase 2 Messaging Tests', () => {
       const messageId = sendResponse.data.data.messageId;
 
       // Forward to another contact
-      const forwardResponse = await client.post(
-        `/instances/${testInstanceId}/messages/forward`,
-        {
-          messageId,
-          to: [TEST_CONFIG.TEST_CONTACT_B],
-        }
-      );
+      const forwardResponse = await client.post(`/instances/${testInstanceId}/messages/forward`, {
+        messageId,
+        to: [TEST_CONFIG.TEST_CONTACT_B],
+      });
 
       expect(forwardResponse.status).toBe(200);
       expect(forwardResponse.data.success).toBe(true);
@@ -359,13 +348,10 @@ describe('Phase 2 Messaging Tests', () => {
       const messageId = sendResponse.data.data.messageId;
 
       // Forward to multiple recipients
-      const forwardResponse = await client.post(
-        `/instances/${testInstanceId}/messages/forward`,
-        {
-          messageId,
-          to: [TEST_CONFIG.TEST_CONTACT_A, TEST_CONFIG.TEST_CONTACT_B],
-        }
-      );
+      const forwardResponse = await client.post(`/instances/${testInstanceId}/messages/forward`, {
+        messageId,
+        to: [TEST_CONFIG.TEST_CONTACT_A, TEST_CONFIG.TEST_CONTACT_B],
+      });
 
       expect(forwardResponse.status).toBe(200);
       expect(forwardResponse.data.success).toBe(true);
@@ -452,7 +438,9 @@ describe('Phase 2 Messaging Tests', () => {
         text: 'Delete me',
       });
 
-      await client.delete(`/instances/${testInstanceId}/messages/${sendResponse.data.data.messageId}`);
+      await client.delete(
+        `/instances/${testInstanceId}/messages/${sendResponse.data.data.messageId}`,
+      );
 
       // Wait for webhook event
       const deleteEvent = await webhookServer.waitForEvent('message_delete', 10000);
@@ -515,7 +503,7 @@ describe('Phase 2 Messaging Tests', () => {
       // Download the media
       const downloadResponse = await client.get(
         `/instances/${testInstanceId}/messages/${messageId}/media`,
-        { responseType: 'arraybuffer' }
+        { responseType: 'arraybuffer' },
       );
 
       // Should get binary data back
@@ -532,7 +520,7 @@ describe('Phase 2 Messaging Tests', () => {
       }
 
       const response = await client.get(
-        `/instances/${testInstanceId}/messages/non-existent-message-id/media`
+        `/instances/${testInstanceId}/messages/non-existent-message-id/media`,
       );
 
       expect(response.status).toBe(404);
@@ -560,9 +548,7 @@ describe('Phase 2 Messaging Tests', () => {
       await new Promise((resolve) => setTimeout(resolve, 2000));
 
       // Try to download media from text message
-      const response = await client.get(
-        `/instances/${testInstanceId}/messages/${messageId}/media`
-      );
+      const response = await client.get(`/instances/${testInstanceId}/messages/${messageId}/media`);
 
       expect(response.status).toBe(400);
       expect(response.data.success).toBe(false);
@@ -571,7 +557,7 @@ describe('Phase 2 Messaging Tests', () => {
 
     it.skip('should reject download when instance is not connected', async () => {
       const response = await client.get(
-        `/instances/${testInstanceId}/messages/fake-message-id/media`
+        `/instances/${testInstanceId}/messages/fake-message-id/media`,
       );
 
       expect(response.status).toBe(503);
@@ -602,7 +588,7 @@ describe('Phase 2 Messaging Tests', () => {
       // Download with chatJid hint
       const downloadResponse = await client.get(
         `/instances/${testInstanceId}/messages/${messageId}/media?chatJid=${encodeURIComponent(chatJid)}`,
-        { responseType: 'arraybuffer' }
+        { responseType: 'arraybuffer' },
       );
 
       expect(downloadResponse.status).toBe(200);

@@ -56,21 +56,19 @@ function validateConfig(config: Config): void {
 
   // Check for insecure defaults
   if (config.apiKey === DEFAULT_API_KEY) {
-    warnings.push(
-      'Using default API key. Set API_KEY environment variable for production.'
-    );
+    warnings.push('Using default API key. Set API_KEY environment variable for production.');
   }
 
   if (config.webhookSecret === DEFAULT_WEBHOOK_SECRET) {
     warnings.push(
-      'Using default webhook secret. Set WEBHOOK_SECRET environment variable for production.'
+      'Using default webhook secret. Set WEBHOOK_SECRET environment variable for production.',
     );
   }
 
   // Validate port range
   if (config.port < 1 || config.port > 65535) {
     warnings.push(
-      `Invalid port ${config.port}. Port must be between 1 and 65535. Defaulting to 3000.`
+      `Invalid port ${config.port}. Port must be between 1 and 65535. Defaulting to 3000.`,
     );
     config.port = 3000;
   }
@@ -78,7 +76,7 @@ function validateConfig(config: Config): void {
   // Check for open CORS in non-development
   if (config.corsOrigin === '*' && process.env.NODE_ENV === 'production') {
     warnings.push(
-      'CORS origin is set to "*" in production. Consider restricting to specific origins.'
+      'CORS origin is set to "*" in production. Consider restricting to specific origins.',
     );
   }
 

@@ -151,7 +151,7 @@ export async function webhookRoutes(server: FastifyInstance): Promise<void> {
           error: err.message,
         });
       }
-    }
+    },
   );
 
   /**
@@ -248,6 +248,6 @@ export async function webhookRoutes(server: FastifyInstance): Promise<void> {
           error: err.message,
         });
       }
-    }
+    },
   );
 }

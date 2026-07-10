@@ -6,12 +6,7 @@
 import { EventEmitter } from 'events';
 import { MiawClient, MiawClientOptions, ConnectionState } from 'miaw-core';
 import pino from 'pino';
-import {
-  InstanceConfig,
-  InstanceState,
-  WebhookEvent,
-  WebhookPayload,
-} from '../types';
+import { InstanceConfig, InstanceState, WebhookEvent, WebhookPayload } from '../types';
 
 interface InstanceManagerOptions {
   sessionPath: string;
@@ -138,7 +133,7 @@ export class InstanceManager extends EventEmitter {
    */
   updateWebhook(
     instanceId: string,
-    updates: { webhookUrl?: string | null; webhookEvents?: WebhookEvent[] }
+    updates: { webhookUrl?: string | null; webhookEvents?: WebhookEvent[] },
   ): InstanceState {
     const managed = this.instances.get(instanceId);
 

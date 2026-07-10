@@ -93,7 +93,7 @@ export async function instanceRoutes(server: FastifyInstance): Promise<void> {
         }
         throw err;
       }
-    }
+    },
   );
 
   /**
@@ -140,7 +140,7 @@ export async function instanceRoutes(server: FastifyInstance): Promise<void> {
         success: true,
         data: instances,
       });
-    }
+    },
   );
 
   /**
@@ -211,7 +211,7 @@ export async function instanceRoutes(server: FastifyInstance): Promise<void> {
         success: true,
         data: instance,
       });
-    }
+    },
   );
 
   /**
@@ -296,7 +296,7 @@ export async function instanceRoutes(server: FastifyInstance): Promise<void> {
         }
         throw err;
       }
-    }
+    },
   );
 
   /**
@@ -357,6 +357,6 @@ export async function instanceRoutes(server: FastifyInstance): Promise<void> {
         }
         throw err;
       }
-    }
+    },
   );
 }

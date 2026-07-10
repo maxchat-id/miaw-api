@@ -12,15 +12,20 @@ import { NotFoundError, BadRequestError } from '../utils/errorHandler';
 /**
  * Register basic GET operation routes
  */
-export async function basicGetsRoutes(server: FastifyInstance, instanceManager: InstanceManager): Promise<void> {
+export async function basicGetsRoutes(
+  server: FastifyInstance,
+  instanceManager: InstanceManager,
+): Promise<void> {
   // ============================================================================
   // GET /instances/:id/contacts - Get all contacts
   // ============================================================================
-  server.get('/instances/:instanceId/contacts', {
-    schema: {
-      tags: ['Data'],
-      summary: 'Get all contacts',
-      description: `Get all contacts from the in-memory store (populated from WhatsApp history sync).
+  server.get(
+    '/instances/:instanceId/contacts',
+    {
+      schema: {
+        tags: ['Data'],
+        summary: 'Get all contacts',
+        description: `Get all contacts from the in-memory store (populated from WhatsApp history sync).
 
 **Note:** Returns an empty array if no contacts have been synced yet. This happens when:
 - The instance was just created
@@ -31,77 +36,85 @@ export async function basicGetsRoutes(server: FastifyInstance, instanceManager: 
 - \`jid\`: Contact JID (e.g., 6281234567890@s.whatsapp.net)
 - \`name\`: Contact name (if saved in phone)
 - \`phone\`: Phone number extracted from JID`,
-      params: {
-        type: 'object',
-        required: ['instanceId'],
-        properties: {
-          instanceId: { type: 'string', minLength: 1, description: 'Instance ID' },
+        params: {
+          type: 'object',
+          required: ['instanceId'],
+          properties: {
+            instanceId: { type: 'string', minLength: 1, description: 'Instance ID' },
+          },
         },
       },
     },
-  }, async (request, reply) => {
-    const { instanceId } = request.params as { instanceId: string };
+    async (request, reply) => {
+      const { instanceId } = request.params as { instanceId: string };
 
-    const client = instanceManager.getClient(instanceId);
-    if (!client) {
-      throw new NotFoundError('Instance');
-    }
+      const client = instanceManager.getClient(instanceId);
+      if (!client) {
+        throw new NotFoundError('Instance');
+      }
 
-    const result = await client.fetchAllContacts();
+      const result = await client.fetchAllContacts();
 
-    if (!result.success) {
-      throw new BadRequestError('Failed to fetch contacts', result);
-    }
+      if (!result.success) {
+        throw new BadRequestError('Failed to fetch contacts', result);
+      }
 
-    return reply.send(result);
-  });
+      return reply.send(result);
+    },
+  );
 
   // ============================================================================
   // GET /instances/:id/groups - Get all groups
   // ============================================================================
-  server.get('/instances/:instanceId/groups', {
-    schema: {
-      tags: ['Data'],
-      summary: 'Get all groups',
-      description: `Get all groups where the authenticated user is a member.
+  server.get(
+    '/instances/:instanceId/groups',
+    {
+      schema: {
+        tags: ['Data'],
+        summary: 'Get all groups',
+        description: `Get all groups where the authenticated user is a member.
 
 **Response:**
 - \`jid\`: Group JID (e.g., 1234567890@g.us)
 - \`name\`: Group subject/name
 - \`participantCount\`: Number of members in the group`,
-      params: {
-        type: 'object',
-        required: ['instanceId'],
-        properties: {
-          instanceId: { type: 'string', minLength: 1, description: 'Instance ID' },
+        params: {
+          type: 'object',
+          required: ['instanceId'],
+          properties: {
+            instanceId: { type: 'string', minLength: 1, description: 'Instance ID' },
+          },
         },
       },
     },
-  }, async (request, reply) => {
-    const { instanceId } = request.params as { instanceId: string };
+    async (request, reply) => {
+      const { instanceId } = request.params as { instanceId: string };
 
-    const client = instanceManager.getClient(instanceId);
-    if (!client) {
-      throw new NotFoundError('Instance');
-    }
+      const client = instanceManager.getClient(instanceId);
+      if (!client) {
+        throw new NotFoundError('Instance');
+      }
 
-    const result = await client.fetchAllGroups();
+      const result = await client.fetchAllGroups();
 
-    if (!result.success) {
-      throw new BadRequestError('Failed to fetch groups', result);
-    }
+      if (!result.success) {
+        throw new BadRequestError('Failed to fetch groups', result);
+      }
 
-    return reply.send(result);
-  });
+      return reply.send(result);
+    },
+  );
 
   // ============================================================================
   // GET /instances/:id/profile - Get own profile
   // ============================================================================
-  server.get('/instances/:instanceId/profile', {
-    schema: {
-      tags: ['Data'],
-      summary: 'Get own profile',
-      description: `Get the authenticated user's profile information.
+  server.get(
+    '/instances/:instanceId/profile',
+    {
+      schema: {
+        tags: ['Data'],
+        summary: 'Get own profile',
+        description: `Get the authenticated user's profile information.
 
 **Response:**
 - \`jid\`: User's JID
@@ -109,39 +122,43 @@ export async function basicGetsRoutes(server: FastifyInstance, instanceManager: 
 - \`name\`: Display name (push name)
 - \`status\`: About/bio text
 - \`profilePictureUrl\`: URL to profile picture`,
-      params: {
-        type: 'object',
-        required: ['instanceId'],
-        properties: {
-          instanceId: { type: 'string', minLength: 1, description: 'Instance ID' },
+        params: {
+          type: 'object',
+          required: ['instanceId'],
+          properties: {
+            instanceId: { type: 'string', minLength: 1, description: 'Instance ID' },
+          },
         },
       },
     },
-  }, async (request, reply) => {
-    const { instanceId } = request.params as { instanceId: string };
+    async (request, reply) => {
+      const { instanceId } = request.params as { instanceId: string };
 
-    const client = instanceManager.getClient(instanceId);
-    if (!client) {
-      throw new NotFoundError('Instance');
-    }
+      const client = instanceManager.getClient(instanceId);
+      if (!client) {
+        throw new NotFoundError('Instance');
+      }
 
-    const profile = await client.getOwnProfile();
+      const profile = await client.getOwnProfile();
 
-    if (!profile) {
-      throw new BadRequestError('Failed to get profile');
-    }
+      if (!profile) {
+        throw new BadRequestError('Failed to get profile');
+      }
 
-    return reply.send(profile);
-  });
+      return reply.send(profile);
+    },
+  );
 
   // ============================================================================
   // GET /instances/:id/labels - Get all labels
   // ============================================================================
-  server.get('/instances/:instanceId/labels', {
-    schema: {
-      tags: ['Data'],
-      summary: 'Get all labels',
-      description: `Get all labels from the account (WhatsApp Business only).
+  server.get(
+    '/instances/:instanceId/labels',
+    {
+      schema: {
+        tags: ['Data'],
+        summary: 'Get all labels',
+        description: `Get all labels from the account (WhatsApp Business only).
 
 **Note:** Returns empty array for non-Business accounts.
 
@@ -149,39 +166,43 @@ export async function basicGetsRoutes(server: FastifyInstance, instanceManager: 
 - \`id\`: Label ID
 - \`name\`: Label name
 - \`color\`: Label color (0-19)`,
-      params: {
-        type: 'object',
-        required: ['instanceId'],
-        properties: {
-          instanceId: { type: 'string', minLength: 1, description: 'Instance ID' },
+        params: {
+          type: 'object',
+          required: ['instanceId'],
+          properties: {
+            instanceId: { type: 'string', minLength: 1, description: 'Instance ID' },
+          },
         },
       },
     },
-  }, async (request, reply) => {
-    const { instanceId } = request.params as { instanceId: string };
+    async (request, reply) => {
+      const { instanceId } = request.params as { instanceId: string };
 
-    const client = instanceManager.getClient(instanceId);
-    if (!client) {
-      throw new NotFoundError('Instance');
-    }
+      const client = instanceManager.getClient(instanceId);
+      if (!client) {
+        throw new NotFoundError('Instance');
+      }
 
-    const result = await client.fetchAllLabels();
+      const result = await client.fetchAllLabels();
 
-    if (!result.success) {
-      throw new BadRequestError('Failed to fetch labels', result);
-    }
+      if (!result.success) {
+        throw new BadRequestError('Failed to fetch labels', result);
+      }
 
-    return reply.send(result);
-  });
+      return reply.send(result);
+    },
+  );
 
   // ============================================================================
   // GET /instances/:id/chats - Get all chats
   // ============================================================================
-  server.get('/instances/:instanceId/chats', {
-    schema: {
-      tags: ['Data'],
-      summary: 'Get all chats',
-      description: `Get all chats from the in-memory store (populated from WhatsApp history sync).
+  server.get(
+    '/instances/:instanceId/chats',
+    {
+      schema: {
+        tags: ['Data'],
+        summary: 'Get all chats',
+        description: `Get all chats from the in-memory store (populated from WhatsApp history sync).
 
 **Note:** Returns an empty array if no chats have been synced yet.
 
@@ -193,39 +214,43 @@ export async function basicGetsRoutes(server: FastifyInstance, instanceManager: 
 - \`unreadCount\`: Number of unread messages
 - \`isArchived\`: Whether chat is archived
 - \`isPinned\`: Whether chat is pinned`,
-      params: {
-        type: 'object',
-        required: ['instanceId'],
-        properties: {
-          instanceId: { type: 'string', minLength: 1, description: 'Instance ID' },
+        params: {
+          type: 'object',
+          required: ['instanceId'],
+          properties: {
+            instanceId: { type: 'string', minLength: 1, description: 'Instance ID' },
+          },
         },
       },
     },
-  }, async (request, reply) => {
-    const { instanceId } = request.params as { instanceId: string };
+    async (request, reply) => {
+      const { instanceId } = request.params as { instanceId: string };
 
-    const client = instanceManager.getClient(instanceId);
-    if (!client) {
-      throw new NotFoundError('Instance');
-    }
+      const client = instanceManager.getClient(instanceId);
+      if (!client) {
+        throw new NotFoundError('Instance');
+      }
 
-    const result = await client.fetchAllChats();
+      const result = await client.fetchAllChats();
 
-    if (!result.success) {
-      throw new BadRequestError('Failed to fetch chats', result);
-    }
+      if (!result.success) {
+        throw new BadRequestError('Failed to fetch chats', result);
+      }
 
-    return reply.send(result);
-  });
+      return reply.send(result);
+    },
+  );
 
   // ============================================================================
   // GET /instances/:id/chats/:jid/messages - Get chat messages
   // ============================================================================
-  server.get('/instances/:instanceId/chats/:jid/messages', {
-    schema: {
-      tags: ['Data'],
-      summary: 'Get chat messages',
-      description: `Get messages from a specific chat from the in-memory store.
+  server.get(
+    '/instances/:instanceId/chats/:jid/messages',
+    {
+      schema: {
+        tags: ['Data'],
+        summary: 'Get chat messages',
+        description: `Get messages from a specific chat from the in-memory store.
 
 **JID Format:**
 - Individual: \`6281234567890@s.whatsapp.net\`
@@ -245,33 +270,36 @@ WhatsApp uses LID (Limited ID) as a privacy measure for phone numbers. When What
 - \`type\`: Message type (text, image, video, audio, document, sticker)
 - \`timestamp\`: Unix timestamp
 - \`fromMe\`: true if sent by authenticated user`,
-      params: {
-        type: 'object',
-        required: ['instanceId', 'jid'],
-        properties: {
-          instanceId: { type: 'string', minLength: 1, description: 'Instance ID' },
-          jid: {
-            type: 'string',
-            minLength: 1,
-            description: 'Chat JID (phone@s.whatsapp.net for individual, group@g.us for group, or @lid format)',
+        params: {
+          type: 'object',
+          required: ['instanceId', 'jid'],
+          properties: {
+            instanceId: { type: 'string', minLength: 1, description: 'Instance ID' },
+            jid: {
+              type: 'string',
+              minLength: 1,
+              description:
+                'Chat JID (phone@s.whatsapp.net for individual, group@g.us for group, or @lid format)',
+            },
           },
         },
       },
     },
-  }, async (request, reply) => {
-    const { instanceId, jid } = request.params as { instanceId: string; jid: string };
+    async (request, reply) => {
+      const { instanceId, jid } = request.params as { instanceId: string; jid: string };
 
-    const client = instanceManager.getClient(instanceId);
-    if (!client) {
-      throw new NotFoundError('Instance');
-    }
+      const client = instanceManager.getClient(instanceId);
+      if (!client) {
+        throw new NotFoundError('Instance');
+      }
 
-    const result = await client.getChatMessages(jid);
+      const result = await client.getChatMessages(jid);
 
-    if (!result.success) {
-      throw new BadRequestError('Failed to fetch messages', result);
-    }
+      if (!result.success) {
+        throw new BadRequestError('Failed to fetch messages', result);
+      }
 
-    return reply.send(result);
-  });
+      return reply.send(result);
+    },
+  );
 }

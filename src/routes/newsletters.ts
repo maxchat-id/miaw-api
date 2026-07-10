@@ -144,7 +144,7 @@ export async function newsletterRoutes(server: FastifyInstance): Promise<void> {
           error: err.message,
         });
       }
-    }
+    },
   );
 
   /**
@@ -258,7 +258,7 @@ export async function newsletterRoutes(server: FastifyInstance): Promise<void> {
       try {
         const messages = await client.fetchNewsletterMessages(
           params.newsletterId,
-          query.limit || query.count
+          query.limit || query.count,
         );
 
         reply.send({
@@ -270,7 +270,7 @@ export async function newsletterRoutes(server: FastifyInstance): Promise<void> {
           error: err.message,
         });
       }
-    }
+    },
   );
 
   /**
@@ -378,7 +378,7 @@ export async function newsletterRoutes(server: FastifyInstance): Promise<void> {
           error: err.message,
         });
       }
-    }
+    },
   );
 
   /**
@@ -482,7 +482,7 @@ export async function newsletterRoutes(server: FastifyInstance): Promise<void> {
           error: err.message,
         });
       }
-    }
+    },
   );
 
   /**
@@ -591,7 +591,7 @@ export async function newsletterRoutes(server: FastifyInstance): Promise<void> {
           error: err.message,
         });
       }
-    }
+    },
   );
 
   /**
@@ -689,7 +689,11 @@ export async function newsletterRoutes(server: FastifyInstance): Promise<void> {
       }
 
       try {
-        const result = await client.sendNewsletterImage(params.newsletterId, body.image, body.caption);
+        const result = await client.sendNewsletterImage(
+          params.newsletterId,
+          body.image,
+          body.caption,
+        );
 
         reply.send({
           success: true,
@@ -700,7 +704,7 @@ export async function newsletterRoutes(server: FastifyInstance): Promise<void> {
           error: err.message,
         });
       }
-    }
+    },
   );
 
   /**
@@ -798,7 +802,11 @@ export async function newsletterRoutes(server: FastifyInstance): Promise<void> {
       }
 
       try {
-        const result = await client.sendNewsletterVideo(params.newsletterId, body.video, body.caption);
+        const result = await client.sendNewsletterVideo(
+          params.newsletterId,
+          body.video,
+          body.caption,
+        );
 
         reply.send({
           success: true,
@@ -809,7 +817,7 @@ export async function newsletterRoutes(server: FastifyInstance): Promise<void> {
           error: err.message,
         });
       }
-    }
+    },
   );
 
   /**
@@ -913,7 +921,7 @@ export async function newsletterRoutes(server: FastifyInstance): Promise<void> {
           error: err.message,
         });
       }
-    }
+    },
   );
 
   /**
@@ -1017,7 +1025,7 @@ export async function newsletterRoutes(server: FastifyInstance): Promise<void> {
           error: err.message,
         });
       }
-    }
+    },
   );
 
   /**
@@ -1121,7 +1129,7 @@ export async function newsletterRoutes(server: FastifyInstance): Promise<void> {
           error: err.message,
         });
       }
-    }
+    },
   );
 
   /**
@@ -1225,7 +1233,7 @@ export async function newsletterRoutes(server: FastifyInstance): Promise<void> {
           error: err.message,
         });
       }
-    }
+    },
   );
 
   /**
@@ -1329,7 +1337,7 @@ export async function newsletterRoutes(server: FastifyInstance): Promise<void> {
           error: err.message,
         });
       }
-    }
+    },
   );
 
   /**
@@ -1435,7 +1443,7 @@ export async function newsletterRoutes(server: FastifyInstance): Promise<void> {
           error: err.message,
         });
       }
-    }
+    },
   );
 
   /**
@@ -1530,7 +1538,10 @@ export async function newsletterRoutes(server: FastifyInstance): Promise<void> {
       }
 
       try {
-        const result = await client.updateNewsletterDescription(params.newsletterId, body.description);
+        const result = await client.updateNewsletterDescription(
+          params.newsletterId,
+          body.description,
+        );
 
         reply.send({
           success: true,
@@ -1541,7 +1552,7 @@ export async function newsletterRoutes(server: FastifyInstance): Promise<void> {
           error: err.message,
         });
       }
-    }
+    },
   );
 
   /**
@@ -1647,7 +1658,7 @@ export async function newsletterRoutes(server: FastifyInstance): Promise<void> {
           error: err.message,
         });
       }
-    }
+    },
   );
 
   /**
@@ -1751,7 +1762,7 @@ export async function newsletterRoutes(server: FastifyInstance): Promise<void> {
           error: err.message,
         });
       }
-    }
+    },
   );
 
   /**
@@ -1858,7 +1869,7 @@ export async function newsletterRoutes(server: FastifyInstance): Promise<void> {
           error: err.message,
         });
       }
-    }
+    },
   );
 
   /**
@@ -1962,7 +1973,7 @@ export async function newsletterRoutes(server: FastifyInstance): Promise<void> {
           error: err.message,
         });
       }
-    }
+    },
   );
 
   /**
@@ -2068,7 +2079,7 @@ export async function newsletterRoutes(server: FastifyInstance): Promise<void> {
           error: err.message,
         });
       }
-    }
+    },
   );
 
   /**
@@ -2173,7 +2184,7 @@ export async function newsletterRoutes(server: FastifyInstance): Promise<void> {
           error: err.message,
         });
       }
-    }
+    },
   );
 
   /**
@@ -2184,7 +2195,8 @@ export async function newsletterRoutes(server: FastifyInstance): Promise<void> {
     '/instances/:id/newsletters/:newsletterId/messages/:messageId/reaction',
     {
       schema: {
-        description: 'React to a newsletter/channel message with an emoji. Use empty string to remove reaction.',
+        description:
+          'React to a newsletter/channel message with an emoji. Use empty string to remove reaction.',
         tags: ['Newsletters'],
         summary: 'React to newsletter message',
         params: {
@@ -2272,7 +2284,7 @@ export async function newsletterRoutes(server: FastifyInstance): Promise<void> {
         const result = await client.reactToNewsletterMessage(
           params.newsletterId,
           params.messageId,
-          body.emoji
+          body.emoji,
         );
 
         reply.send({
@@ -2284,6 +2296,6 @@ export async function newsletterRoutes(server: FastifyInstance): Promise<void> {
           error: err.message,
         });
       }
-    }
+    },
   );
 }

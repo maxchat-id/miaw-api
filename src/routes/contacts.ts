@@ -128,7 +128,7 @@ export async function contactRoutes(server: FastifyInstance): Promise<void> {
       } catch (err: any) {
         throw new BadRequestError('Failed to check number', { error: err.message });
       }
-    }
+    },
   );
 
   /**
@@ -238,7 +238,7 @@ export async function contactRoutes(server: FastifyInstance): Promise<void> {
       } catch (err: any) {
         throw new BadRequestError('Failed to check numbers', { error: err.message });
       }
-    }
+    },
   );
 
   /**
@@ -343,7 +343,7 @@ export async function contactRoutes(server: FastifyInstance): Promise<void> {
       } catch (err: any) {
         throw new BadRequestError('Failed to get contact info', { error: err.message });
       }
-    }
+    },
   );
 
   /**
@@ -354,7 +354,8 @@ export async function contactRoutes(server: FastifyInstance): Promise<void> {
     '/instances/:id/contacts/:jid/profile',
     {
       schema: {
-        description: 'Get full contact profile including name, status, picture URL, and business details',
+        description:
+          'Get full contact profile including name, status, picture URL, and business details',
         tags: ['Contacts'],
         summary: 'Get contact profile',
         params: {
@@ -462,7 +463,7 @@ export async function contactRoutes(server: FastifyInstance): Promise<void> {
       } catch (err: any) {
         throw new BadRequestError('Failed to get contact profile', { error: err.message });
       }
-    }
+    },
   );
 
   /**
@@ -566,7 +567,7 @@ export async function contactRoutes(server: FastifyInstance): Promise<void> {
       } catch (err: any) {
         throw new BadRequestError('Failed to get profile picture', { error: err.message });
       }
-    }
+    },
   );
 
   /**
@@ -577,7 +578,8 @@ export async function contactRoutes(server: FastifyInstance): Promise<void> {
     '/instances/:id/contacts/:jid/business',
     {
       schema: {
-        description: 'Get business profile for WhatsApp Business accounts (description, category, website, email, address)',
+        description:
+          'Get business profile for WhatsApp Business accounts (description, category, website, email, address)',
         tags: ['Contacts'],
         summary: 'Get business profile',
         params: {
@@ -673,7 +675,7 @@ export async function contactRoutes(server: FastifyInstance): Promise<void> {
       } catch (err: any) {
         throw new BadRequestError('Failed to get business profile', { error: err.message });
       }
-    }
+    },
   );
 
   /**
@@ -802,7 +804,7 @@ export async function contactRoutes(server: FastifyInstance): Promise<void> {
         }
         throw new BadRequestError('Failed to add/edit contact', { error: err.message });
       }
-    }
+    },
   );
 
   /**
@@ -916,6 +918,6 @@ export async function contactRoutes(server: FastifyInstance): Promise<void> {
         }
         throw new BadRequestError('Failed to remove contact', { error: err.message });
       }
-    }
+    },
   );
 }

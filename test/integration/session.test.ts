@@ -218,7 +218,10 @@ describe('Session Lifecycle Tests', () => {
       expect(typeof response.data.data.size).toBe('number');
       expect(typeof response.data.data.eventCount).toBe('number');
       // lastSyncTime can be null or a date string
-      expect(response.data.data.lastSyncTime === null || typeof response.data.data.lastSyncTime === 'string').toBe(true);
+      expect(
+        response.data.data.lastSyncTime === null ||
+          typeof response.data.data.lastSyncTime === 'string',
+      ).toBe(true);
     });
 
     it('should return zero counts for disconnected instance', async () => {

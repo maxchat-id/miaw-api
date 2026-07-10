@@ -44,31 +44,37 @@ function extractApiKey(request: FastifyRequest): string | null {
 export function createAuthMiddleware() {
   return async function authMiddleware(
     request: FastifyRequest,
-    _reply: FastifyReply
+    _reply: FastifyReply,
   ): Promise<void> {
     const apiKey = extractApiKey(request);
 
     if (!apiKey) {
       // Log auth failure for security auditing
-      request.log.warn({
-        event: 'auth_failure',
-        reason: 'missing_api_key',
-        ip: request.ip,
-        method: request.method,
-        url: request.url,
-      }, 'Authentication failed: Missing API key');
+      request.log.warn(
+        {
+          event: 'auth_failure',
+          reason: 'missing_api_key',
+          ip: request.ip,
+          method: request.method,
+          url: request.url,
+        },
+        'Authentication failed: Missing API key',
+      );
       throw new UnauthorizedError('Missing API key');
     }
 
     if (!timingSafeEqual(apiKey, config.apiKey)) {
       // Log auth failure for security auditing (don't log the invalid key itself)
-      request.log.warn({
-        event: 'auth_failure',
-        reason: 'invalid_api_key',
-        ip: request.ip,
-        method: request.method,
-        url: request.url,
-      }, 'Authentication failed: Invalid API key');
+      request.log.warn(
+        {
+          event: 'auth_failure',
+          reason: 'invalid_api_key',
+          ip: request.ip,
+          method: request.method,
+          url: request.url,
+        },
+        'Authentication failed: Invalid API key',
+      );
       throw new UnauthorizedError('Invalid API key');
     }
 

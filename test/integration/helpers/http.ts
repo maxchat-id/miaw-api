@@ -25,23 +25,15 @@ export class HttpClient {
   constructor(
     baseUrl: string,
     defaultHeaders: Record<string, string> = {},
-    defaultTimeout: number = 30000
+    defaultTimeout: number = 30000,
   ) {
     this.baseUrl = baseUrl;
     this.defaultHeaders = defaultHeaders;
     this.defaultTimeout = defaultTimeout;
   }
 
-  async request(
-    path: string,
-    options: HttpRequestOptions = {}
-  ): Promise<HttpResponse> {
-    const {
-      method = 'GET',
-      headers = {},
-      body,
-      timeout = this.defaultTimeout,
-    } = options;
+  async request(path: string, options: HttpRequestOptions = {}): Promise<HttpResponse> {
+    const { method = 'GET', headers = {}, body, timeout = this.defaultTimeout } = options;
 
     const url = `${this.baseUrl}${path}`;
     const requestHeaders = { ...this.defaultHeaders, ...headers };
