@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Prettier** configuration (`.prettierrc.json`, `printWidth: 100`) with
+  `format` / `format:check` scripts; formatted the whole codebase.
+- **Pre-commit hook** (husky + lint-staged) that runs Prettier on staged files.
+- **CI quality gate** (GitHub Actions) running format check, lint, build, and
+  unit tests on pushes to `main` and PRs.
+
+### Changed
+
+- Wired `eslint-config-prettier` into the ESLint config so it no longer fights
+  Prettier; renamed `eslint.config.js` → `eslint.config.mjs`.
+- Reverted the `miaw-core` dependency from `^1.9.2` to `file:../miaw-core`:
+  `1.9.2` (which carries the `exports` fix `dev:start` needs) is not published to
+  npm, so the registry spec made the repo uninstallable and CI unable to install.
+  Switch back to `^1.9.2` once miaw-core 1.9.2 is published.
+
 ## [1.2.0] - 2026-07-09
 
 ### Added
