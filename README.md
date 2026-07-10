@@ -271,19 +271,19 @@ When events occur, POST requests are sent to your configured webhook URL:
 
 ### Event Types
 
-| Event               | Description                                   |
-| ------------------- | --------------------------------------------- |
-| `qr`                | QR code available for scanning                |
-| `ready`             | Instance connected and ready                  |
-| `message`           | New inbound message received                  |
-| `message_edit`      | A message was edited                          |
-| `message_delete`    | A message was deleted/revoked                 |
-| `message_reaction`  | A message received an emoji reaction          |
-| `presence`          | Subscribed contact's presence changed         |
-| `connection`        | Connection state changed                      |
-| `disconnected`      | Instance disconnected                         |
-| `reconnecting`      | Reconnection attempt in progress              |
-| `error`             | Error occurred                                |
+| Event              | Description                           |
+| ------------------ | ------------------------------------- |
+| `qr`               | QR code available for scanning        |
+| `ready`            | Instance connected and ready          |
+| `message`          | New inbound message received          |
+| `message_edit`     | A message was edited                  |
+| `message_delete`   | A message was deleted/revoked         |
+| `message_reaction` | A message received an emoji reaction  |
+| `presence`         | Subscribed contact's presence changed |
+| `connection`       | Connection state changed              |
+| `disconnected`     | Instance disconnected                 |
+| `reconnecting`     | Reconnection attempt in progress      |
+| `error`            | Error occurred                        |
 
 When creating an instance, `webhookEvents` acts as a whitelist: list specific
 events to receive only those, or omit it / pass `[]` to receive all events.
@@ -383,13 +383,13 @@ npm run test:integration -- setup
 
 ### Instance Management
 
-| Method | Endpoint         | Description          |
-| ------ | ---------------- | -------------------- |
-| POST   | `/instances`     | Create new instance          |
-| GET    | `/instances`     | List all instances           |
-| GET    | `/instances/:id` | Get instance details         |
-| PATCH  | `/instances/:id` | Update webhook URL/events    |
-| DELETE | `/instances/:id` | Delete instance              |
+| Method | Endpoint         | Description               |
+| ------ | ---------------- | ------------------------- |
+| POST   | `/instances`     | Create new instance       |
+| GET    | `/instances`     | List all instances        |
+| GET    | `/instances/:id` | Get instance details      |
+| PATCH  | `/instances/:id` | Update webhook URL/events |
+| DELETE | `/instances/:id` | Delete instance           |
 
 ### Connection
 
@@ -481,14 +481,14 @@ npm run test:integration -- setup
 
 ### Basic GET Operations
 
-| Method | Endpoint                                | Description                |
-| ------ | --------------------------------------- | -------------------------- |
-| GET    | `/instances/:id/contacts`              | Get all contacts           |
-| GET    | `/instances/:id/groups`                | Get all groups             |
-| GET    | `/instances/:id/profile`               | Get own profile            |
-| GET    | `/instances/:id/labels`                | Get all labels             |
-| GET    | `/instances/:id/chats`                 | Get all chats              |
-| GET    | `/instances/:id/chats/:jid/messages`   | Get chat messages          |
+| Method | Endpoint                             | Description       |
+| ------ | ------------------------------------ | ----------------- |
+| GET    | `/instances/:id/contacts`            | Get all contacts  |
+| GET    | `/instances/:id/groups`              | Get all groups    |
+| GET    | `/instances/:id/profile`             | Get own profile   |
+| GET    | `/instances/:id/labels`              | Get all labels    |
+| GET    | `/instances/:id/chats`               | Get all chats     |
+| GET    | `/instances/:id/chats/:jid/messages` | Get chat messages |
 
 ### Health
 
@@ -504,18 +504,19 @@ npm run test:integration -- setup
 
 ## Configuration Reference
 
-| Variable                 | Default    | Description                          |
-| ------------------------ | ---------- | ------------------------------------ |
-| `PORT`               | 3000       | Server port                          |
-| `HOST`               | 0.0.0.0    | Server host                          |
-| `API_KEY`                | -          | API key for authentication           |
-| `WEBHOOK_SECRET`     | -          | Secret for webhook signature         |
-| `WEBHOOK_TIMEOUT_MS`     | 10000      | Webhook delivery timeout (ms)        |
-| `WEBHOOK_MAX_RETRIES`    | 6          | Max webhook retry attempts           |
-| `WEBHOOK_RETRY_DELAY_MS` | 60000      | Initial retry delay (ms)             |
-| `SESSION_PATH`           | ./sessions | Session storage path                 |
-| `LOG_LEVEL`              | info       | Log level (debug, info, warn, error) |
-| `CORS_ORIGIN`            | \*         | CORS allowed origin                  |
+| Variable                 | Default    | Description                                                                       |
+| ------------------------ | ---------- | --------------------------------------------------------------------------------- |
+| `PORT`                   | 3000       | Server port                                                                       |
+| `HOST`                   | 0.0.0.0    | Server host                                                                       |
+| `API_KEY`                | -          | API key for authentication                                                        |
+| `WEBHOOK_SECRET`         | -          | Secret for webhook signature                                                      |
+| `WEBHOOK_TIMEOUT_MS`     | 10000      | Webhook delivery timeout (ms)                                                     |
+| `WEBHOOK_MAX_RETRIES`    | 6          | Max webhook retry attempts                                                        |
+| `WEBHOOK_RETRY_DELAY_MS` | 60000      | Initial retry delay (ms)                                                          |
+| `WEBHOOK_SSRF_ALLOWLIST` | -          | Hosts exempt from the webhook SSRF check (comma-separated; `host` or `host:port`) |
+| `SESSION_PATH`           | ./sessions | Session storage path                                                              |
+| `LOG_LEVEL`              | info       | Log level (debug, info, warn, error)                                              |
+| `CORS_ORIGIN`            | \*         | CORS allowed origin                                                               |
 
 ## Limitations
 

@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- `WEBHOOK_SSRF_ALLOWLIST` env — hosts (comma-separated `host` or `host:port`)
+  exempt from the webhook SSRF address check, so self-hosted setups can point
+  `webhookUrl` at a co-located consumer (e.g. `localhost:4000`). Default empty
+  (all private/loopback still blocked); the `http(s)`-scheme check always
+  applies.
+
 ## [1.2.1] - 2026-07-10
 
 ### Added

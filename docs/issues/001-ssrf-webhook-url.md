@@ -24,6 +24,15 @@ Write-time validation implemented in `src/utils/ssrf.ts` and wired into
   — a public webhook endpoint could otherwise `302` to an internal address and
   bypass the write-time validation.
 
+### Operator allowlist (2026-07-10)
+
+- Added `WEBHOOK_SSRF_ALLOWLIST` (comma-separated `host` or `host:port`). Listed
+  hosts bypass the private/loopback address check (scheme is still enforced) —
+  for self-hosted setups whose webhook consumer is co-located, e.g.
+  `localhost:4000`. Default is empty (all private/loopback blocked), so exposed
+  deployments stay safe unless the operator opts in. A bare `host` entry matches
+  any port; a `host:port` entry matches only that port.
+
 ### Deferred (still open)
 
 **Delivery-time IP-pinning against DNS rebinding.** Write-time validation
@@ -69,10 +78,10 @@ known clients, but a compromised/abusive API key still gets internal reach.
    private / loopback / link-local / reserved ranges
    (`127.0.0.0/8`, `10/8`, `172.16/12`, `192.168/16`, `169.254/16`, `::1`,
    `fc00::/7`, `fd00::/8`, `0.0.0.0`).
-4. **Validate at write time** (create + update) so a bad URL is rejected with
+3. **Validate at write time** (create + update) so a bad URL is rejected with
    `400` before it is ever stored, and again **at delivery time** to defeat
    DNS rebinding (resolve-then-connect to the same IP, or re-check on send).
-5. Optional: configurable allowlist of webhook hosts for locked-down deploys.
+4. Optional: configurable allowlist of webhook hosts for locked-down deploys.
 
 ## Acceptance criteria
 

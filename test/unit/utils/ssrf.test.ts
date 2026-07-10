@@ -88,3 +88,44 @@ describe('assertSafeWebhookUrl', () => {
     await expect(assertSafeWebhookUrl('https://nope.invalid/hook')).rejects.toThrow(/resolve/);
   });
 });
+
+describe('assertSafeWebhookUrl — allowlist', () => {
+  beforeEach(() => {
+    mockLookup.mockReset();
+  });
+
+  it('allows a loopback host when its hostname is allowlisted (any port)', async () => {
+    await expect(
+      assertSafeWebhookUrl('http://localhost:4000/hook', ['localhost']),
+    ).resolves.toBeUndefined();
+    expect(mockLookup).not.toHaveBeenCalled();
+  });
+
+  it('allows a blocked IP literal when allowlisted', async () => {
+    await expect(
+      assertSafeWebhookUrl('http://127.0.0.1:9000/hook', ['127.0.0.1']),
+    ).resolves.toBeUndefined();
+  });
+
+  it('matches host:port precisely when the entry has a port', async () => {
+    await expect(
+      assertSafeWebhookUrl('http://localhost:4000/hook', ['localhost:4000']),
+    ).resolves.toBeUndefined();
+    // different port is not covered by the host:port entry; localhost resolves
+    // to loopback and is blocked.
+    mockLookup.mockResolvedValue([{ address: '127.0.0.1', family: 4 }]);
+    await expect(
+      assertSafeWebhookUrl('http://localhost:5000/hook', ['localhost:4000']),
+    ).rejects.toThrow(/blocked/);
+  });
+
+  it('does not allowlist other private hosts', async () => {
+    await expect(assertSafeWebhookUrl('http://10.0.0.5/hook', ['localhost'])).rejects.toThrow(
+      /blocked/,
+    );
+  });
+
+  it('still enforces the http(s) scheme even when allowlisted', async () => {
+    await expect(assertSafeWebhookUrl('ftp://localhost/x', ['localhost'])).rejects.toThrow(/http/);
+  });
+});

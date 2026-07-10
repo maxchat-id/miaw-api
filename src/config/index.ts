@@ -23,6 +23,8 @@ interface Config {
   webhookTimeout: number;
   webhookMaxRetries: number;
   webhookRetryDelay: number;
+  // Hosts (or host:port) exempt from the webhook SSRF address check
+  webhookSsrfAllowlist: string[];
 
   // Logging
   logLevel: string;
@@ -39,6 +41,10 @@ function loadConfig(): Config {
     webhookTimeout: parseInt(process.env.WEBHOOK_TIMEOUT_MS || '10000', 10),
     webhookMaxRetries: parseInt(process.env.WEBHOOK_MAX_RETRIES || '6', 10),
     webhookRetryDelay: parseInt(process.env.WEBHOOK_RETRY_DELAY_MS || '60000', 10),
+    webhookSsrfAllowlist: (process.env.WEBHOOK_SSRF_ALLOWLIST || '')
+      .split(',')
+      .map((h) => h.trim())
+      .filter(Boolean),
     logLevel: process.env.LOG_LEVEL || 'info',
   };
 

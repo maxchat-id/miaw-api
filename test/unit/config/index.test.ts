@@ -26,6 +26,7 @@ describe('Config', () => {
     delete process.env.WEBHOOK_TIMEOUT_MS;
     delete process.env.WEBHOOK_MAX_RETRIES;
     delete process.env.WEBHOOK_RETRY_DELAY_MS;
+    delete process.env.WEBHOOK_SSRF_ALLOWLIST;
     delete process.env.LOG_LEVEL;
     delete process.env.NODE_ENV;
     resetModules();
@@ -148,6 +149,17 @@ describe('Config', () => {
       process.env.LOG_LEVEL = 'debug';
       const { config } = await import('../../../src/config');
       expect(config.logLevel).toBe('debug');
+    });
+
+    it('should default the webhook SSRF allowlist to an empty array', async () => {
+      const { config } = await import('../../../src/config');
+      expect(config.webhookSsrfAllowlist).toEqual([]);
+    });
+
+    it('should parse WEBHOOK_SSRF_ALLOWLIST as a trimmed, comma-separated list', async () => {
+      process.env.WEBHOOK_SSRF_ALLOWLIST = 'localhost:4000, 127.0.0.1 ,';
+      const { config } = await import('../../../src/config');
+      expect(config.webhookSsrfAllowlist).toEqual(['localhost:4000', '127.0.0.1']);
     });
   });
 
