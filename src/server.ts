@@ -165,6 +165,9 @@ export async function createServer(): Promise<FastifyInstance> {
     webhookDispatcher.queue(url, payload);
   });
 
+  // Restore persisted instances (recreate + reconnect) after a restart
+  await instanceManager.restore();
+
   // Decorate server with instance manager
   server.decorate('instanceManager', instanceManager);
   server.decorate('webhookDispatcher', webhookDispatcher);

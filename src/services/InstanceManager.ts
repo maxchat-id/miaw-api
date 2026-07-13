@@ -4,6 +4,8 @@
  */
 
 import { EventEmitter } from 'events';
+import { promises as fs } from 'fs';
+import path from 'path';
 import { MiawClient, MiawClientOptions, ConnectionState } from 'miaw-core';
 import pino from 'pino';
 import { InstanceConfig, InstanceState, WebhookEvent, WebhookPayload } from '../types';
@@ -30,11 +32,61 @@ export class InstanceManager extends EventEmitter {
   private instances: Map<string, ManagedInstance> = new Map();
   private options: InstanceManagerOptions;
   private logger: pino.Logger;
+  private registryPath: string;
 
   constructor(options: InstanceManagerOptions) {
     super();
     this.options = options;
     this.logger = pino({ level: 'info' });
+    this.registryPath = path.join(options.sessionPath, 'instances.json');
+  }
+
+  /**
+   * Persist the instance registry (ids + webhook config) so instances survive a
+   * restart. Session auth already lives on disk; this restores the list and
+   * webhook targets that would otherwise be in-memory only.
+   */
+  private async persist(): Promise<void> {
+    try {
+      const registry: InstanceConfig[] = Array.from(this.instances.values()).map((m) => ({
+        instanceId: m.state.instanceId,
+        webhookUrl: m.state.webhookUrl,
+        webhookEvents: m.state.webhookEvents,
+        webhookEnabled: m.state.webhookEnabled,
+      }));
+      await fs.mkdir(path.dirname(this.registryPath), { recursive: true });
+      await fs.writeFile(this.registryPath, JSON.stringify(registry, null, 2));
+    } catch (err) {
+      this.logger.error({ err }, 'Failed to persist instance registry');
+    }
+  }
+
+  /**
+   * Recreate persisted instances on startup and reconnect them. Sessions live
+   * on disk, so connect() resumes without a new QR. Connects run in the
+   * background so a slow or failed one never blocks startup.
+   */
+  async restore(): Promise<void> {
+    let registry: InstanceConfig[];
+    try {
+      registry = JSON.parse(await fs.readFile(this.registryPath, 'utf8'));
+    } catch {
+      return; // no registry yet (first boot)
+    }
+
+    for (const config of registry) {
+      try {
+        await this.createInstance(config);
+        this.getClient(config.instanceId)
+          ?.connect()
+          .catch((err) =>
+            this.logger.error({ instanceId: config.instanceId, err }, 'Restore connect failed'),
+          );
+      } catch (err) {
+        this.logger.error({ instanceId: config.instanceId, err }, 'Restore failed');
+      }
+    }
+    this.logger.info({ count: registry.length }, 'Instances restored');
   }
 
   /**
@@ -79,6 +131,7 @@ export class InstanceManager extends EventEmitter {
     };
 
     this.instances.set(instanceId, managed);
+    void this.persist();
 
     this.logger.info({ instanceId }, 'Instance created');
 
@@ -120,6 +173,7 @@ export class InstanceManager extends EventEmitter {
 
     // Delete from map
     this.instances.delete(instanceId);
+    void this.persist();
 
     this.logger.info({ instanceId }, 'Instance deleted');
   }
@@ -152,6 +206,7 @@ export class InstanceManager extends EventEmitter {
     }
 
     this.updateState(instanceId, patch);
+    void this.persist();
     this.logger.info({ instanceId }, 'Webhook updated');
 
     return managed.state;
