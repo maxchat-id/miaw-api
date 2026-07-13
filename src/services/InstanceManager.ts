@@ -112,13 +112,11 @@ export class InstanceManager extends EventEmitter {
 
     this.logger.info({ instanceId }, 'Deleting instance');
 
-    // Disconnect if connected
-    if (managed.state.status === 'connected') {
-      await managed.client.disconnect();
-    }
-
-    // Remove event listeners
-    managed.client.removeAllListeners();
+    // Fully tear down the client for ANY status (clears reconnect timer, closes
+    // socket, removes listeners). Deleting a still-connecting instance must stop
+    // its reconnect loop — otherwise it can emit 'error' after teardown and crash
+    // the whole (multi-tenant) process.
+    await managed.client.dispose();
 
     // Delete from map
     this.instances.delete(instanceId);
