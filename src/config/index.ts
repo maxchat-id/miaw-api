@@ -13,6 +13,10 @@ interface Config {
   apiKey: string;
   webhookSecret: string;
 
+  // Public base URL shown in API docs (supports `{subdomain}` template)
+  publicServerUrl: string;
+  publicServerSubdomain: string;
+
   // CORS
   corsOrigin: string;
 
@@ -34,6 +38,8 @@ function loadConfig(): Config {
   const config: Config = {
     port: parseInt(process.env.PORT || '3000', 10),
     host: process.env.HOST || '0.0.0.0',
+    publicServerUrl: process.env.PUBLIC_SERVER_URL || '',
+    publicServerSubdomain: process.env.PUBLIC_SERVER_SUBDOMAIN || 'api',
     apiKey: process.env.API_KEY || DEFAULT_API_KEY,
     webhookSecret: process.env.WEBHOOK_SECRET || DEFAULT_WEBHOOK_SECRET,
     corsOrigin: process.env.CORS_ORIGIN || '*',
