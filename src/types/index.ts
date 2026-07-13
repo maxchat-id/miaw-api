@@ -43,6 +43,7 @@ export type WebhookEvent =
   | 'message_edit'
   | 'message_delete'
   | 'message_reaction'
+  | 'message_receipt'
   | 'presence'
   | 'connection'
   | 'disconnected'

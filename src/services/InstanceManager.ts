@@ -259,6 +259,12 @@ export class InstanceManager extends EventEmitter {
       this.emitWebhook(instanceId, 'message_reaction', reaction);
     });
 
+    // Message receipt (delivery / read / played)
+    client.on('message_receipt', (receipt: any) => {
+      this.logger.debug({ instanceId, messageId: receipt.messageId }, 'Message receipt');
+      this.emitWebhook(instanceId, 'message_receipt', receipt);
+    });
+
     // Presence update
     client.on('presence', (update: any) => {
       this.logger.debug({ instanceId, jid: update.jid }, 'Presence update');
