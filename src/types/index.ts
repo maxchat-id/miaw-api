@@ -40,6 +40,7 @@ export type WebhookEvent =
   | 'qr'
   | 'ready'
   | 'message'
+  | 'message_own'
   | 'message_edit'
   | 'message_delete'
   | 'message_reaction'

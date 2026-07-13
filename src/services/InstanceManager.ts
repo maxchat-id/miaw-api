@@ -239,6 +239,12 @@ export class InstanceManager extends EventEmitter {
       this.emitWebhook(instanceId, 'message', message);
     });
 
+    // Own outgoing message not sent via the API (e.g. typed on the phone)
+    client.on('message_own', (message: any) => {
+      this.logger.debug({ instanceId, messageId: message.id }, 'Own message');
+      this.emitWebhook(instanceId, 'message_own', message);
+    });
+
     // Message edited
     client.on('message_edit', (edit: any) => {
       this.logger.debug({ instanceId, messageId: edit.messageId }, 'Message edited');
