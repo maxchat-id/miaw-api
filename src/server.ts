@@ -16,6 +16,44 @@ import { errorHandler } from './utils/errorHandler';
 import { createShutdownHandler } from './utils/shutdown';
 
 /**
+ * Build the OpenAPI `servers` list shown in the docs.
+ *
+ * - Always includes the local development server.
+ * - If PUBLIC_SERVER_URL is set, adds it as the primary server.
+ *   When the URL contains a `{subdomain}` template, it is exposed as an
+ *   editable OpenAPI server variable so users can pick their own subdomain
+ *   (e.g. `https://{subdomain}.maxchat.id`).
+ */
+function buildServers() {
+  type ServerVariable = { default: string; description?: string };
+  type Server = { url: string; description?: string; variables?: Record<string, ServerVariable> };
+  const servers: Server[] = [];
+
+  if (config.publicServerUrl) {
+    const server: Server = {
+      url: config.publicServerUrl,
+      description: 'Production server',
+    };
+    if (config.publicServerUrl.includes('{subdomain}')) {
+      server.variables = {
+        subdomain: {
+          default: config.publicServerSubdomain,
+          description: 'Tenant subdomain',
+        },
+      };
+    }
+    servers.push(server);
+  }
+
+  servers.push({
+    url: `http://localhost:${config.port}`,
+    description: 'Development server',
+  });
+
+  return servers;
+}
+
+/**
  * Create and configure Fastify server
  */
 export async function createServer(): Promise<FastifyInstance> {
@@ -49,12 +87,7 @@ export async function createServer(): Promise<FastifyInstance> {
         description: 'REST API wrapper for miaw-core - Multiple Instance of App WhatsApp',
         version: '1.0.0',
       },
-      servers: [
-        {
-          url: `http://localhost:${config.port}`,
-          description: 'Development server',
-        },
-      ],
+      servers: buildServers(),
       tags: [
         { name: 'Instances', description: 'Create and manage WhatsApp instances' },
         { name: 'Connection', description: 'Connect, disconnect, and check instance status' },
