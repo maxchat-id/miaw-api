@@ -243,6 +243,8 @@ export class InstanceManager extends EventEmitter {
       this.emitWebhook(instanceId, 'connection', { state });
 
       if (state === 'connected') {
+        // Paired now → drop any cached QR so a pull returns empty.
+        this.updateState(instanceId, { lastQr: undefined });
         const user = (client as any).socket?.user;
         if (user) {
           this.updateState(instanceId, {
@@ -264,7 +266,7 @@ export class InstanceManager extends EventEmitter {
     // QR code
     client.on('qr', (qr: string) => {
       this.logger.info({ instanceId }, 'QR code received');
-      this.updateState(instanceId, { status: 'qr_required' });
+      this.updateState(instanceId, { status: 'qr_required', lastQr: qr });
       this.emitWebhook(instanceId, 'qr', { qr });
     });
 

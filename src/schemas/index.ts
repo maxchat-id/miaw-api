@@ -131,8 +131,10 @@ export function registerSchemas(server: FastifyInstance): void {
         maxLength: 100,
       },
       media: {
+        // Accept a public URL, a local path, or a `data:` URI (base64). The
+        // strict `uri` format rejected data: URIs, so validate as a string.
         type: 'string',
-        format: 'uri',
+        minLength: 1,
       },
       caption: {
         type: 'string',

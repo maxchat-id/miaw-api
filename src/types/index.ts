@@ -30,6 +30,8 @@ export interface InstanceState {
   lastActivity: Date;
   connectedAt?: Date;
   phoneNumber?: string;
+  /** Last QR string received (pullable via GET /instances/:id/qr); cleared on connect. */
+  lastQr?: string;
 }
 
 // ============================================================================

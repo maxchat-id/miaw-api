@@ -87,3 +87,32 @@ describe('InstanceManager.updateWebhook', () => {
     );
   });
 });
+
+describe('InstanceManager QR caching (C4/C5)', () => {
+  const handlerFor = (client: unknown, event: string) => {
+    const on = (client as { on: { mock: { calls: [string, (arg?: unknown) => void][] } } }).on;
+    const call = on.mock.calls.find(([e]) => e === event);
+    if (!call) throw new Error(`no handler for ${event}`);
+    return call[1];
+  };
+
+  it('caches lastQr on the qr event and clears it on connect', async () => {
+    const manager = new InstanceManager({
+      sessionPath: './sessions',
+      webhookSecret: 'test-secret',
+      webhookTimeout: 1000,
+      webhookMaxRetries: 3,
+      webhookRetryDelay: 1000,
+    });
+    await manager.createInstance({ instanceId: 'bot' });
+    const client = manager.getClient('bot');
+
+    handlerFor(client, 'qr')('QR-STRING');
+    expect(manager.getInstance('bot')?.lastQr).toBe('QR-STRING');
+    expect(manager.getInstance('bot')?.status).toBe('qr_required');
+
+    handlerFor(client, 'connection')('connected');
+    expect(manager.getInstance('bot')?.lastQr).toBeUndefined();
+    expect(manager.getInstance('bot')?.status).toBe('connected');
+  });
+});

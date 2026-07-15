@@ -308,6 +308,7 @@ export async function connectionRoutes(server: FastifyInstance): Promise<void> {
                   },
                   phoneNumber: { type: 'string', nullable: true },
                   connectedAt: { type: 'string', format: 'date-time', nullable: true },
+                  needsPairing: { type: 'boolean' },
                 },
               },
             },
@@ -344,6 +345,79 @@ export async function connectionRoutes(server: FastifyInstance): Promise<void> {
           status: instance.status,
           phoneNumber: instance.phoneNumber,
           connectedAt: instance.connectedAt,
+          // True only when a fresh QR scan is required (never during a
+          // transient reconnect), so callers can hold `ready` on reconnect.
+          needsPairing: instance.status === 'qr_required',
+        },
+      });
+    },
+  );
+
+  /**
+   * GET /instances/:id/qr
+   * Return the last QR string (cached from the `qr` event) so callers can poll
+   * for it instead of relying on the webhook push. Empty once connected.
+   */
+  server.get(
+    '/instances/:id/qr',
+    {
+      schema: {
+        description:
+          'Get the last QR code for pairing (cached from the qr event). ' +
+          'Returns null once the instance is connected.',
+        tags: ['Connection'],
+        summary: 'Get instance QR',
+        params: {
+          type: 'object',
+          properties: {
+            id: { type: 'string' },
+          },
+          required: ['id'],
+        },
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              success: { type: 'boolean' },
+              data: {
+                type: 'object',
+                properties: {
+                  qr: { type: 'string', nullable: true },
+                  status: { type: 'string' },
+                },
+              },
+            },
+          },
+          404: {
+            type: 'object',
+            properties: {
+              success: { type: 'boolean' },
+              error: {
+                type: 'object',
+                properties: {
+                  code: { type: 'string' },
+                  message: { type: 'string' },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      const params = request.params as { id: string };
+      const instanceManager = server.instanceManager;
+      const instance = instanceManager.getInstance(params.id);
+
+      if (!instance) {
+        throw new NotFoundError('Instance');
+      }
+
+      reply.send({
+        success: true,
+        data: {
+          qr: instance.lastQr ?? null,
+          status: instance.status,
         },
       });
     },
