@@ -8,8 +8,9 @@ import { FastifyInstance } from 'fastify';
  * Register all schemas
  */
 export function registerSchemas(server: FastifyInstance): void {
-  // Instance ID pattern
-  const instanceIdPattern = '^[a-z0-9_-]+$';
+  // Instance ID pattern. Uppercase allowed: maxchat tenant `domain` (used as
+  // the instanceId) is a mixed-case opaque token, e.g. `d0EpQi3K2Ipl...`.
+  const instanceIdPattern = '^[a-zA-Z0-9_-]+$';
 
   // ============================================================================
   // Instance Schemas
