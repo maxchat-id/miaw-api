@@ -2,7 +2,7 @@
 
 > REST API wrapper for miaw-core - Multiple Instance of App WhatsApp
 
-**Version:** 0.9.0 (Phase 9 - Basic GET Operations)
+**Version:** 1.2.1 (see [CHANGELOG.md](./CHANGELOG.md) for releases after v0.9.0)
 
 Miaw API provides a RESTful interface to manage multiple WhatsApp instances, send messages, and receive real-time webhook events. Built with Fastify and TypeScript.
 
@@ -18,7 +18,11 @@ Miaw API provides a RESTful interface to manage multiple WhatsApp instances, sen
 - **Authentication** - Simple API key authentication
 - **Docker Support** - Easy deployment with Docker and Docker Compose
 
-## Current Status (Phase 9 - Basic GET Operations)
+## Status
+
+The phase log below covers the feature build-out through v0.9.0. Releases
+v1.0.0–v1.2.1 (polish, tooling, CI, webhook SSRF allowlist) are in
+[CHANGELOG.md](./CHANGELOG.md).
 
 ### Implemented (Phase 1-9)
 
@@ -98,13 +102,10 @@ Miaw API provides a RESTful interface to manage multiple WhatsApp instances, sen
 - Get all chats
 - Get chat messages
 
-### Planned (Phase 10+)
+### Since v0.9.0
 
-- Polish & Testing
-- Performance optimization
-- Security audit
-
-See [docs/ROADMAP.md](./docs/ROADMAP.md) for the full roadmap.
+Polish, testing, and security hardening landed across v1.0.0–v1.2.1 — see
+[CHANGELOG.md](./CHANGELOG.md). Full roadmap: [docs/ROADMAP.md](./docs/ROADMAP.md).
 
 ## Quick Start
 
