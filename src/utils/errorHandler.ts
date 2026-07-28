@@ -57,6 +57,25 @@ export class ValidationError extends ApiError {
 }
 
 /**
+ * Not-found handler for unknown routes. Emits the same app-level error
+ * envelope as {@link errorHandler} so clients see one consistent shape
+ * instead of Fastify's default {message,error,statusCode} (ISSUE-04).
+ */
+export function notFoundHandler(request: any, reply: FastifyReply): void {
+  const error = new NotFoundError(`Route ${request.method}:${request.url}`);
+  request.log.error({ correlationId: error.correlationId, error });
+
+  reply.status(error.statusCode).send({
+    success: false,
+    error: {
+      code: error.code,
+      message: error.message,
+      correlationId: error.correlationId,
+    },
+  });
+}
+
+/**
  * Global error handler
  */
 export function errorHandler(error: Error, request: any, reply: FastifyReply): void {

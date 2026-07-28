@@ -12,7 +12,7 @@ import { registerRoutes } from './routes';
 import { registerSchemas } from './schemas';
 import { InstanceManager } from './services/InstanceManager';
 import { WebhookDispatcher } from './services/WebhookDispatcher';
-import { errorHandler } from './utils/errorHandler';
+import { errorHandler, notFoundHandler } from './utils/errorHandler';
 import { createShutdownHandler } from './utils/shutdown';
 
 /**
@@ -145,6 +145,9 @@ export async function createServer(): Promise<FastifyInstance> {
 
   // Register error handler
   setErrorHandler(server);
+
+  // Register not-found handler (consistent error shape for unknown routes)
+  server.setNotFoundHandler(notFoundHandler);
 
   // Register health check
   server.get(

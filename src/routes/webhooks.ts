@@ -53,7 +53,9 @@ export async function webhookRoutes(server: FastifyInstance): Promise<void> {
                 properties: {
                   sent: { type: 'boolean' },
                   webhookUrl: { type: 'string' },
-                  testEvent: { type: 'object' },
+                  // additionalProperties so the sample payload survives
+                  // serialization instead of being stripped to {} (ISSUE-03)
+                  testEvent: { type: 'object', additionalProperties: true },
                 },
               },
             },
