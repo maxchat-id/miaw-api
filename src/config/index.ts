@@ -2,9 +2,17 @@
  * Environment configuration
  */
 
+import type { ProxyRotationStrategy } from 'miaw-core';
+
 // Default values that indicate insecure configuration
 const DEFAULT_API_KEY = 'miaw-api-key';
 const DEFAULT_WEBHOOK_SECRET = 'webhook-secret';
+const PROXY_STRATEGIES = new Set<ProxyRotationStrategy>([
+  'deterministic',
+  'round-robin',
+  'random',
+  'weighted',
+]);
 
 interface Config {
   // API Configuration
@@ -22,6 +30,10 @@ interface Config {
 
   // Session Storage
   sessionPath: string;
+
+  // Proxy Pool
+  proxyFile?: string;
+  proxyStrategy: ProxyRotationStrategy;
 
   // Webhook Configuration
   webhookTimeout: number;
@@ -44,6 +56,8 @@ function loadConfig(): Config {
     webhookSecret: process.env.WEBHOOK_SECRET || DEFAULT_WEBHOOK_SECRET,
     corsOrigin: process.env.CORS_ORIGIN || '*',
     sessionPath: process.env.SESSION_PATH || './sessions',
+    proxyFile: process.env.MIAW_PROXY_FILE || undefined,
+    proxyStrategy: parseProxyStrategy(process.env.MIAW_PROXY_STRATEGY),
     webhookTimeout: parseInt(process.env.WEBHOOK_TIMEOUT_MS || '10000', 10),
     webhookMaxRetries: parseInt(process.env.WEBHOOK_MAX_RETRIES || '6', 10),
     webhookRetryDelay: parseInt(process.env.WEBHOOK_RETRY_DELAY_MS || '60000', 10),
@@ -58,6 +72,16 @@ function loadConfig(): Config {
   validateConfig(config);
 
   return config;
+}
+
+function parseProxyStrategy(value: string | undefined): ProxyRotationStrategy {
+  const strategy = value || 'deterministic';
+  if (!PROXY_STRATEGIES.has(strategy as ProxyRotationStrategy)) {
+    throw new Error(
+      `Invalid MIAW_PROXY_STRATEGY "${strategy}". Expected one of: ${Array.from(PROXY_STRATEGIES).join(', ')}`,
+    );
+  }
+  return strategy as ProxyRotationStrategy;
 }
 
 /**

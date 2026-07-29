@@ -2,6 +2,8 @@
  * API Type Definitions
  */
 
+import type { MiawClientOptions } from 'miaw-core';
+
 // ============================================================================
 // Instance Types
 // ============================================================================
@@ -13,11 +15,29 @@ export type ConnectionState =
   | 'reconnecting'
   | 'qr_required';
 
+/**
+ * Per-instance MiawClient options accepted over the API. Deliberately a subset:
+ * transport escape hatches (`agent`/`fetchAgent`) and paths are server-owned.
+ */
+export type InstanceClientOptions = Pick<
+  MiawClientOptions,
+  | 'debug'
+  | 'autoReconnect'
+  | 'maxReconnectAttempts'
+  | 'reconnectDelay'
+  | 'syncFullHistory'
+  | 'browser'
+  | 'proxy'
+  | 'usePairingCode'
+  | 'phoneNumber'
+>;
+
 export interface InstanceConfig {
   instanceId: string;
   webhookUrl?: string;
   webhookEvents?: WebhookEvent[];
   webhookEnabled?: boolean;
+  clientOptions?: InstanceClientOptions;
 }
 
 export interface InstanceState {

@@ -11,6 +11,7 @@ import { config } from './config';
 import { registerRoutes } from './routes';
 import { registerSchemas } from './schemas';
 import { InstanceManager } from './services/InstanceManager';
+import { ProxyPoolService } from './services/ProxyService';
 import { WebhookDispatcher } from './services/WebhookDispatcher';
 import { errorHandler, notFoundHandler } from './utils/errorHandler';
 import { createShutdownHandler } from './utils/shutdown';
@@ -109,6 +110,7 @@ export async function createServer(): Promise<FastifyInstance> {
           name: 'Business',
           description: 'WhatsApp Business features (labels, catalog, newsletters)',
         },
+        { name: 'Proxies', description: 'Inspect, reload, and test outbound proxies' },
         { name: 'Health', description: 'API health check' },
       ],
       components: {
@@ -179,6 +181,12 @@ export async function createServer(): Promise<FastifyInstance> {
     return server.swagger();
   });
 
+  const proxyPool = await ProxyPoolService.create({
+    filePath: config.proxyFile,
+    strategy: config.proxyStrategy,
+    logger: server.log,
+  });
+
   // Create instance manager (shared across requests)
   const instanceManager = new InstanceManager({
     sessionPath: config.sessionPath,
@@ -186,6 +194,7 @@ export async function createServer(): Promise<FastifyInstance> {
     webhookTimeout: config.webhookTimeout,
     webhookMaxRetries: config.webhookMaxRetries,
     webhookRetryDelay: config.webhookRetryDelay,
+    proxyPool,
   });
 
   // Create webhook dispatcher
@@ -206,7 +215,14 @@ export async function createServer(): Promise<FastifyInstance> {
 
   // Decorate server with instance manager
   server.decorate('instanceManager', instanceManager);
+  server.decorate('proxyPool', proxyPool);
   server.decorate('webhookDispatcher', webhookDispatcher);
+
+  // The proxy pool may hold a file watcher; release it when the server closes.
+  // instanceManager/webhookDispatcher are disposed by createShutdownHandler.
+  server.addHook('onClose', () => {
+    proxyPool.close();
+  });
 
   // Register API routes (pass instanceManager for v0.9.0 routes)
   await registerRoutes(server, instanceManager);

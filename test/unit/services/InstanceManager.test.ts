@@ -4,15 +4,42 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
+const coreMock = vi.hoisted(() => ({ clients: [] as any[], options: [] as any[] }));
+
 // Mock miaw-core so createInstance does not spin up a real WhatsApp client
 vi.mock('miaw-core', () => {
   class MiawClient {
-    on = vi.fn();
+    handlers = new Map<string, (...args: any[]) => void>();
+    on = vi.fn((event: string, handler: (...args: any[]) => void) => {
+      this.handlers.set(event, handler);
+      return this;
+    });
     removeAllListeners = vi.fn();
     disconnect = vi.fn();
-    constructor(_opts: unknown) {}
+    options: any;
+    constructor(opts: unknown) {
+      this.options = opts;
+      coreMock.clients.push(this);
+      coreMock.options.push(opts);
+    }
+    emitTest(event: string, ...args: any[]) {
+      this.handlers.get(event)?.(...args);
+    }
   }
-  return { MiawClient };
+  return {
+    MiawClient,
+    validateProxyConfig: (proxy: string | { url: string }) => {
+      const raw = typeof proxy === 'string' ? proxy : proxy.url;
+      return /^(https?|socks|socks4|socks4a|socks5|socks5h):\/\//.test(raw);
+    },
+    maskProxyUrl: (proxy: string | { url: string; password?: string }) => {
+      const raw = typeof proxy === 'string' ? proxy : proxy.url;
+      const url = new URL(raw);
+      if (typeof proxy !== 'string' && proxy.password) url.password = proxy.password;
+      if (url.password) url.password = '****';
+      return url.toString();
+    },
+  };
 });
 
 import { InstanceManager } from '../../../src/services/InstanceManager';
@@ -114,5 +141,90 @@ describe('InstanceManager QR caching (C4/C5)', () => {
     handlerFor(client, 'connection')('connected');
     expect(manager.getInstance('bot')?.lastQr).toBeUndefined();
     expect(manager.getInstance('bot')?.status).toBe('connected');
+  });
+});
+
+describe('InstanceManager proxy resolution', () => {
+  let manager: InstanceManager;
+
+  beforeEach(() => {
+    coreMock.clients.length = 0;
+    coreMock.options.length = 0;
+    manager = new InstanceManager({
+      sessionPath: './sessions',
+      webhookSecret: 'test-secret',
+      webhookTimeout: 1000,
+      webhookMaxRetries: 3,
+      webhookRetryDelay: 1000,
+    });
+  });
+
+  it('rebuilds a disconnected client with a replacement proxy', async () => {
+    await manager.createInstance({
+      instanceId: 'bot',
+      webhookUrl: 'https://example.test/hook',
+      clientOptions: { debug: true, autoReconnect: false },
+    });
+
+    const result = manager.replaceProxy('bot', 'http://region:secret@proxy.test:8080');
+
+    expect(coreMock.clients).toHaveLength(2);
+    expect(coreMock.clients[0].removeAllListeners).toHaveBeenCalledOnce();
+    expect(coreMock.clients[1].disconnect).not.toHaveBeenCalled();
+    expect(coreMock.options[1]).toMatchObject({
+      instanceId: 'bot',
+      sessionPath: './sessions',
+      debug: true,
+      autoReconnect: false,
+      proxy: 'http://region:secret@proxy.test:8080',
+    });
+    expect(result).toMatchObject({
+      source: 'explicit',
+      protocol: 'http',
+      downloadProxied: true,
+    });
+    expect(JSON.stringify(result)).not.toContain('secret');
+    expect(manager.getInstance('bot')?.webhookUrl).toBe('https://example.test/hook');
+  });
+
+  it.each(['connected', 'connecting', 'reconnecting', 'qr_required'])(
+    'rejects proxy replacement while the instance is %s',
+    async (status) => {
+      await manager.createInstance({ instanceId: 'bot' });
+      coreMock.clients[0].emitTest('connection', status);
+
+      expect(() => manager.replaceProxy('bot', 'http://proxy.test:8080')).toThrow(
+        'must be disconnected',
+      );
+      expect(coreMock.clients).toHaveLength(1);
+    },
+  );
+
+  it('uses the pool by default, supports an override, and returns to the pool', async () => {
+    const pooledProxy = { url: 'socks5h://pool.test:1080', label: 'pool' };
+    const select = vi.fn(() => pooledProxy);
+    const pooledManager = new InstanceManager({
+      sessionPath: './sessions',
+      webhookSecret: 'test-secret',
+      webhookTimeout: 1000,
+      webhookMaxRetries: 3,
+      webhookRetryDelay: 1000,
+      proxyPool: { select } as any,
+    });
+
+    await pooledManager.createInstance({ instanceId: 'bot' });
+    expect(coreMock.options[0]).toMatchObject({ proxy: pooledProxy });
+    expect(pooledManager.getProxy('bot').source).toBe('pool');
+
+    pooledManager.replaceProxy('bot', 'http://override.test:8080');
+    expect(pooledManager.getProxy('bot').source).toBe('explicit');
+
+    const restored = pooledManager.replaceProxy('bot');
+    expect(restored).toMatchObject({
+      source: 'pool',
+      protocol: 'socks5h',
+      downloadProxied: false,
+    });
+    expect(select).toHaveBeenCalledWith('bot');
   });
 });

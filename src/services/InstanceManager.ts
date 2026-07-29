@@ -6,9 +6,23 @@
 import { EventEmitter } from 'events';
 import { promises as fs } from 'fs';
 import path from 'path';
-import { MiawClient, MiawClientOptions, ConnectionState } from 'miaw-core';
+import {
+  MiawClient,
+  MiawClientOptions,
+  ConnectionState,
+  maskProxyUrl,
+  validateProxyConfig,
+} from 'miaw-core';
+import type { ProxyConfig } from 'miaw-core';
 import pino from 'pino';
 import { InstanceConfig, InstanceState, WebhookEvent, WebhookPayload } from '../types';
+import {
+  describeProxy,
+  type EffectiveProxyInfo,
+  type ProxyInput,
+  type ProxyPoolService,
+  type ProxySource,
+} from './ProxyService';
 
 interface InstanceManagerOptions {
   sessionPath: string;
@@ -16,6 +30,7 @@ interface InstanceManagerOptions {
   webhookTimeout: number;
   webhookMaxRetries: number;
   webhookRetryDelay: number;
+  proxyPool?: ProxyPoolService;
 }
 
 interface ManagedInstance {
@@ -23,6 +38,8 @@ interface ManagedInstance {
   client: MiawClient;
   state: InstanceState;
   disconnectTimeout?: NodeJS.Timeout;
+  effectiveProxy?: ProxyInput;
+  proxySource: ProxySource;
 }
 
 /**
@@ -101,14 +118,9 @@ export class InstanceManager extends EventEmitter {
 
     this.logger.info({ instanceId }, 'Creating instance');
 
-    // Create MiawClient
-    const clientOptions: MiawClientOptions = {
-      instanceId,
-      sessionPath: this.options.sessionPath,
-      debug: false,
-    };
-
-    const client = new MiawClient(clientOptions);
+    const storedConfig = this.cloneConfig(config);
+    const { proxy: effectiveProxy, source: proxySource } = this.resolveEffectiveProxy(storedConfig);
+    const client = this.createClient(storedConfig, effectiveProxy);
 
     // Set up event handlers
     this.setupClientEvents(instanceId, client);
@@ -125,9 +137,11 @@ export class InstanceManager extends EventEmitter {
     };
 
     const managed: ManagedInstance = {
-      config,
+      config: storedConfig,
       client,
       state,
+      effectiveProxy,
+      proxySource,
     };
 
     this.instances.set(instanceId, managed);
@@ -220,6 +234,50 @@ export class InstanceManager extends EventEmitter {
     return managed ? managed.client : null;
   }
 
+  getProxy(instanceId: string): EffectiveProxyInfo {
+    const managed = this.instances.get(instanceId);
+    if (!managed) throw new Error(`Instance ${instanceId} not found`);
+    return describeProxy(managed.effectiveProxy, managed.proxySource);
+  }
+
+  replaceProxy(instanceId: string, proxy?: ProxyConfig | string): EffectiveProxyInfo {
+    const managed = this.instances.get(instanceId);
+    if (!managed) throw new Error(`Instance ${instanceId} not found`);
+    if (managed.state.status !== 'disconnected') {
+      throw new Error('Instance must be disconnected before changing its proxy');
+    }
+    if (proxy !== undefined && !validateProxyConfig(proxy)) {
+      throw new Error(`Invalid proxy configuration: ${maskProxyUrl(proxy)}`);
+    }
+
+    const nextClientOptions = { ...(managed.config.clientOptions || {}) };
+    if (proxy === undefined) {
+      delete nextClientOptions.proxy;
+    } else {
+      nextClientOptions.proxy = proxy;
+    }
+
+    const nextConfig: InstanceConfig = {
+      ...managed.config,
+      clientOptions: nextClientOptions,
+    };
+    const { proxy: effectiveProxy, source: proxySource } = this.resolveEffectiveProxy(nextConfig);
+    const nextClient = this.createClient(nextConfig, effectiveProxy);
+    this.setupClientEvents(instanceId, nextClient);
+
+    managed.client.removeAllListeners();
+    managed.client = nextClient;
+    managed.config = nextConfig;
+    managed.effectiveProxy = effectiveProxy;
+    managed.proxySource = proxySource;
+
+    this.logger.info(
+      { instanceId, proxy: describeProxy(effectiveProxy, proxySource) },
+      'Instance proxy replaced',
+    );
+    return this.getProxy(instanceId);
+  }
+
   /**
    * Update instance state
    */
@@ -228,6 +286,41 @@ export class InstanceManager extends EventEmitter {
     if (managed) {
       managed.state = { ...managed.state, ...updates, lastActivity: new Date() };
     }
+  }
+
+  private cloneConfig(config: InstanceConfig): InstanceConfig {
+    return {
+      ...config,
+      clientOptions: config.clientOptions ? { ...config.clientOptions } : undefined,
+      webhookEvents: config.webhookEvents ? [...config.webhookEvents] : undefined,
+    };
+  }
+
+  private resolveEffectiveProxy(config: InstanceConfig): {
+    proxy?: ProxyInput;
+    source: ProxySource;
+  } {
+    const explicit = config.clientOptions?.proxy;
+    if (explicit !== undefined) {
+      if (!validateProxyConfig(explicit)) {
+        throw new Error(`Invalid proxy configuration: ${maskProxyUrl(explicit)}`);
+      }
+      return { proxy: explicit, source: 'explicit' };
+    }
+
+    const pooled = this.options.proxyPool?.select(config.instanceId);
+    return pooled ? { proxy: pooled, source: 'pool' } : { source: 'none' };
+  }
+
+  private createClient(config: InstanceConfig, proxy?: ProxyInput): MiawClient {
+    const clientOptions: MiawClientOptions = {
+      ...config.clientOptions,
+      instanceId: config.instanceId,
+      sessionPath: this.options.sessionPath,
+      debug: config.clientOptions?.debug ?? false,
+      ...(proxy !== undefined ? { proxy } : {}),
+    };
+    return new MiawClient(clientOptions);
   }
 
   /**
