@@ -169,12 +169,13 @@ export async function testProxy(
 ): Promise<ProxyTestResult> {
   const rawUrl = typeof proxy === 'string' ? proxy : proxy.url;
   const maskedUrl = maskProxyUrl(proxy);
-  const protocol = new URL(rawUrl).protocol.replace(':', '');
-  const downloadProxied = protocol === 'http' || protocol === 'https';
 
   if (!validateProxyConfig(proxy)) {
     throw new Error('Invalid proxy configuration');
   }
+
+  const protocol = new URL(rawUrl).protocol.replace(':', '');
+  const downloadProxied = protocol === 'http' || protocol === 'https';
 
   let agents: Awaited<ReturnType<typeof createProxyAgents>> | undefined;
   const startedAt = performance.now();
@@ -224,7 +225,11 @@ export async function testProxy(
     };
   } finally {
     agents?.wsAgent.destroy();
-    await closeDispatcher(agents?.downloadDispatcher);
+    try {
+      await closeDispatcher(agents?.downloadDispatcher);
+    } catch {
+      // Cleanup failure must not replace the probe result.
+    }
   }
 }
 
