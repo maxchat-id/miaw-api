@@ -155,9 +155,23 @@ WEBHOOK_RETRY_DELAY_MS=1000
 # Session Storage
 SESSION_PATH=./sessions
 
+# Optional mounted proxy pool
+# MIAW_PROXY_FILE=/run/secrets/miaw-proxies.txt
+MIAW_PROXY_STRATEGY=deterministic
+
 # Logging
 LOG_LEVEL=info
 ```
+
+`MIAW_PROXY_FILE` accepts the TXT and JSON formats supported by
+`miaw-core` 1.10.0. Pool entries are assigned to new instances using
+`deterministic` selection by default, so a stable `instanceId` keeps a stable
+egress proxy. An explicit `clientOptions.proxy` supplied during instance
+creation takes precedence over the pool.
+
+Proxy passwords are never returned by the API. Manage the pool file as a
+mounted secret and use `POST /api/v1/proxy-pool/reloads` after replacing it
+when an immediate reload is required.
 
 ### Running
 
@@ -505,19 +519,21 @@ npm run test:integration -- setup
 
 ## Configuration Reference
 
-| Variable                 | Default    | Description                                                                       |
-| ------------------------ | ---------- | --------------------------------------------------------------------------------- |
-| `PORT`                   | 3000       | Server port                                                                       |
-| `HOST`                   | 0.0.0.0    | Server host                                                                       |
-| `API_KEY`                | -          | API key for authentication                                                        |
-| `WEBHOOK_SECRET`         | -          | Secret for webhook signature                                                      |
-| `WEBHOOK_TIMEOUT_MS`     | 10000      | Webhook delivery timeout (ms)                                                     |
-| `WEBHOOK_MAX_RETRIES`    | 6          | Max webhook retry attempts                                                        |
-| `WEBHOOK_RETRY_DELAY_MS` | 60000      | Initial retry delay (ms)                                                          |
-| `WEBHOOK_SSRF_ALLOWLIST` | -          | Hosts exempt from the webhook SSRF check (comma-separated; `host` or `host:port`) |
-| `SESSION_PATH`           | ./sessions | Session storage path                                                              |
-| `LOG_LEVEL`              | info       | Log level (debug, info, warn, error)                                              |
-| `CORS_ORIGIN`            | \*         | CORS allowed origin                                                               |
+| Variable                 | Default       | Description                                                                       |
+| ------------------------ | ------------- | --------------------------------------------------------------------------------- |
+| `PORT`                   | 3000          | Server port                                                                       |
+| `HOST`                   | 0.0.0.0       | Server host                                                                       |
+| `API_KEY`                | -             | API key for authentication                                                        |
+| `WEBHOOK_SECRET`         | -             | Secret for webhook signature                                                      |
+| `WEBHOOK_TIMEOUT_MS`     | 10000         | Webhook delivery timeout (ms)                                                     |
+| `WEBHOOK_MAX_RETRIES`    | 6             | Max webhook retry attempts                                                        |
+| `WEBHOOK_RETRY_DELAY_MS` | 60000         | Initial retry delay (ms)                                                          |
+| `WEBHOOK_SSRF_ALLOWLIST` | -             | Hosts exempt from the webhook SSRF check (comma-separated; `host` or `host:port`) |
+| `SESSION_PATH`           | ./sessions    | Session storage path                                                              |
+| `MIAW_PROXY_FILE`        | -             | Optional mounted TXT/JSON proxy pool                                              |
+| `MIAW_PROXY_STRATEGY`    | deterministic | Pool selection strategy                                                           |
+| `LOG_LEVEL`              | info          | Log level (debug, info, warn, error)                                              |
+| `CORS_ORIGIN`            | \*            | CORS allowed origin                                                               |
 
 ## Limitations
 
@@ -533,6 +549,7 @@ npm run test:integration -- setup
 3. **HTTPS**: Use HTTPS in production for all API communication
 4. **Firewall**: Restrict access to webhook endpoints
 5. **Session Files**: Protect `./sessions/` directory (contains auth credentials)
+6. **Proxy Credentials**: Mount proxy lists as secrets and never commit them
 
 ## Troubleshooting
 

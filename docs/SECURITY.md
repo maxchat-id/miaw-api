@@ -8,6 +8,7 @@ This document outlines security best practices for deploying and operating miaw-
 - [Webhook Security](#webhook-security)
 - [CORS Configuration](#cors-configuration)
 - [Session Security](#session-security)
+- [Proxy Security](#proxy-security)
 - [Deployment Recommendations](#deployment-recommendations)
 - [Security Checklist](#security-checklist)
 
@@ -32,6 +33,7 @@ export API_KEY="your-secure-random-key-here"
 The API accepts authentication via two methods (in order of precedence):
 
 1. **Authorization Header** (recommended)
+
    ```
    Authorization: Bearer your-api-key
    ```
@@ -64,9 +66,9 @@ To rotate the API key:
 
 All webhook requests include a cryptographic signature to verify authenticity:
 
-| Header | Description |
-|--------|-------------|
-| `X-Miaw-Signature` | HMAC-SHA256 signature in format `sha256=<hex>` |
+| Header             | Description                                           |
+| ------------------ | ----------------------------------------------------- |
+| `X-Miaw-Signature` | HMAC-SHA256 signature in format `sha256=<hex>`        |
 | `X-Miaw-Timestamp` | Unix timestamp (milliseconds) when request was signed |
 
 ### Setting Up Webhook Secret
@@ -104,19 +106,13 @@ function verifyWebhookSignature(payload, signature, timestamp, secret, maxAgeMs 
   // 3. Compute expected signature
   const payloadString = JSON.stringify(payload);
   const signedPayload = `${timestamp}.${payloadString}`;
-  const computedSignature = crypto
-    .createHmac('sha256', secret)
-    .update(signedPayload)
-    .digest('hex');
+  const computedSignature = crypto.createHmac('sha256', secret).update(signedPayload).digest('hex');
 
   // 4. Use timing-safe comparison
   if (expectedSignature.length !== computedSignature.length) {
     return false;
   }
-  return crypto.timingSafeEqual(
-    Buffer.from(expectedSignature),
-    Buffer.from(computedSignature)
-  );
+  return crypto.timingSafeEqual(Buffer.from(expectedSignature), Buffer.from(computedSignature));
 }
 
 // Express middleware example
@@ -170,14 +166,14 @@ def verify_webhook_signature(payload, signature, timestamp, secret, max_age_ms=3
 
 Failed webhook deliveries are retried with exponential backoff:
 
-| Attempt | Delay |
-|---------|-------|
-| 1 | Immediate |
-| 2 | 1 minute |
-| 3 | 5 minutes |
-| 4 | 15 minutes |
-| 5 | 1 hour |
-| 6 | 1 hour (max) |
+| Attempt | Delay        |
+| ------- | ------------ |
+| 1       | Immediate    |
+| 2       | 1 minute     |
+| 3       | 5 minutes    |
+| 4       | 15 minutes   |
+| 5       | 1 hour       |
+| 6       | 1 hour (max) |
 
 After `WEBHOOK_MAX_RETRIES` failures, the webhook is dropped.
 
@@ -236,6 +232,7 @@ ls -la /path/to/sessions
 ### Session Data Contents
 
 Session directories contain:
+
 - `creds.json` - Authentication credentials
 - `keys/` - Encryption keys
 
@@ -250,6 +247,27 @@ Session directories contain:
 
 ---
 
+## Proxy Security
+
+Proxy URLs commonly contain usernames, passwords, provider regions, and sticky
+session identifiers. Treat a proxy-list file with the same controls as session
+credentials:
+
+- Mount `MIAW_PROXY_FILE` from a secret volume with least-privilege filesystem
+  permissions. Do not commit proxy lists or place credentials in CLI flags.
+- The API masks passwords in pool status, instance status, probe responses,
+  logs, and errors. Avoid adding request-body logging at the reverse proxy.
+- Keep `MIAW_PROXY_STRATEGY=deterministic` for persisted WhatsApp sessions.
+  Random or round-robin selection can change an instance's egress IP when the
+  client is reconstructed.
+- Proxy-pool reloads affect future clients only. Updating the pool never
+  rotates a connected session.
+- Prefer HTTP(S) proxies when all media traffic must be proxied. SOCKS proxy
+  connections and uploads are tunneled, but media downloads use a direct
+  connection because Node's undici transport has no SOCKS dispatcher.
+- Restrict API access to `POST /api/v1/proxy-tests`. It probes only the fixed
+  WhatsApp Web target and cannot be used as an arbitrary URL fetcher.
+
 ## Deployment Recommendations
 
 ### Use HTTPS
@@ -257,6 +275,7 @@ Session directories contain:
 **Always deploy behind HTTPS in production.** Options:
 
 1. **Reverse Proxy** (recommended)
+
    ```nginx
    # nginx example
    server {
@@ -318,11 +337,11 @@ USER appuser
 
 The API logs security events:
 
-| Event | Level | Description |
-|-------|-------|-------------|
-| `auth_failure` | WARN | Failed authentication attempt |
-| `webhook_delivered` | INFO | Successful webhook delivery |
-| `webhook_failed` | WARN | Failed webhook delivery |
+| Event               | Level | Description                   |
+| ------------------- | ----- | ----------------------------- |
+| `auth_failure`      | WARN  | Failed authentication attempt |
+| `webhook_delivered` | INFO  | Successful webhook delivery   |
+| `webhook_failed`    | WARN  | Failed webhook delivery       |
 
 Configure appropriate log aggregation for security monitoring.
 
@@ -333,22 +352,26 @@ Configure appropriate log aggregation for security monitoring.
 Use this checklist before deploying to production:
 
 ### Authentication
+
 - [ ] Set custom `API_KEY` (not default `miaw-api-key`)
 - [ ] Set custom `WEBHOOK_SECRET` (not default `webhook-secret`)
 - [ ] Implemented webhook signature verification in your webhook handler
 
 ### Network
+
 - [ ] HTTPS enabled (via reverse proxy or load balancer)
 - [ ] API bound to localhost if using reverse proxy
 - [ ] CORS restricted to specific origin(s)
 - [ ] Firewall rules configured appropriately
 
 ### Sessions
+
 - [ ] Session path has restricted permissions (700)
 - [ ] Session directory owned by application user
 - [ ] Session backups encrypted
 
 ### Deployment
+
 - [ ] Running as non-root user
 - [ ] Secrets not in version control
 - [ ] Environment variables from secure source
@@ -356,6 +379,7 @@ Use this checklist before deploying to production:
 - [ ] Monitoring for failed authentication attempts
 
 ### Application
+
 - [ ] Latest version deployed
 - [ ] No default/test credentials
 - [ ] `NODE_ENV=production` set
@@ -375,6 +399,6 @@ If you discover a security vulnerability, please report it responsibly:
 
 ## Version History
 
-| Version | Changes |
-|---------|---------|
-| 1.0.0 | Initial security documentation |
+| Version | Changes                        |
+| ------- | ------------------------------ |
+| 1.0.0   | Initial security documentation |

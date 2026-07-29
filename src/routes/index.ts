@@ -17,6 +17,7 @@ import { businessRoutes } from './business';
 import { newsletterRoutes } from './newsletters';
 import { basicGetsRoutes } from './basic-gets';
 import { sessionRoutes } from './session';
+import { proxyRoutes } from './proxies';
 
 /**
  * Register all routes
@@ -62,4 +63,7 @@ export async function registerRoutes(
 
   // Session lifecycle & stats routes (v0.15.0)
   await server.register(sessionRoutes);
+
+  // Proxy pool inspection and per-instance proxy management
+  await server.register(proxyRoutes);
 }

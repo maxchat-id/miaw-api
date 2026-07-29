@@ -11,6 +11,32 @@ export function registerSchemas(server: FastifyInstance): void {
   // Instance ID pattern. Uppercase allowed: maxchat tenant `domain` (used as
   // the instanceId) is a mixed-case opaque token, e.g. `d0EpQi3K2Ipl...`.
   const instanceIdPattern = '^[a-zA-Z0-9_-]+$';
+  const proxyUrlPattern = '^(?:https?|socks|socks4|socks4a|socks5|socks5h)://';
+
+  server.addSchema({
+    $id: 'proxyConfig',
+    oneOf: [
+      {
+        type: 'string',
+        format: 'uri',
+        pattern: proxyUrlPattern,
+      },
+      {
+        type: 'object',
+        additionalProperties: false,
+        required: ['url'],
+        properties: {
+          url: {
+            type: 'string',
+            format: 'uri',
+            pattern: proxyUrlPattern,
+          },
+          username: { type: 'string' },
+          password: { type: 'string' },
+        },
+      },
+    ],
+  });
 
   // ============================================================================
   // Instance Schemas
@@ -53,6 +79,34 @@ export function registerSchemas(server: FastifyInstance): void {
           ],
         },
         nullable: true,
+      },
+      clientOptions: {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          debug: { type: 'boolean' },
+          autoReconnect: { type: 'boolean' },
+          maxReconnectAttempts: { type: 'integer', minimum: 0 },
+          reconnectDelay: { type: 'integer', minimum: 0 },
+          syncFullHistory: { type: 'boolean' },
+          browser: {
+            type: 'array',
+            minItems: 3,
+            maxItems: 3,
+            items: { type: 'string' },
+          },
+          proxy: {
+            $ref: 'proxyConfig#',
+          },
+          usePairingCode: { type: 'boolean' },
+          phoneNumber: { type: 'string', pattern: '^[0-9]+$' },
+        },
+        allOf: [
+          {
+            if: { properties: { usePairingCode: { const: true } }, required: ['usePairingCode'] },
+            then: { required: ['phoneNumber'] },
+          },
+        ],
       },
     },
   });
