@@ -23,10 +23,10 @@ export default async function setup() {
   process.env.SESSION_PATH = './test-sessions';
   process.env.LOG_LEVEL = 'error';
 
-  // The webhook test servers (helpers/webhook.ts, ports 3001 and 3002) listen on loopback, which the
-  // SSRF guard blocks by default. Allowlisting those two host:ports is exactly
-  // what the setting exists for and keeps the guard active everywhere else.
-  process.env.WEBHOOK_SSRF_ALLOWLIST = '127.0.0.1:3001,127.0.0.1:3002';
+  // The webhook test servers (helpers/webhook.ts) listen on loopback,
+  // which the SSRF guard blocks by default. A bare host entry allows any port
+  // on it, so they can take an ephemeral port and stop fighting over 3001.
+  process.env.WEBHOOK_SSRF_ALLOWLIST = '127.0.0.1';
 
   // Instances are persisted to a registry and restored on start, so leftovers
   // from an earlier run would reconnect to WhatsApp and flood the output.

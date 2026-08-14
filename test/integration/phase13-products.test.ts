@@ -266,9 +266,7 @@ describe('Phase 13 Product Management Tests', () => {
 
       // Delete the product
       const deleteResponse = await client.delete(`/instances/${testInstanceId}/products`, {
-        data: {
-          productIds: [productId],
-        },
+        body: { productIds: [productId] },
       });
 
       expect(deleteResponse.status).toBe(200);
@@ -309,9 +307,7 @@ describe('Phase 13 Product Management Tests', () => {
 
       // Delete all products
       const deleteResponse = await client.delete(`/instances/${testInstanceId}/products`, {
-        data: {
-          productIds,
-        },
+        body: { productIds },
       });
 
       expect(deleteResponse.status).toBe(200);
@@ -321,9 +317,7 @@ describe('Phase 13 Product Management Tests', () => {
 
     it.skip('should reject deletion when instance is not connected', async () => {
       const response = await client.delete(`/instances/${testInstanceId}/products`, {
-        data: {
-          productIds: ['test-product-id'],
-        },
+        body: { productIds: ['test-product-id'] },
       });
 
       expect(response.status).toBe(503);
@@ -332,9 +326,7 @@ describe('Phase 13 Product Management Tests', () => {
 
     it('should reject deletion with empty productIds array', async () => {
       const response = await client.delete(`/instances/${testInstanceId}/products`, {
-        data: {
-          productIds: [],
-        },
+        body: { productIds: [] },
       });
 
       expect(response.status).toBe(400);
@@ -343,7 +335,7 @@ describe('Phase 13 Product Management Tests', () => {
 
     it('should reject deletion without productIds', async () => {
       const response = await client.delete(`/instances/${testInstanceId}/products`, {
-        data: {},
+        body: {},
       });
 
       expect(response.status).toBe(400);
@@ -469,9 +461,7 @@ describe('Phase 13 Product Management Tests', () => {
 
       // Delete products
       const deleteResponse = await client.delete(`/instances/non-existent/products`, {
-        data: {
-          productIds: ['test-product-id'],
-        },
+        body: { productIds: ['test-product-id'] },
       });
       expect(deleteResponse.status).toBe(404);
     });

@@ -14,4 +14,4 @@ process.env.API_KEY = 'test-api-key-for-integration-tests';
 process.env.WEBHOOK_SECRET = 'test-webhook-secret';
 process.env.SESSION_PATH = './test-sessions';
 process.env.LOG_LEVEL = 'error';
-process.env.WEBHOOK_SSRF_ALLOWLIST = '127.0.0.1:3001,127.0.0.1:3002';
+process.env.WEBHOOK_SSRF_ALLOWLIST = '127.0.0.1';
