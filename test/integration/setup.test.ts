@@ -1,10 +1,12 @@
 /**
  * Setup Integration Test
  *
- * Initial connection and QR code pairing test.
- * This must be run first before other integration tests.
+ * Initial connection and QR code pairing. Two of these steps need a person to
+ * scan a QR code within the timeout, so the file is opt-in rather than part of
+ * a default run — otherwise it fails every unattended run and buries the
+ * failures that matter.
  *
- * Run with: npm run test:integration -- setup
+ * Run with: MIAW_TEST_PAIRING=1 npm run test:integration -- setup
  */
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
@@ -12,7 +14,9 @@ import { startTestServer, stopTestServer, createTestClient } from './helpers/ser
 import { WebhookTestServer } from './helpers/webhook.js';
 import { TEST_CONFIG } from './fixtures/data.js';
 
-describe('Setup Tests - Initial Connection', () => {
+const pairing = process.env.MIAW_TEST_PAIRING ? describe : describe.skip;
+
+pairing('Setup Tests - Initial Connection', () => {
   let client: any;
   let webhookServer: WebhookTestServer;
 

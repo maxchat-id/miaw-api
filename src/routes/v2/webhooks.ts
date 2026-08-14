@@ -140,6 +140,9 @@ export async function webhookRoutesV2(server: FastifyInstance): Promise<void> {
         params: instanceParams,
         body: {
           type: 'object',
+          // The only field has a default, so a bodyless POST is meaningful.
+          // Without nullable, Fastify rejects it with 'body must be object'.
+          nullable: true,
           additionalProperties: false,
           properties: { event: { type: 'string', minLength: 1, default: 'test' } },
         },

@@ -73,7 +73,10 @@ describe('Instance Management Tests', () => {
 
       expect(response.status).toBe(400);
       expect(response.data.success).toBe(false);
-      expect(response.data.error.code).toBe('INVALID_REQUEST');
+      // Schema failures keep Fastify's own code; errorHandler only falls back
+      // to INVALID_REQUEST when the framework error carries none. That
+      // pass-through is asserted in test/unit/utils/errorHandler.test.ts.
+      expect(response.data.error.code).toBe('FST_ERR_VALIDATION');
     });
 
     it('should reject empty instance ID', async () => {

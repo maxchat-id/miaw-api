@@ -63,9 +63,13 @@ describe('Basic GET Operations (v0.9.0)', () => {
 
       expect(response.status).toBe(404);
 
-      const data = (await response.json()) as { success: boolean; error?: string };
+      const data = (await response.json()) as {
+        success: boolean;
+        error: { code: string; message: string };
+      };
       expect(data.success).toBe(false);
-      expect(data.error).toBe('Instance not found');
+      expect(data.error.code).toBe('NOT_FOUND');
+      expect(data.error.message).toBe('Instance not found');
     });
   });
 
@@ -98,9 +102,13 @@ describe('Basic GET Operations (v0.9.0)', () => {
 
       expect(response.status).toBe(404);
 
-      const data = (await response.json()) as { success: boolean; error?: string };
+      const data = (await response.json()) as {
+        success: boolean;
+        error: { code: string; message: string };
+      };
       expect(data.success).toBe(false);
-      expect(data.error).toBe('Instance not found');
+      expect(data.error.code).toBe('NOT_FOUND');
+      expect(data.error.message).toBe('Instance not found');
     });
   });
 
@@ -133,9 +141,13 @@ describe('Basic GET Operations (v0.9.0)', () => {
 
       expect(response.status).toBe(404);
 
-      const data = (await response.json()) as { success: boolean; error?: string };
+      const data = (await response.json()) as {
+        success: boolean;
+        error: { code: string; message: string };
+      };
       expect(data.success).toBe(false);
-      expect(data.error).toBe('Instance not found');
+      expect(data.error.code).toBe('NOT_FOUND');
+      expect(data.error.message).toBe('Instance not found');
     });
   });
 
@@ -168,9 +180,13 @@ describe('Basic GET Operations (v0.9.0)', () => {
 
       expect(response.status).toBe(404);
 
-      const data = (await response.json()) as { success: boolean; error?: string };
+      const data = (await response.json()) as {
+        success: boolean;
+        error: { code: string; message: string };
+      };
       expect(data.success).toBe(false);
-      expect(data.error).toBe('Instance not found');
+      expect(data.error.code).toBe('NOT_FOUND');
+      expect(data.error.message).toBe('Instance not found');
     });
   });
 
@@ -203,9 +219,13 @@ describe('Basic GET Operations (v0.9.0)', () => {
 
       expect(response.status).toBe(404);
 
-      const data = (await response.json()) as { success: boolean; error?: string };
+      const data = (await response.json()) as {
+        success: boolean;
+        error: { code: string; message: string };
+      };
       expect(data.success).toBe(false);
-      expect(data.error).toBe('Instance not found');
+      expect(data.error.code).toBe('NOT_FOUND');
+      expect(data.error.message).toBe('Instance not found');
     });
   });
 
@@ -247,9 +267,13 @@ describe('Basic GET Operations (v0.9.0)', () => {
 
       expect(response.status).toBe(404);
 
-      const data = (await response.json()) as { success: boolean; error?: string };
+      const data = (await response.json()) as {
+        success: boolean;
+        error: { code: string; message: string };
+      };
       expect(data.success).toBe(false);
-      expect(data.error).toBe('Instance not found');
+      expect(data.error.code).toBe('NOT_FOUND');
+      expect(data.error.message).toBe('Instance not found');
     });
   });
 });

@@ -106,7 +106,8 @@ describe('Phase 7 Webhook Tests', () => {
 
       expect(response.status).toBe(200);
       expect(response.data.success).toBe(true);
-      expect(response.data.data.webhookUrl).toBe('');
+      expect(response.data.data.webhookUrl).toBeUndefined();
+      expect(response.data.data.webhookEnabled).toBe(false);
     });
   });
 
@@ -191,10 +192,10 @@ describe('Phase 7 Webhook Tests', () => {
       // Wait for delivery
       await new Promise((resolve) => setTimeout(resolve, 3000));
 
-      const events = webhookServer.getEvents();
-      expect(events.length).toBeGreaterThan(0);
+      const requests = webhookServer.getRequests();
+      expect(requests.length).toBeGreaterThan(0);
 
-      const lastEvent = events[events.length - 1];
+      const lastEvent = requests[requests.length - 1];
       expect(lastEvent.headers['x-miaw-signature']).toBeDefined();
     });
 
@@ -203,10 +204,10 @@ describe('Phase 7 Webhook Tests', () => {
 
       await new Promise((resolve) => setTimeout(resolve, 3000));
 
-      const events = webhookServer.getEvents();
-      expect(events.length).toBeGreaterThan(0);
+      const requests = webhookServer.getRequests();
+      expect(requests.length).toBeGreaterThan(0);
 
-      const lastEvent = events[events.length - 1];
+      const lastEvent = requests[requests.length - 1];
       expect(lastEvent.headers['x-miaw-timestamp']).toBeDefined();
 
       // Verify timestamp is recent (within 5 minutes)
@@ -220,10 +221,10 @@ describe('Phase 7 Webhook Tests', () => {
 
       await new Promise((resolve) => setTimeout(resolve, 3000));
 
-      const events = webhookServer.getEvents();
-      expect(events.length).toBeGreaterThan(0);
+      const requests = webhookServer.getRequests();
+      expect(requests.length).toBeGreaterThan(0);
 
-      const lastEvent = events[events.length - 1];
+      const lastEvent = requests[requests.length - 1];
       const signature = lastEvent.headers['x-miaw-signature'];
 
       expect(signature).toMatch(/^sha256=[a-f0-9]{64}$/);
@@ -234,10 +235,10 @@ describe('Phase 7 Webhook Tests', () => {
 
       await new Promise((resolve) => setTimeout(resolve, 3000));
 
-      const events = webhookServer.getEvents();
-      expect(events.length).toBeGreaterThan(0);
+      const requests = webhookServer.getRequests();
+      expect(requests.length).toBeGreaterThan(0);
 
-      const lastEvent = events[events.length - 1];
+      const lastEvent = requests[requests.length - 1];
       const signature = lastEvent.headers['x-miaw-signature'];
       const timestamp = parseInt(lastEvent.headers['x-miaw-timestamp'], 10);
       const payload = lastEvent.body;
@@ -350,7 +351,6 @@ describe('Phase 7 Webhook Tests', () => {
         const noWebhookId = `test-${Date.now()}`;
         await client.post('/instances', {
           instanceId: noWebhookId,
-          webhookUrl: '',
           webhookEvents: [],
         });
 
@@ -422,7 +422,6 @@ describe('Phase 7 Webhook Tests', () => {
         const noWebhookId = `test-${Date.now()}`;
         await client.post('/instances', {
           instanceId: noWebhookId,
-          webhookUrl: '',
           webhookEvents: [],
         });
 
@@ -449,7 +448,7 @@ describe('Phase 7 Webhook Tests', () => {
       await client.post('/instances', {
         instanceId: testInstanceId,
         webhookUrl: webhookServer.getWebhookUrl(),
-        webhookEvents: ['test', 'message', 'ready'],
+        webhookEvents: ['message', 'ready', 'connection'],
       });
 
       // Send multiple test webhooks

@@ -415,6 +415,9 @@ export async function messagingMutationRoutesV2(server: FastifyInstance): Promis
         },
         body: {
           type: 'object',
+          // Both fields default, so a bodyless POST is meaningful. Without
+          // nullable, Fastify rejects it with 'body must be object'.
+          nullable: true,
           additionalProperties: false,
           properties: {
             count: { type: 'integer', minimum: 1, maximum: 500, default: 50 },

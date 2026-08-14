@@ -161,8 +161,10 @@ describe('Connection Tests', () => {
       expect(response.data.success).toBe(true);
       expect(response.data.data.instanceId).toBe(testInstanceId);
       expect(response.data.data.status).toBe('disconnected');
-      expect(response.data.data.phoneNumber).toBeNull();
-      expect(response.data.data.connectedAt).toBeNull();
+      // Neither field is declared nullable in the response schema, so an
+      // unconnected instance omits them rather than sending null.
+      expect(response.data.data.phoneNumber).toBeUndefined();
+      expect(response.data.data.connectedAt).toBeUndefined();
     });
 
     it('should return status with metadata for connected instance', async () => {
