@@ -34,6 +34,7 @@ import { proxyRoutes } from './proxies';
 import { instanceRoutesV2 } from './v2/instances';
 import { connectionRoutesV2 } from './v2/connection';
 import { messagingSendRoutesV2 } from './v2/messaging-send';
+import { messagingMutationRoutesV2 } from './v2/messaging-mutations';
 
 export const V2_PREFIX = '/api/v2';
 
@@ -108,12 +109,18 @@ export async function registerV2Routes(server: FastifyInstance): Promise<void> {
   await server.register(
     async (api) => {
       api.addHook('onRoute', (route) => {
+        const response = (route.schema?.response ?? {}) as Record<string, unknown>;
+
+        // A route that declares its own success response opts out: the media
+        // download answers with a raw binary body, which the envelope
+        // serializer would mangle into an empty object.
+        if ('2xx' in response || '200' in response) {
+          return;
+        }
+
         route.schema = {
           ...route.schema,
-          response: {
-            ...(route.schema?.response ?? {}),
-            '2xx': { $ref: 'successEnvelope#' },
-          },
+          response: { ...response, '2xx': { $ref: 'successEnvelope#' } },
         };
       });
 
@@ -125,6 +132,7 @@ export async function registerV2Routes(server: FastifyInstance): Promise<void> {
       await api.register(instanceRoutesV2);
       await api.register(connectionRoutesV2);
       await api.register(messagingSendRoutesV2);
+      await api.register(messagingMutationRoutesV2);
     },
     { prefix: V2_PREFIX },
   );
