@@ -37,6 +37,8 @@ import { messagingSendRoutesV2 } from './v2/messaging-send';
 import { messagingMutationRoutesV2 } from './v2/messaging-mutations';
 import { webhookRoutesV2 } from './v2/webhooks';
 import { contactRoutesV2 } from './v2/contacts';
+import { chatRoutesV2 } from './v2/chats';
+import { profileRoutesV2 } from './v2/profile';
 
 export const V2_PREFIX = '/api/v2';
 
@@ -137,6 +139,8 @@ export async function registerV2Routes(server: FastifyInstance): Promise<void> {
       await api.register(messagingMutationRoutesV2);
       await api.register(webhookRoutesV2);
       await api.register(contactRoutesV2);
+      await api.register(chatRoutesV2);
+      await api.register(profileRoutesV2);
     },
     { prefix: V2_PREFIX },
   );

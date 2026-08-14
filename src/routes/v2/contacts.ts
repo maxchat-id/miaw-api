@@ -26,7 +26,12 @@
 import { FastifyInstance } from 'fastify';
 import type { MiawClient } from 'miaw-core';
 import { createAuthMiddleware } from '../../middleware/auth';
-import { NotFoundError, BadRequestError, ServiceUnavailableError } from '../../utils/errorHandler';
+import {
+  ApiError,
+  NotFoundError,
+  BadRequestError,
+  ServiceUnavailableError,
+} from '../../utils/errorHandler';
 
 const instanceParams = {
   type: 'object',
@@ -60,12 +65,13 @@ function requireConnectedClient(server: FastifyInstance, instanceId: string): Mi
   return client;
 }
 
+/**
+ * Normalize an unexpected error into a 400, while letting anything we already
+ * classified (404, 503, or a 400 that carries its own message and details)
+ * travel to the error handler untouched.
+ */
 function failed(what: string, err: any): never {
-  if (
-    err?.code === 'NOT_FOUND' ||
-    err?.code === 'BAD_REQUEST' ||
-    err?.code === 'SERVICE_UNAVAILABLE'
-  ) {
+  if (err instanceof ApiError) {
     throw err;
   }
   throw new BadRequestError(`Failed to ${what}`, { error: err?.message });
