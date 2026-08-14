@@ -40,6 +40,8 @@ import { contactRoutesV2 } from './v2/contacts';
 import { chatRoutesV2 } from './v2/chats';
 import { profileRoutesV2 } from './v2/profile';
 import { groupRoutesV2 } from './v2/groups';
+import { labelRoutesV2 } from './v2/labels';
+import { catalogRoutesV2 } from './v2/catalog';
 
 export const V2_PREFIX = '/api/v2';
 
@@ -143,6 +145,8 @@ export async function registerV2Routes(server: FastifyInstance): Promise<void> {
       await api.register(chatRoutesV2);
       await api.register(profileRoutesV2);
       await api.register(groupRoutesV2);
+      await api.register(labelRoutesV2);
+      await api.register(catalogRoutesV2);
     },
     { prefix: V2_PREFIX },
   );
