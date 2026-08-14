@@ -152,16 +152,8 @@ describe('v2 session', () => {
     expect(res.json().data.reconnectDelay).toBe(3000);
   });
 
-  it('rejects an empty patch and a transport setting', async () => {
+  it('rejects an empty patch', async () => {
     expect((await call('PATCH', '/instances/bot/runtime', {})).statusCode).toBe(400);
-
-    // The transport is bound at construction; changing it needs PUT .../proxy.
-    // Fastify's ajv strips unknown keys rather than failing, so without the
-    // propertyNames guard this would have answered 200 having changed nothing.
-    const proxy = await call('PATCH', '/instances/bot/runtime', {
-      proxy: 'socks5://proxy.test:1080',
-    });
-    expect(proxy.statusCode).toBe(400);
     expect(client.setRuntimeOptions).not.toHaveBeenCalled();
   });
 

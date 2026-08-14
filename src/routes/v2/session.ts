@@ -220,13 +220,6 @@ export async function sessionRoutesV2(server: FastifyInstance): Promise<void> {
         body: {
           type: 'object',
           additionalProperties: false,
-          // Fastify's ajv runs with removeAdditional, so additionalProperties
-          // alone would strip an unknown key and answer 200 — a caller trying
-          // to set `proxy` here would think it worked. propertyNames is not
-          // subject to removal, so it rejects instead.
-          propertyNames: {
-            enum: ['debug', 'autoReconnect', 'maxReconnectAttempts', 'reconnectDelay'],
-          },
           // An empty patch would report success while changing nothing.
           minProperties: 1,
           properties: {

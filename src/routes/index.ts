@@ -115,10 +115,56 @@ export async function registerV1Routes(
  * ported handler cannot accidentally ship a bare payload. It only fires for
  * routes registered inside this scope.
  */
+/**
+ * Fastify runs ajv with `removeAdditional`, so `additionalProperties: false`
+ * does not reject an unknown key — it strips it and lets the request through.
+ * A caller who misspells a field, or sends one this route does not accept, is
+ * told the request succeeded while that part of it was silently discarded.
+ *
+ * `propertyNames` is not subject to removal, so restating the allowed keys
+ * there turns the same schema into a rejection. Applied by walking the schema
+ * rather than by hand at each route, so a schema added later is covered too.
+ *
+ * Bodies declared as `$ref` are left alone: those schemas are shared with v1,
+ * and tightening them there would change a frozen contract.
+ */
+function rejectUnknownProperties(node: unknown): void {
+  if (Array.isArray(node)) {
+    node.forEach(rejectUnknownProperties);
+    return;
+  }
+  if (!node || typeof node !== 'object') {
+    return;
+  }
+
+  const schema = node as Record<string, any>;
+
+  if (
+    schema.additionalProperties === false &&
+    schema.properties &&
+    typeof schema.properties === 'object' &&
+    !schema.propertyNames
+  ) {
+    const allowed = Object.keys(schema.properties);
+    if (allowed.length > 0) {
+      schema.propertyNames = { enum: allowed };
+    }
+  }
+
+  for (const value of Object.values(schema)) {
+    rejectUnknownProperties(value);
+  }
+}
+
 export async function registerV2Routes(server: FastifyInstance): Promise<void> {
   await server.register(
     async (api) => {
       api.addHook('onRoute', (route) => {
+        // Inline request schemas reject unknown keys instead of dropping them.
+        for (const part of ['body', 'querystring', 'params'] as const) {
+          rejectUnknownProperties(route.schema?.[part]);
+        }
+
         const response = (route.schema?.response ?? {}) as Record<string, unknown>;
 
         // A route that declares its own success response opts out: the media
