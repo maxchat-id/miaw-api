@@ -3,28 +3,31 @@
  * Starts and stops the API server for testing
  */
 
-import { createServer as startApiServer } from '../../dist/server.js';
+// Imported from source rather than dist/ so a run does not depend on a build
+// being current. The env this server reads is set in ../setup-env.ts, which
+// vitest loads before this module graph.
+import type { FastifyInstance } from 'fastify';
+import { createServer as buildApiServer } from '../../../src/server.js';
 import { HttpClient } from './http.js';
 
-let apiServer: any = null;
+const HOST = process.env.HOST ?? '127.0.0.1';
+const PORT = Number(process.env.PORT ?? 3000);
+const API_KEY = process.env.API_KEY ?? 'test-api-key-for-integration-tests';
+
+export const BASE_URL = `http://${HOST}:${PORT}`;
+
+let apiServer: FastifyInstance | null = null;
 
 export async function startTestServer(): Promise<void> {
   if (apiServer) {
     return; // Already running
   }
 
-  // Set test environment variables
-  process.env.PORT = '3000';
-  process.env.HOST = '127.0.0.1';
-  process.env.API_KEY = 'test-api-key-for-integration-tests';
-  process.env.WEBHOOK_SECRET = 'test-webhook-secret';
-  process.env.SESSION_PATH = './test-sessions';
-  process.env.LOG_LEVEL = 'error'; // Reduce log noise during tests
-
-  apiServer = await startApiServer();
-
-  // Wait for server to be ready
-  await new Promise((resolve) => setTimeout(resolve, 1000));
+  const server = await buildApiServer();
+  // createServer() only builds the instance; without listen() the tests would
+  // hit a closed port.
+  await server.listen({ host: HOST, port: PORT });
+  apiServer = server;
 }
 
 export async function stopTestServer(): Promise<void> {
@@ -36,10 +39,10 @@ export async function stopTestServer(): Promise<void> {
 
 export function createTestClient(): HttpClient {
   return new HttpClient(
-    'http://127.0.0.1:3000',
+    BASE_URL,
     {
       'Content-Type': 'application/json',
-      Authorization: 'Bearer test-api-key-for-integration-tests',
+      Authorization: `Bearer ${API_KEY}`,
     },
     30000,
   );
