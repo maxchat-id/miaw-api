@@ -39,6 +39,33 @@ export function registerSchemas(server: FastifyInstance): void {
   });
 
   // ============================================================================
+  // v2 Response Envelopes
+  // ============================================================================
+
+  // Stamped onto every 2xx of a `/api/v2` route by registerV2Routes(). `data`
+  // is intentionally unconstrained: serialization stays the handler's job.
+  server.addSchema({
+    $id: 'successEnvelope',
+    type: 'object',
+    required: ['success', 'data'],
+    properties: {
+      success: { const: true },
+      data: {},
+    },
+  });
+
+  // Collections put their pagination metadata inside `data`.
+  server.addSchema({
+    $id: 'collectionData',
+    type: 'object',
+    required: ['items', 'total'],
+    properties: {
+      items: { type: 'array', items: {} },
+      total: { type: 'integer', minimum: 0 },
+    },
+  });
+
+  // ============================================================================
   // Instance Schemas
   // ============================================================================
 
