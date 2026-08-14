@@ -5,7 +5,8 @@
  * GET    /instances                                  - List instances
  * GET    /instances/:instanceId                      - Get instance
  * DELETE /instances/:instanceId                      - Delete instance
- * GET    /instances/:instanceId/authentication/qr-code - Pull the cached QR
+ * GET    /instances/:instanceId/authentication/qr-code      - Pull the cached QR
+ * GET    /instances/:instanceId/authentication/pairing-code - Pull the cached code
  *
  * Differences from v1: the path parameter is `:instanceId` (not `:id`), the
  * list returns `{ items, total }`, and the QR moved from `/qr` to
@@ -152,6 +153,37 @@ export async function instanceRoutesV2(server: FastifyInstance): Promise<void> {
       reply.send({
         success: true,
         data: { qr: instance.lastQr, status: instance.status },
+      });
+    },
+  );
+
+  server.get(
+    '/instances/:instanceId/authentication/pairing-code',
+    {
+      schema: {
+        description:
+          'Get the last pairing code, the alternative to scanning a QR. Only produced ' +
+          'when the instance was created with clientOptions.usePairingCode and a ' +
+          'phoneNumber. Returns 404 once paired, since the code expires.',
+        tags: ['Instances'],
+        summary: 'Get current pairing-code',
+        params: instanceParams,
+      },
+    },
+    async (request, reply) => {
+      const { instanceId } = request.params as { instanceId: string };
+      const instance = server.instanceManager.getInstance(instanceId);
+
+      if (!instance) {
+        throw new NotFoundError('Instance');
+      }
+      if (!instance.lastPairingCode) {
+        throw new NotFoundError('Pairing code');
+      }
+
+      reply.send({
+        success: true,
+        data: { code: instance.lastPairingCode, status: instance.status },
       });
     },
   );

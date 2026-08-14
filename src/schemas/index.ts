@@ -91,6 +91,7 @@ export function registerSchemas(server: FastifyInstance): void {
           type: 'string',
           enum: [
             'qr',
+            'pairing_code',
             'ready',
             'message',
             'message_own',
@@ -154,6 +155,7 @@ export function registerSchemas(server: FastifyInstance): void {
           type: 'string',
           enum: [
             'qr',
+            'pairing_code',
             'ready',
             'message',
             'message_own',

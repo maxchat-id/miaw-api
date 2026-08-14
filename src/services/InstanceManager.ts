@@ -343,8 +343,8 @@ export class InstanceManager extends EventEmitter {
       this.emitWebhook(instanceId, 'connection', { state });
 
       if (state === 'connected') {
-        // Paired now → drop any cached QR so a pull returns empty.
-        this.updateState(instanceId, { lastQr: undefined });
+        // Paired now → drop the cached challenges so a pull returns empty.
+        this.updateState(instanceId, { lastQr: undefined, lastPairingCode: undefined });
         const user = (client as any).socket?.user;
         if (user) {
           this.updateState(instanceId, {
@@ -368,6 +368,14 @@ export class InstanceManager extends EventEmitter {
       this.logger.info({ instanceId }, 'QR code received');
       this.updateState(instanceId, { status: 'qr_required', lastQr: qr });
       this.emitWebhook(instanceId, 'qr', { qr });
+    });
+
+    // The pairing code is the alternative to a QR scan and is cached the same
+    // way: it expires, so a stale one is worse than none.
+    client.on('pairing_code', (code: string) => {
+      this.logger.info({ instanceId }, 'Pairing code received');
+      this.updateState(instanceId, { status: 'qr_required', lastPairingCode: code });
+      this.emitWebhook(instanceId, 'pairing_code', { code });
     });
 
     // Reconnecting

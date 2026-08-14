@@ -7,6 +7,7 @@
  * DELETE /instances/:instanceId/messages/:messageId/reaction
  * POST   /instances/:instanceId/messages/:messageId/forward
  * GET    /instances/:instanceId/messages/:messageId/media
+ * PUT|DELETE /instances/:instanceId/messages/:messageId/star
  * PUT    /instances/:instanceId/messages/:messageId/read-receipt
  * POST   /instances/:instanceId/chats/:chatJid/message-history-loads
  *
@@ -449,4 +450,47 @@ export async function messagingMutationRoutesV2(server: FastifyInstance): Promis
       }
     },
   );
+
+  // Starring has no v1 route; it is new here. PUT/DELETE rather than a toggle,
+  // so setting a state that already holds stays harmless.
+  for (const starred of [true, false]) {
+    const route = starred ? server.put.bind(server) : server.delete.bind(server);
+
+    route(
+      '/instances/:instanceId/messages/:messageId/star',
+      {
+        schema: {
+          description: starred ? 'Star a message' : 'Remove a star from a message',
+          tags: ['Messaging'],
+          summary: starred ? 'Star message' : 'Unstar message',
+          params: messageParams,
+          querystring: chatJidQuery,
+        },
+      },
+      async (request, reply) => {
+        const { instanceId, messageId } = request.params as {
+          instanceId: string;
+          messageId: string;
+        };
+        const { chatJid } = request.query as { chatJid?: string };
+
+        const client = requireConnectedClient(server, instanceId);
+        const message = await requireMessage(client, messageId, chatJid);
+
+        try {
+          const result = starred
+            ? await client.starMessage(message)
+            : await client.unstarMessage(message);
+          if (!result.success) {
+            throw new BadRequestError(`Failed to ${starred ? 'star' : 'unstar'} message`, {
+              error: result.error,
+            });
+          }
+          reply.send({ success: true, data: { messageId, starred } });
+        } catch (err: any) {
+          failed(`${starred ? 'star' : 'unstar'} message`, err);
+        }
+      },
+    );
+  }
 }

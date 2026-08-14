@@ -5,6 +5,12 @@
  * GET /instances/:instanceId/chats/:chatJid/messages
  * PUT /instances/:instanceId/chats/:chatJid/presence
  * PUT /instances/:instanceId/presence
+ * PUT|DELETE /instances/:instanceId/chats/:chatJid/archive
+ * PUT|DELETE /instances/:instanceId/chats/:chatJid/pin
+ * PUT|DELETE /instances/:instanceId/chats/:chatJid/mute
+ * PUT    /instances/:instanceId/chats/:chatJid/read-state
+ * DELETE /instances/:instanceId/chats/:chatJid/messages
+ * DELETE /instances/:instanceId/chats/:chatJid
  *
  * v1 modelled chat presence as three verb routes — `/typing/:to`,
  * `/recording/:to`, `/stop-typing/:to` — which are three spellings of one
@@ -13,6 +19,10 @@
  *
  * Account-wide presence keeps its own route because it is not scoped to a
  * chat: it is what every contact sees.
+ *
+ * The archive, pin, mute, read-state and deletion routes have no v1
+ * equivalent; they are new here. Each flag is a sub-resource set with PUT and
+ * cleared with DELETE, so repeating a request is harmless.
  */
 
 import { FastifyInstance } from 'fastify';
@@ -200,6 +210,258 @@ export async function chatRoutesV2(server: FastifyInstance): Promise<void> {
         reply.send({ success: true, data: { status } });
       } catch (err: any) {
         failed('set presence', err);
+      }
+    },
+  );
+
+  // Flags a chat carries. Each is a sub-resource: PUT sets it, DELETE clears
+  // it, so a caller that does not know the current state cannot get it wrong.
+  const flags = [
+    {
+      path: 'archive',
+      noun: 'archive',
+      field: 'archived',
+      set: (client: MiawClient, jid: string) => client.archiveChat(jid),
+      clear: (client: MiawClient, jid: string) => client.unarchiveChat(jid),
+    },
+    {
+      path: 'pin',
+      noun: 'pin',
+      field: 'pinned',
+      set: (client: MiawClient, jid: string) => client.pinChat(jid),
+      clear: (client: MiawClient, jid: string) => client.unpinChat(jid),
+    },
+  ];
+
+  for (const flag of flags) {
+    server.put(
+      `/instances/:instanceId/chats/:chatJid/${flag.path}`,
+      {
+        schema: {
+          description: `Set the ${flag.noun} on a chat`,
+          tags: ['Chats'],
+          summary: `Set ${flag.path}`,
+          params: chatParams,
+        },
+      },
+      async (request, reply) => {
+        const { instanceId, chatJid } = request.params as {
+          instanceId: string;
+          chatJid: string;
+        };
+        const client = requireConnectedClient(server, instanceId);
+
+        try {
+          const result = await flag.set(client, chatJid);
+          if (!result.success) {
+            throw new BadRequestError(`Failed to set ${flag.noun}`, { error: result.error });
+          }
+          reply.send({ success: true, data: { chatJid, [flag.field]: true } });
+        } catch (err: any) {
+          failed(`set ${flag.noun}`, err);
+        }
+      },
+    );
+
+    server.delete(
+      `/instances/:instanceId/chats/:chatJid/${flag.path}`,
+      {
+        schema: {
+          description: `Clear the ${flag.noun} on a chat`,
+          tags: ['Chats'],
+          summary: `Clear ${flag.path}`,
+          params: chatParams,
+        },
+      },
+      async (request, reply) => {
+        const { instanceId, chatJid } = request.params as {
+          instanceId: string;
+          chatJid: string;
+        };
+        const client = requireConnectedClient(server, instanceId);
+
+        try {
+          const result = await flag.clear(client, chatJid);
+          if (!result.success) {
+            throw new BadRequestError(`Failed to clear ${flag.noun}`, { error: result.error });
+          }
+          reply.send({ success: true, data: { chatJid, [flag.field]: false } });
+        } catch (err: any) {
+          failed(`clear ${flag.noun}`, err);
+        }
+      },
+    );
+  }
+
+  server.put(
+    '/instances/:instanceId/chats/:chatJid/mute',
+    {
+      schema: {
+        description:
+          'Mute a chat for a while. WhatsApp stores an expiry, not a flag, so the ' +
+          'duration is part of the request.',
+        tags: ['Chats'],
+        summary: 'Set mute',
+        params: chatParams,
+        body: {
+          type: 'object',
+          nullable: true,
+          additionalProperties: false,
+          properties: {
+            durationMs: {
+              type: 'integer',
+              minimum: 1000,
+              default: 8 * 60 * 60 * 1000,
+              description: 'Defaults to 8 hours, matching miaw-core.',
+            },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      const { instanceId, chatJid } = request.params as {
+        instanceId: string;
+        chatJid: string;
+      };
+      const { durationMs } = (request.body ?? {}) as { durationMs?: number };
+      const client = requireConnectedClient(server, instanceId);
+
+      try {
+        const result = await client.muteChat(chatJid, durationMs);
+        if (!result.success) {
+          throw new BadRequestError('Failed to mute chat', { error: result.error });
+        }
+        reply.send({ success: true, data: { chatJid, muted: true, durationMs } });
+      } catch (err: any) {
+        failed('mute chat', err);
+      }
+    },
+  );
+
+  server.delete(
+    '/instances/:instanceId/chats/:chatJid/mute',
+    {
+      schema: {
+        description: 'Unmute a chat',
+        tags: ['Chats'],
+        summary: 'Clear mute',
+        params: chatParams,
+      },
+    },
+    async (request, reply) => {
+      const { instanceId, chatJid } = request.params as {
+        instanceId: string;
+        chatJid: string;
+      };
+      const client = requireConnectedClient(server, instanceId);
+
+      try {
+        const result = await client.unmuteChat(chatJid);
+        if (!result.success) {
+          throw new BadRequestError('Failed to unmute chat', { error: result.error });
+        }
+        reply.send({ success: true, data: { chatJid, muted: false } });
+      } catch (err: any) {
+        failed('unmute chat', err);
+      }
+    },
+  );
+
+  server.put(
+    '/instances/:instanceId/chats/:chatJid/read-state',
+    {
+      schema: {
+        description:
+          'Mark a chat read or unread. This is the chat-level badge, not a per-message ' +
+          'read receipt — for that use PUT /messages/:messageId/read-receipt.',
+        tags: ['Chats'],
+        summary: 'Set read state',
+        params: chatParams,
+        body: {
+          type: 'object',
+          required: ['state'],
+          additionalProperties: false,
+          properties: { state: { type: 'string', enum: ['read', 'unread'] } },
+        },
+      },
+    },
+    async (request, reply) => {
+      const { instanceId, chatJid } = request.params as {
+        instanceId: string;
+        chatJid: string;
+      };
+      const { state } = request.body as { state: 'read' | 'unread' };
+      const client = requireConnectedClient(server, instanceId);
+
+      try {
+        const result =
+          state === 'read'
+            ? await client.markChatRead(chatJid)
+            : await client.markChatUnread(chatJid);
+        if (!result.success) {
+          throw new BadRequestError(`Failed to mark chat ${state}`, { error: result.error });
+        }
+        reply.send({ success: true, data: { chatJid, state } });
+      } catch (err: any) {
+        failed(`mark chat ${state}`, err);
+      }
+    },
+  );
+
+  server.delete(
+    '/instances/:instanceId/chats/:chatJid/messages',
+    {
+      schema: {
+        description: 'Clear a chat, deleting its messages but keeping the chat itself',
+        tags: ['Chats'],
+        summary: 'Clear chat messages',
+        params: chatParams,
+      },
+    },
+    async (request, reply) => {
+      const { instanceId, chatJid } = request.params as {
+        instanceId: string;
+        chatJid: string;
+      };
+      const client = requireConnectedClient(server, instanceId);
+
+      try {
+        const result = await client.clearChat(chatJid);
+        if (!result.success) {
+          throw new BadRequestError('Failed to clear chat', { error: result.error });
+        }
+        reply.send({ success: true, data: { chatJid, cleared: true } });
+      } catch (err: any) {
+        failed('clear chat', err);
+      }
+    },
+  );
+
+  server.delete(
+    '/instances/:instanceId/chats/:chatJid',
+    {
+      schema: {
+        description: 'Delete a chat, removing it from the list along with its messages',
+        tags: ['Chats'],
+        summary: 'Delete chat',
+        params: chatParams,
+      },
+    },
+    async (request, reply) => {
+      const { instanceId, chatJid } = request.params as {
+        instanceId: string;
+        chatJid: string;
+      };
+      const client = requireConnectedClient(server, instanceId);
+
+      try {
+        const result = await client.deleteChat(chatJid);
+        if (!result.success) {
+          throw new BadRequestError('Failed to delete chat', { error: result.error });
+        }
+        reply.send({ success: true, data: { chatJid, deleted: true } });
+      } catch (err: any) {
+        failed('delete chat', err);
       }
     },
   );

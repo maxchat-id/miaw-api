@@ -134,6 +134,19 @@ describe('v2 instances + connection', () => {
     expect(cleared.statusCode).toBe(404);
   });
 
+  it('serves the pairing code from the authentication sub-resource', async () => {
+    manager.getInstance.mockReturnValue(
+      stateFor({ status: 'qr_required', lastPairingCode: 'ABCD-1234' }),
+    );
+    const found = await call('GET', '/instances/bot/authentication/pairing-code');
+    expect(found.json().data.code).toBe('ABCD-1234');
+
+    // The code expires, so a stale one must not outlive pairing.
+    manager.getInstance.mockReturnValue(stateFor({ status: 'connected' }));
+    const cleared = await call('GET', '/instances/bot/authentication/pairing-code');
+    expect(cleared.statusCode).toBe(404);
+  });
+
   it('maps a missing instance to 404', async () => {
     manager.getInstance.mockReturnValue(null);
     manager.getClient.mockReturnValue(null);

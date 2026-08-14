@@ -6,6 +6,10 @@
  * POST /instances/:instanceId/messages/video
  * POST /instances/:instanceId/messages/audio
  * POST /instances/:instanceId/messages/document
+ * POST /instances/:instanceId/messages/location
+ * POST /instances/:instanceId/messages/contact
+ * POST /instances/:instanceId/messages/sticker
+ * POST /instances/:instanceId/messages/poll
  *
  * v1 exposed two overlapping ways to send: the verb-shaped `/send-text` and
  * `/send-media` (which sniffed the mimetype to pick a sender), plus a typed
@@ -15,10 +19,13 @@
  * The soft-failure guard is carried over from v1: miaw-core reports a failed
  * send as `{ success: false }` rather than throwing, so a handler that only
  * catches exceptions would answer 200 for a message that never left.
+ *
+ * Location, contact, sticker and poll have no v1 route; they are new here,
+ * following the same shape as the ported ones.
  */
 
 import { FastifyInstance } from 'fastify';
-import type { MiawClient, MiawMessage, SendMessageResult } from 'miaw-core';
+import type { ContactCard, MiawClient, MiawMessage, SendMessageResult } from 'miaw-core';
 import { createAuthMiddleware } from '../../middleware/auth';
 import { NotFoundError, BadRequestError, ServiceUnavailableError } from '../../utils/errorHandler';
 
@@ -265,6 +272,194 @@ export async function messagingSendRoutesV2(server: FastifyInstance): Promise<vo
           caption: body.caption,
           fileName: body.fileName,
           mimetype: body.mimetype,
+          quoted,
+        }),
+      );
+      reply.send({ success: true, data });
+    },
+  );
+
+  server.post(
+    '/instances/:instanceId/messages/location',
+    {
+      schema: {
+        description: 'Send a location pin',
+        tags: ['Messaging'],
+        summary: 'Send location',
+        params: instanceParams,
+        body: {
+          type: 'object',
+          required: ['to', 'latitude', 'longitude'],
+          additionalProperties: false,
+          properties: {
+            to: { type: 'string', minLength: 1, maxLength: 100 },
+            latitude: { type: 'number', minimum: -90, maximum: 90 },
+            longitude: { type: 'number', minimum: -180, maximum: 180 },
+            name: { type: 'string' },
+            address: { type: 'string' },
+            chatJid: { type: 'string', nullable: true },
+            quoted: { type: 'string', nullable: true },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      const { instanceId } = request.params as { instanceId: string };
+      const body = request.body as SendBody & {
+        latitude: number;
+        longitude: number;
+        name?: string;
+        address?: string;
+      };
+
+      const client = requireConnectedClient(server, instanceId);
+      const quoted = await resolveQuoted(client, body.quoted, body.chatJid);
+
+      const data = await send('location', body.to, () =>
+        client.sendLocation(body.to, body.latitude, body.longitude, {
+          name: body.name,
+          address: body.address,
+          quoted,
+        }),
+      );
+      reply.send({ success: true, data });
+    },
+  );
+
+  server.post(
+    '/instances/:instanceId/messages/contact',
+    {
+      schema: {
+        description: 'Send one or more contact cards',
+        tags: ['Messaging'],
+        summary: 'Send contact',
+        params: instanceParams,
+        body: {
+          type: 'object',
+          required: ['to', 'contacts'],
+          additionalProperties: false,
+          properties: {
+            to: { type: 'string', minLength: 1, maxLength: 100 },
+            contacts: {
+              type: 'array',
+              minItems: 1,
+              items: {
+                type: 'object',
+                required: ['fullName', 'phone'],
+                additionalProperties: false,
+                properties: {
+                  fullName: { type: 'string', minLength: 1 },
+                  phone: { type: 'string', minLength: 1 },
+                  organization: { type: 'string' },
+                },
+              },
+            },
+            chatJid: { type: 'string', nullable: true },
+            quoted: { type: 'string', nullable: true },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      const { instanceId } = request.params as { instanceId: string };
+      const body = request.body as SendBody & { contacts: ContactCard[] };
+
+      const client = requireConnectedClient(server, instanceId);
+      const quoted = await resolveQuoted(client, body.quoted, body.chatJid);
+
+      const data = await send('contact', body.to, () =>
+        client.sendContact(body.to, body.contacts, { quoted }),
+      );
+      reply.send({ success: true, data });
+    },
+  );
+
+  server.post(
+    '/instances/:instanceId/messages/sticker',
+    {
+      schema: {
+        description: 'Send a sticker. WhatsApp expects WebP.',
+        tags: ['Messaging'],
+        summary: 'Send sticker',
+        params: instanceParams,
+        body: {
+          type: 'object',
+          required: ['to', 'sticker'],
+          additionalProperties: false,
+          properties: {
+            to: { type: 'string', minLength: 1, maxLength: 100 },
+            sticker: { type: 'string', minLength: 1 },
+            chatJid: { type: 'string', nullable: true },
+            quoted: { type: 'string', nullable: true },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      const { instanceId } = request.params as { instanceId: string };
+      const body = request.body as SendBody & { sticker: string };
+
+      const client = requireConnectedClient(server, instanceId);
+      const quoted = await resolveQuoted(client, body.quoted, body.chatJid);
+
+      const data = await send('sticker', body.to, () =>
+        client.sendSticker(body.to, body.sticker, { quoted }),
+      );
+      reply.send({ success: true, data });
+    },
+  );
+
+  server.post(
+    '/instances/:instanceId/messages/poll',
+    {
+      schema: {
+        description: 'Send a poll',
+        tags: ['Messaging'],
+        summary: 'Send poll',
+        params: instanceParams,
+        body: {
+          type: 'object',
+          required: ['to', 'name', 'options'],
+          additionalProperties: false,
+          properties: {
+            to: { type: 'string', minLength: 1, maxLength: 100 },
+            name: { type: 'string', minLength: 1, description: 'The question.' },
+            options: {
+              type: 'array',
+              minItems: 2,
+              maxItems: 12,
+              items: { type: 'string', minLength: 1 },
+            },
+            selectableCount: {
+              type: 'integer',
+              minimum: 1,
+              default: 1,
+              description: 'How many options one voter may pick.',
+            },
+            chatJid: { type: 'string', nullable: true },
+            quoted: { type: 'string', nullable: true },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      const { instanceId } = request.params as { instanceId: string };
+      const body = request.body as SendBody & {
+        name: string;
+        options: string[];
+        selectableCount?: number;
+      };
+
+      const client = requireConnectedClient(server, instanceId);
+      const quoted = await resolveQuoted(client, body.quoted, body.chatJid);
+
+      if (body.selectableCount !== undefined && body.selectableCount > body.options.length) {
+        throw new BadRequestError('selectableCount cannot exceed the number of options');
+      }
+
+      const data = await send('poll', body.to, () =>
+        client.sendPoll(body.to, body.name, body.options, {
+          selectableCount: body.selectableCount,
           quoted,
         }),
       );

@@ -142,6 +142,26 @@ describe('InstanceManager QR caching (C4/C5)', () => {
     expect(manager.getInstance('bot')?.lastQr).toBeUndefined();
     expect(manager.getInstance('bot')?.status).toBe('connected');
   });
+
+  it('caches the pairing code the same way, since it expires too', async () => {
+    const manager = new InstanceManager({
+      sessionPath: './sessions',
+      webhookSecret: 'test-secret',
+      webhookTimeout: 1000,
+      webhookMaxRetries: 3,
+      webhookRetryDelay: 1000,
+    });
+    await manager.createInstance({ instanceId: 'bot' });
+    const client = manager.getClient('bot');
+
+    handlerFor(client, 'pairing_code')('ABCD-1234');
+    expect(manager.getInstance('bot')?.lastPairingCode).toBe('ABCD-1234');
+    expect(manager.getInstance('bot')?.status).toBe('qr_required');
+
+    // Pairing clears both challenges: a stale code is worse than none.
+    handlerFor(client, 'connection')('connected');
+    expect(manager.getInstance('bot')?.lastPairingCode).toBeUndefined();
+  });
 });
 
 describe('InstanceManager proxy resolution', () => {

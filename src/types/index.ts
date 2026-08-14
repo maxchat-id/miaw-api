@@ -52,6 +52,8 @@ export interface InstanceState {
   phoneNumber?: string;
   /** Last QR string received (pullable via GET /instances/:id/qr); cleared on connect. */
   lastQr?: string;
+  /** Last pairing code received; cleared on connect, like lastQr. */
+  lastPairingCode?: string;
 }
 
 // ============================================================================
@@ -60,6 +62,7 @@ export interface InstanceState {
 
 export type WebhookEvent =
   | 'qr'
+  | 'pairing_code'
   | 'ready'
   | 'message'
   | 'message_own'
