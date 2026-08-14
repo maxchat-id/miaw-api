@@ -99,15 +99,6 @@ describe('v2 instances + connection', () => {
     expect(manager.createInstance).not.toHaveBeenCalled();
   });
 
-  it('moves webhook updates onto their own sub-resource', async () => {
-    const res = await call('PATCH', '/instances/bot/webhook', {
-      webhookEvents: ['ready'],
-    });
-
-    expect(res.statusCode).toBe(200);
-    expect(manager.updateWebhook).toHaveBeenCalledWith('bot', { webhookEvents: ['ready'] });
-  });
-
   it('acts on connection as a sub-resource', async () => {
     const put = await call('PUT', '/instances/bot/connection');
     expect(put.statusCode).toBe(200);

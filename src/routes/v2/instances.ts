@@ -4,13 +4,12 @@
  * POST   /instances                                  - Create instance
  * GET    /instances                                  - List instances
  * GET    /instances/:instanceId                      - Get instance
- * PATCH  /instances/:instanceId/webhook              - Update webhook settings
  * DELETE /instances/:instanceId                      - Delete instance
  * GET    /instances/:instanceId/authentication/qr-code - Pull the cached QR
  *
  * Differences from v1: the path parameter is `:instanceId` (not `:id`), the
- * list returns `{ items, total }`, webhook updates live on their own
- * sub-resource, and the QR moved from `/qr` to `/authentication/qr-code`.
+ * list returns `{ items, total }`, and the QR moved from `/qr` to
+ * `/authentication/qr-code`. Webhook configuration lives in `./webhooks.ts`.
  * The v1 SSRF check on webhook URLs is kept — it is a local guarantee, not a
  * contract detail.
  */
@@ -99,40 +98,6 @@ export async function instanceRoutesV2(server: FastifyInstance): Promise<void> {
       }
 
       reply.send({ success: true, data: instance });
-    },
-  );
-
-  server.patch(
-    '/instances/:instanceId/webhook',
-    {
-      schema: {
-        description: 'Update instance webhook settings (URL and/or events)',
-        tags: ['Instances'],
-        summary: 'Update instance webhook',
-        params: instanceParams,
-        body: { $ref: 'updateInstance#' },
-      },
-    },
-    async (request, reply) => {
-      const { instanceId } = request.params as { instanceId: string };
-      const body = request.body as {
-        webhookUrl?: string | null;
-        webhookEvents?: WebhookEvent[];
-      };
-
-      if (body.webhookUrl) {
-        await assertSafeWebhookUrl(body.webhookUrl, config.webhookSsrfAllowlist);
-      }
-
-      try {
-        const state = server.instanceManager.updateWebhook(instanceId, body);
-        reply.send({ success: true, data: state });
-      } catch (err: any) {
-        if (err.message?.includes('not found')) {
-          throw new NotFoundError('Instance');
-        }
-        throw err;
-      }
     },
   );
 
