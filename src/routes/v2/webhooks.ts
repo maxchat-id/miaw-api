@@ -69,7 +69,7 @@ export async function webhookRoutesV2(server: FastifyInstance): Promise<void> {
         tags: ['Webhooks'],
         summary: 'Update webhook configuration',
         params: instanceParams,
-        body: { $ref: 'updateInstance#' },
+        body: { $ref: 'v2UpdateInstance#' },
       },
     },
     async (request, reply) => {

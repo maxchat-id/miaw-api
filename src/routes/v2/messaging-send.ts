@@ -124,7 +124,7 @@ export async function messagingSendRoutesV2(server: FastifyInstance): Promise<vo
         tags: ['Messaging'],
         summary: 'Send text',
         params: instanceParams,
-        body: { $ref: 'sendText#' },
+        body: { $ref: 'v2SendText#' },
       },
     },
     async (request, reply) => {
@@ -149,7 +149,7 @@ export async function messagingSendRoutesV2(server: FastifyInstance): Promise<vo
         tags: ['Messaging'],
         summary: 'Send image',
         params: instanceParams,
-        body: { $ref: 'sendImage#' },
+        body: { $ref: 'v2SendImage#' },
       },
     },
     async (request, reply) => {
@@ -182,7 +182,7 @@ export async function messagingSendRoutesV2(server: FastifyInstance): Promise<vo
         tags: ['Messaging'],
         summary: 'Send video',
         params: instanceParams,
-        body: { $ref: 'sendVideo#' },
+        body: { $ref: 'v2SendVideo#' },
       },
     },
     async (request, reply) => {
@@ -219,7 +219,7 @@ export async function messagingSendRoutesV2(server: FastifyInstance): Promise<vo
         tags: ['Messaging'],
         summary: 'Send audio',
         params: instanceParams,
-        body: { $ref: 'sendAudio#' },
+        body: { $ref: 'v2SendAudio#' },
       },
     },
     async (request, reply) => {
@@ -252,7 +252,7 @@ export async function messagingSendRoutesV2(server: FastifyInstance): Promise<vo
         tags: ['Messaging'],
         summary: 'Send document',
         params: instanceParams,
-        body: { $ref: 'sendDocument#' },
+        body: { $ref: 'v2SendDocument#' },
       },
     },
     async (request, reply) => {

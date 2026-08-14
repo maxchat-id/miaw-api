@@ -5,8 +5,12 @@
  * success while discarding it.
  *
  * registerV2Routes walks each inline request schema and restates the allowed
- * keys under `propertyNames`, which removal does not apply to. These tests
- * mount through that hook, since registering a module directly bypasses it.
+ * keys under `propertyNames`, which removal does not apply to. Schemas shared
+ * with v1 through `$ref` get a strict `v2`-prefixed twin instead, so v1 keeps
+ * the lenient behaviour its callers may rely on.
+ *
+ * These tests mount through registerV2Routes, since registering a module
+ * directly bypasses the hook.
  */
 
 import Fastify, { type FastifyInstance } from 'fastify';
@@ -27,6 +31,7 @@ describe('v2 rejects unknown request fields', () => {
   beforeEach(async () => {
     client = {
       sendText: vi.fn(async () => ({ success: true, messageId: 'M1' })),
+      createInstance: vi.fn(async () => ({ instanceId: 'bot2', status: 'disconnected' })),
       sendContact: vi.fn(async () => ({ success: true, messageId: 'M2' })),
       getChatMessages: vi.fn(async () => ({ success: true, messages: [] })),
       getMessageCounts: vi.fn(() => new Map()),
@@ -52,6 +57,8 @@ describe('v2 rejects unknown request fields', () => {
     server.decorate('instanceManager', {
       getClient: vi.fn(() => client),
       getInstance: vi.fn(() => ({ instanceId: 'bot', status: 'connected' })),
+      createInstance: client.createInstance,
+      listInstances: vi.fn(() => []),
     } as any);
     server.decorate('proxyPool', { enabled: false, getStatus: () => ({}) } as any);
     server.decorate('webhookDispatcher', { getStats: () => ({}) } as any);
@@ -122,16 +129,36 @@ describe('v2 rejects unknown request fields', () => {
     expect(client.muteChat).toHaveBeenCalledWith(CHAT, undefined);
   });
 
-  it('does not touch bodies declared as $ref, which v1 shares', async () => {
-    // sendText# is registered once and used by both mounts; tightening it here
-    // would change a frozen contract, so an unknown key is still dropped.
+  it('rejects an unknown key in a $ref body through the v2 twin', async () => {
+    // sendText# stays lenient for v1; v2 points at v2SendText#, a strict clone.
     const res = await call('POST', '/instances/bot/messages/text', {
       to: '628111',
       text: 'halo',
       unknownField: true,
     });
 
+    expect(res.statusCode).toBe(400);
+    expect(client.sendText).not.toHaveBeenCalled();
+  });
+
+  it('still accepts the same $ref body without the unknown key', async () => {
+    const res = await call('POST', '/instances/bot/messages/text', {
+      to: '628111',
+      text: 'halo',
+    });
+
     expect(res.statusCode).toBe(200);
     expect(client.sendText).toHaveBeenCalledOnce();
+  });
+
+  it('reaches a nested $ref: clientOptions.proxy resolves to the strict twin', async () => {
+    const res = await call('POST', '/instances', {
+      instanceId: 'bot2',
+      clientOptions: {
+        proxy: { url: 'socks5://proxy.test:1080', realm: 'nope' },
+      },
+    });
+
+    expect(res.statusCode).toBe(400);
   });
 });

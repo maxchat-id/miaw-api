@@ -38,7 +38,7 @@ export async function instanceRoutesV2(server: FastifyInstance): Promise<void> {
         description: 'Create a new WhatsApp instance',
         tags: ['Instances'],
         summary: 'Create instance',
-        body: { $ref: 'createInstance#' },
+        body: { $ref: 'v2CreateInstance#' },
       },
     },
     async (request, reply) => {

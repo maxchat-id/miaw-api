@@ -69,6 +69,25 @@ describe('v2 contract', () => {
       expect(v2.data.data.total).toBe(v2.data.data.items.length);
     });
 
+    it('keeps v1 lenient about unknown fields', async () => {
+      // v2 rejects these; v1 is frozen, and callers may be sending extra
+      // fields today that it has always quietly accepted.
+      const id = `v1-lenient-${Date.now()}`;
+      const res = await client.post('/instances', { instanceId: id, unknownField: true });
+
+      expect(res.status).toBe(201);
+      await client.delete(`/instances/${id}`);
+    });
+
+    it('rejects the same unknown field on v2', async () => {
+      const res = await client.post(`${V2}/instances`, {
+        instanceId: `v2-strict-${Date.now()}`,
+        unknownField: true,
+      });
+
+      expect(res.status).toBe(400);
+    });
+
     it('does not leak v2 paths into the root mount', async () => {
       const stray = await client.get('/api/v2/api/v2/instances');
 
