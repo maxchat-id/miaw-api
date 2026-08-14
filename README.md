@@ -6,6 +6,13 @@
 
 Miaw API provides a RESTful interface to manage multiple WhatsApp instances, send messages, and receive real-time webhook events. Built with Fastify and TypeScript.
 
+**Two contracts are served side by side.** The original one keeps its unprefixed
+paths and is frozen; the normalized one lives under `/api/v2`. They share one
+process and one WhatsApp connection, so you can port a client call by call. See
+the [API v2 Guide](./docs/API.md) and the
+[migration guide](./docs/MIGRATION-V1-V2.md). The endpoint tables further down
+this file describe the unprefixed contract.
+
 ## Features
 
 - **Multi-Instance Management** - Create and manage multiple WhatsApp instances
@@ -513,6 +520,10 @@ npm run test:integration -- setup
 
 ## Documentation
 
+- [API v2 Guide](./docs/API.md) - Conventions and the full endpoint index
+- [Migrating v1 to v2](./docs/MIGRATION-V1-V2.md) - What changes, and in what order
+- [Error Codes](./docs/ERROR-CODES.md) - Error catalogue
+- [Security](./docs/SECURITY.md) - Webhook signatures and SSRF rules
 - [Roadmap](./docs/ROADMAP.md) - Full development roadmap
 - [Integration Test Plan](./docs/INTEGRATION-TEST-PLAN.md) - Test strategy
 - [Testing Guide](./docs/TESTING.md) - How to run tests
