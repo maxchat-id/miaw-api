@@ -3,6 +3,8 @@
  *
  * DELETE /instances/:instanceId/authentication - Log out of WhatsApp
  * DELETE /instances/:instanceId/session        - Delete the stored credentials
+ * GET    /instances/:instanceId/runtime        - Read the tunable options
+ * PATCH  /instances/:instanceId/runtime        - Change them on a live client
  * DELETE /instances/:instanceId/runtime        - Dispose the in-process client
  * GET    /instances/:instanceId/stats/messages
  * GET    /instances/:instanceId/stats/labels
@@ -25,7 +27,7 @@
  */
 
 import { FastifyInstance } from 'fastify';
-import type { MiawClient } from 'miaw-core';
+import type { MiawClient, RuntimeOptions } from 'miaw-core';
 import { createAuthMiddleware } from '../../middleware/auth';
 import { NotFoundError, ServiceUnavailableError } from '../../utils/errorHandler';
 
@@ -181,6 +183,76 @@ export async function sessionRoutesV2(server: FastifyInstance): Promise<void> {
           lastSyncTime: info.lastSyncTime?.toISOString() ?? null,
         },
       });
+    },
+  );
+
+  server.get(
+    '/instances/:instanceId/runtime',
+    {
+      schema: {
+        description:
+          'Read the options that can be changed on a running client. Transport settings ' +
+          'are absent by design: proxy, agent and browser are bound when the socket is ' +
+          'built, so changing one needs a rebuild — see PUT .../proxy.',
+        tags: ['Session'],
+        summary: 'Get runtime options',
+        params: instanceParams,
+      },
+    },
+    async (request, reply) => {
+      const { instanceId } = request.params as { instanceId: string };
+      const client = requireClient(server, instanceId);
+
+      reply.send({ success: true, data: client.getRuntimeOptions() });
+    },
+  );
+
+  server.patch(
+    '/instances/:instanceId/runtime',
+    {
+      schema: {
+        description:
+          'Change options on a running client. The reconnect values apply from the next ' +
+          'attempt onward — one already scheduled keeps the delay it was scheduled with.',
+        tags: ['Session'],
+        summary: 'Update runtime options',
+        params: instanceParams,
+        body: {
+          type: 'object',
+          additionalProperties: false,
+          // Fastify's ajv runs with removeAdditional, so additionalProperties
+          // alone would strip an unknown key and answer 200 — a caller trying
+          // to set `proxy` here would think it worked. propertyNames is not
+          // subject to removal, so it rejects instead.
+          propertyNames: {
+            enum: ['debug', 'autoReconnect', 'maxReconnectAttempts', 'reconnectDelay'],
+          },
+          // An empty patch would report success while changing nothing.
+          minProperties: 1,
+          properties: {
+            debug: { type: 'boolean' },
+            autoReconnect: { type: 'boolean' },
+            maxReconnectAttempts: {
+              type: 'integer',
+              minimum: 0,
+              description: 'Omit or use a large value for "keep trying".',
+            },
+            reconnectDelay: {
+              type: 'integer',
+              minimum: 100,
+              maximum: 600000,
+              description: 'Base delay in ms; the backoff doubles it per attempt.',
+            },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      const { instanceId } = request.params as { instanceId: string };
+      const patch = request.body as Partial<RuntimeOptions>;
+      const client = requireClient(server, instanceId);
+
+      reply.send({ success: true, data: client.setRuntimeOptions(patch) });
     },
   );
 }

@@ -30,6 +30,19 @@ describe('v2 session', () => {
             ['b@s.whatsapp.net', 4],
           ]),
       ),
+      getRuntimeOptions: vi.fn(() => ({
+        debug: false,
+        autoReconnect: true,
+        maxReconnectAttempts: Infinity,
+        reconnectDelay: 3000,
+      })),
+      setRuntimeOptions: vi.fn((patch: any) => ({
+        debug: false,
+        autoReconnect: true,
+        maxReconnectAttempts: Infinity,
+        reconnectDelay: 3000,
+        ...patch,
+      })),
       getLabelsStoreInfo: vi.fn(() => ({
         size: 2,
         eventCount: 7,
@@ -51,11 +64,12 @@ describe('v2 session', () => {
     vi.clearAllMocks();
   });
 
-  const call = (method: string, url: string) =>
+  const call = (method: string, url: string, payload?: unknown) =>
     server.inject({
       method: method as any,
       url: `${PREFIX}${url}`,
       headers: { 'x-api-key': config.apiKey },
+      ...(payload === undefined ? {} : { payload }),
     });
 
   it('separates logout, session and runtime as three DELETEs', async () => {
@@ -116,6 +130,39 @@ describe('v2 session', () => {
     client.getLabelsStoreInfo.mockReturnValue({ size: 0, eventCount: 0, lastSyncTime: undefined });
     const never = await call('GET', '/instances/bot/stats/labels');
     expect(never.json().data.lastSyncTime).toBeNull();
+  });
+
+  it('reads the tunable options', async () => {
+    const res = await call('GET', '/instances/bot/runtime');
+
+    expect(res.json().data).toEqual({
+      debug: false,
+      autoReconnect: true,
+      maxReconnectAttempts: null,
+      reconnectDelay: 3000,
+    });
+  });
+
+  it('applies only the keys sent, and returns the whole set', async () => {
+    const res = await call('PATCH', '/instances/bot/runtime', { autoReconnect: false });
+
+    expect(res.statusCode).toBe(200);
+    expect(client.setRuntimeOptions).toHaveBeenCalledWith({ autoReconnect: false });
+    expect(res.json().data.autoReconnect).toBe(false);
+    expect(res.json().data.reconnectDelay).toBe(3000);
+  });
+
+  it('rejects an empty patch and a transport setting', async () => {
+    expect((await call('PATCH', '/instances/bot/runtime', {})).statusCode).toBe(400);
+
+    // The transport is bound at construction; changing it needs PUT .../proxy.
+    // Fastify's ajv strips unknown keys rather than failing, so without the
+    // propertyNames guard this would have answered 200 having changed nothing.
+    const proxy = await call('PATCH', '/instances/bot/runtime', {
+      proxy: 'socks5://proxy.test:1080',
+    });
+    expect(proxy.statusCode).toBe(400);
+    expect(client.setRuntimeOptions).not.toHaveBeenCalled();
   });
 
   it('404s an unknown instance', async () => {

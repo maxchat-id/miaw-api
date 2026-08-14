@@ -247,6 +247,31 @@ describe('v2 contract', () => {
       expect(res.data.error.code).toBe('SERVICE_UNAVAILABLE');
     });
 
+    it('reads and updates runtime options', async () => {
+      const before = await client.get(`${V2}/instances/${instanceId}/runtime`);
+      expect(before.status).toBe(200);
+      expect(before.data.data).toHaveProperty('autoReconnect');
+
+      const patched = await patch(`${V2}/instances/${instanceId}/runtime`, {
+        autoReconnect: false,
+        reconnectDelay: 5000,
+      });
+      expect(patched.status).toBe(200);
+      expect(patched.data.data.autoReconnect).toBe(false);
+      expect(patched.data.data.reconnectDelay).toBe(5000);
+
+      const after = await client.get(`${V2}/instances/${instanceId}/runtime`);
+      expect(after.data.data.autoReconnect).toBe(false);
+    });
+
+    it('refuses to change the transport through runtime', async () => {
+      const res = await patch(`${V2}/instances/${instanceId}/runtime`, {
+        proxy: 'socks5://proxy.invalid:1080',
+      });
+
+      expect(res.status).toBe(400);
+    });
+
     it('still allows session bookkeeping', async () => {
       // Clearing and disposing are exactly what you do while disconnected.
       const cleared = await client.delete(`${V2}/instances/${instanceId}/session`);
@@ -307,6 +332,7 @@ describe('v2 contract', () => {
       expect(paths).toContain(`${V2}/instances/{instanceId}/communities`);
       expect(paths).toContain(`${V2}/instances/{instanceId}/messages/poll`);
       expect(paths).toContain(`${V2}/instances/{instanceId}/authentication/pairing-code`);
+      expect(paths).toContain(`${V2}/instances/{instanceId}/runtime`);
     });
 
     it('registers every ported v2 module', async () => {
