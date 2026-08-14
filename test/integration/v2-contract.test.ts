@@ -232,6 +232,8 @@ describe('v2 contract', () => {
       ['GET', '/groups', undefined],
       ['GET', '/profile', undefined],
       ['GET', '/labels', undefined],
+      ['GET', '/communities', undefined],
+      ['PUT', '/chats/628111%40s.whatsapp.net/archive', undefined],
       ['POST', '/messages/text', { to: '628111', text: 'halo' }],
     ];
 
@@ -302,6 +304,9 @@ describe('v2 contract', () => {
       expect(paths).toContain(`${V2}/instances`);
       expect(paths).toContain(`${V2}/instances/{instanceId}/messages/text`);
       expect(paths).toContain(`${V2}/instances/{instanceId}/newsletters`);
+      expect(paths).toContain(`${V2}/instances/{instanceId}/communities`);
+      expect(paths).toContain(`${V2}/instances/{instanceId}/messages/poll`);
+      expect(paths).toContain(`${V2}/instances/{instanceId}/authentication/pairing-code`);
     });
 
     it('registers every ported v2 module', async () => {
@@ -321,6 +326,8 @@ describe('v2 contract', () => {
         'labels',
         'catalog/products',
         'newsletters',
+        'communities',
+        'catalog/products',
         'proxy-pool',
         'stats/messages',
       ]) {

@@ -111,6 +111,7 @@ export async function createServer(): Promise<FastifyInstance> {
           description: 'WhatsApp Business features (labels, catalog, newsletters)',
         },
         { name: 'Proxies', description: 'Inspect, reload, and test outbound proxies' },
+        { name: 'Communities', description: 'Create and manage WhatsApp communities' },
         { name: 'Health', description: 'API health check' },
       ],
       components: {
