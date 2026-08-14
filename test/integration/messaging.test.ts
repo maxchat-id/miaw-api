@@ -10,7 +10,7 @@
  * Run connection.test.ts and pair via QR code first.
  */
 
-import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from '@jest/globals';
+import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
 import { startTestServer, stopTestServer, createTestClient } from './helpers/server.js';
 import { HttpClient } from './helpers/http.js';
 import { WebhookTestServer } from './helpers/webhook.js';

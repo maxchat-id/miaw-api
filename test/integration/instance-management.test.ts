@@ -8,7 +8,7 @@
  * - Delete instance
  */
 
-import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { startTestServer, stopTestServer, createTestClient } from './helpers/server.js';
 import { HttpClient } from './helpers/http.js';
 import { TEST_CONFIG } from './fixtures/data.js';

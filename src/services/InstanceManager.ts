@@ -15,6 +15,7 @@ import {
 } from 'miaw-core';
 import type { ProxyConfig } from 'miaw-core';
 import pino from 'pino';
+import { config } from '../config';
 import { InstanceConfig, InstanceState, WebhookEvent, WebhookPayload } from '../types';
 import {
   describeProxy,
@@ -54,7 +55,9 @@ export class InstanceManager extends EventEmitter {
   constructor(options: InstanceManagerOptions) {
     super();
     this.options = options;
-    this.logger = pino({ level: 'info' });
+    // LOG_LEVEL applies here too; a hardcoded level ignored the setting and
+    // made the service the loudest thing in a test run.
+    this.logger = pino({ level: config.logLevel });
     this.registryPath = path.join(options.sessionPath, 'instances.json');
   }
 

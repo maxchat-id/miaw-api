@@ -94,6 +94,10 @@ export class HttpClient {
     return this.request(path, { ...options, method: 'PUT', body });
   }
 
+  async patch(path: string, body?: any, options?: HttpRequestOptions): Promise<HttpResponse> {
+    return this.request(path, { ...options, method: 'PATCH', body });
+  }
+
   async delete(path: string, options?: HttpRequestOptions): Promise<HttpResponse> {
     return this.request(path, { ...options, method: 'DELETE' });
   }

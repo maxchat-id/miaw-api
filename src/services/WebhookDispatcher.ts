@@ -4,6 +4,7 @@
  */
 
 import pino from 'pino';
+import { config } from '../config';
 import crypto from 'crypto';
 
 interface WebhookDispatcherOptions {
@@ -48,7 +49,7 @@ export class WebhookDispatcher {
 
   constructor(options: WebhookDispatcherOptions) {
     this.options = options;
-    this.logger = pino({ level: 'info' });
+    this.logger = pino({ level: config.logLevel });
     this.deliveryQueue = new Map();
     this.startProcessing();
   }
