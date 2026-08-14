@@ -33,6 +33,7 @@ import { sessionRoutes } from './session';
 import { proxyRoutes } from './proxies';
 import { instanceRoutesV2 } from './v2/instances';
 import { connectionRoutesV2 } from './v2/connection';
+import { messagingSendRoutesV2 } from './v2/messaging-send';
 
 export const V2_PREFIX = '/api/v2';
 
@@ -123,6 +124,7 @@ export async function registerV2Routes(server: FastifyInstance): Promise<void> {
       // Ported to the v2 shape.
       await api.register(instanceRoutesV2);
       await api.register(connectionRoutesV2);
+      await api.register(messagingSendRoutesV2);
     },
     { prefix: V2_PREFIX },
   );
