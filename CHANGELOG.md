@@ -5,15 +5,86 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.3.0] - 2026-08-15
+
+**A second API contract, served beside the first.** v1 keeps its unprefixed
+paths and is frozen; the normalized contract lives under `/api/v2`. Both are
+served by one process sharing one instance registry and one WhatsApp
+connection, so a client can port a call at a time. See
+[docs/API.md](./docs/API.md) and
+[docs/MIGRATION-V1-V2.md](./docs/MIGRATION-V1-V2.md).
+
+One v1 response changed shape — see **Changed** below.
 
 ### Added
 
-- `WEBHOOK_SSRF_ALLOWLIST` env — hosts (comma-separated `host` or `host:port`)
-  exempt from the webhook SSRF address check, so self-hosted setups can point
-  `webhookUrl` at a co-located consumer (e.g. `localhost:4000`). Default empty
-  (all private/loopback still blocked); the `http(s)`-scheme check always
-  applies.
+- **The v2 contract** — 135 endpoints under `/api/v2`, covering instances,
+  connection, messaging, chats, contacts, profile, groups, communities,
+  business (labels and catalog), newsletters, webhooks, session and proxies.
+  Every 2xx carries `{ success, data }`; collections carry `{ items, total }`
+  inside `data`, with `nextCursor` where paging applies.
+- **Capabilities miaw-core already had but v1 never routed** — sending
+  location, contact cards, stickers and polls; starring a message; archiving,
+  pinning, muting and setting the read state of a chat; clearing a chat's
+  messages separately from deleting the chat.
+- **Communities** — 16 endpoints mirroring the group vocabulary, plus
+  `linked-groups`, which groups have no analogue for.
+- **`GET`/`PATCH /api/v2/instances/:instanceId/runtime`** — read and change
+  `debug`, `autoReconnect`, `maxReconnectAttempts` and `reconnectDelay` on a
+  live client. Transport settings are absent by design: the socket binds them
+  at construction.
+- **`GET /api/v2/instances/:instanceId/authentication/pairing-code`** — the
+  pairing code is now cached like the QR and cleared on connect, and pushed as
+  a new `pairing_code` webhook event. miaw-core emitted it; nothing stored it.
+- **Proxy management** — `GET /proxy-pool`, `POST /proxy-pool/reloads`,
+  `POST /proxy-tests`, and per-instance `GET`/`PUT`/`DELETE .../proxy`, served
+  identically on both mounts. Backed by a proxy pool service reading
+  `MIAW_PROXY_FILE` / `MIAW_PROXY_STRATEGY`.
+- **`WEBHOOK_SSRF_ALLOWLIST`** — hosts (comma-separated `host` or `host:port`)
+  exempt from the webhook SSRF address check, so a self-hosted setup can point
+  `webhookUrl` at a co-located consumer. Default empty; the `http(s)` scheme
+  check always applies.
+- Instance registry persistence, so instances survive a restart, and
+  `clientOptions` on create — including a per-instance `proxy`.
+
+### Changed
+
+- **`GET /instances/:id/webhook/status` answers `webhookUrl: null` rather than
+  `""` when no webhook is configured.** The handler always sent `null`; the
+  response schema typed the field as a plain string, so the serializer coerced
+  it. **A consumer comparing against `""` needs to adjust.** This is the only
+  v1-visible shape change in this release.
+- `POST /instances/:id/webhook/test` accepts a request with no body. Every
+  field in its schema is optional, but Fastify rejected the bodyless case
+  before the handler ran. Strictly more permissive.
+- `LOG_LEVEL` now applies to `InstanceManager` and `WebhookDispatcher`, which
+  hardcoded pino at `info` and were the loudest things in the process.
+- The `webhookEvents` enum gains `pairing_code`.
+- v2 rejects unknown request fields rather than dropping them. Fastify runs ajv
+  with `removeAdditional`, so `additionalProperties: false` stripped an unknown
+  key and answered 200 — a caller who misspelled a field was told it worked.
+  v1 keeps the lenient behaviour its callers may rely on.
+
+### Fixed
+
+- Webhook events queued while a delivery was in flight could be delivered
+  twice.
+- `instanceId` accepts uppercase, so a mixed-case tenant token is usable.
+- Deleting an instance disposes its client whatever its state; previously a
+  disconnected instance leaked its sockets and timers.
+- Error and serialization shapes are consistent: Fastify validation failures
+  return 4xx rather than 500, `/health` is marked public in the OpenAPI spec,
+  and nested objects survive response serialization instead of being stripped
+  to `{}`.
+- Webhook URLs are validated against SSRF at write time, and deliveries no
+  longer follow redirects.
+
+### Documentation
+
+- `docs/API.md` — v2 conventions and the endpoint index, generated from the
+  running server's OpenAPI document.
+- `docs/MIGRATION-V1-V2.md` — what breaks, what changed on purpose, the full
+  path mapping, and a suggested order of work.
 
 ## [1.2.1] - 2026-07-10
 
