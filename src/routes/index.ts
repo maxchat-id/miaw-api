@@ -42,6 +42,7 @@ import { profileRoutesV2 } from './v2/profile';
 import { groupRoutesV2 } from './v2/groups';
 import { labelRoutesV2 } from './v2/labels';
 import { catalogRoutesV2 } from './v2/catalog';
+import { sessionRoutesV2 } from './v2/session';
 
 export const V2_PREFIX = '/api/v2';
 
@@ -147,6 +148,7 @@ export async function registerV2Routes(server: FastifyInstance): Promise<void> {
       await api.register(groupRoutesV2);
       await api.register(labelRoutesV2);
       await api.register(catalogRoutesV2);
+      await api.register(sessionRoutesV2);
     },
     { prefix: V2_PREFIX },
   );
