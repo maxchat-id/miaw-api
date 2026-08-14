@@ -31,6 +31,8 @@ import { newsletterRoutes } from './newsletters';
 import { basicGetsRoutes } from './basic-gets';
 import { sessionRoutes } from './session';
 import { proxyRoutes } from './proxies';
+import { instanceRoutesV2 } from './v2/instances';
+import { connectionRoutesV2 } from './v2/connection';
 
 export const V2_PREFIX = '/api/v2';
 
@@ -114,9 +116,13 @@ export async function registerV2Routes(server: FastifyInstance): Promise<void> {
         };
       });
 
-      // Ported so far: proxy management. Its v1 paths already match the v2
-      // contract, so the same module serves both mounts.
+      // Proxy management: its v1 paths already match the v2 contract, so the
+      // same module serves both mounts.
       await api.register(proxyRoutes);
+
+      // Ported to the v2 shape.
+      await api.register(instanceRoutesV2);
+      await api.register(connectionRoutesV2);
     },
     { prefix: V2_PREFIX },
   );
