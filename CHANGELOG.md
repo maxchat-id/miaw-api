@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-08-15
+
+**Validation errors match the documented catalogue.** One response code
+changes; see below.
+
+### Changed
+
+- **A schema validation failure now answers `VALIDATION_ERROR`, not
+  `FST_ERR_VALIDATION`,** and carries ajv's per-field report as
+  `details.validation`. Anything else the framework rejects — an empty body, an
+  unsupported content type — answers `INVALID_REQUEST`.
+
+  `docs/ERROR-CODES.md` has always specified `VALIDATION_ERROR` with
+  `details.validation`, and the `ValidationError` class has always existed, but
+  nothing emitted either: the handler passed Fastify's own code straight
+  through, so the documented code was unreachable and clients got no
+  machine-readable detail. Leaking `FST_ERR_*` also meant a Fastify rename
+  would have changed this API's contract without anyone deciding to.
+
+  **A client matching on `FST_ERR_VALIDATION` needs to match
+  `VALIDATION_ERROR` instead.** Anything switching on the documented codes was
+  already falling through to its default branch and now works.
+
 ## [1.3.0] - 2026-08-15
 
 **A second API contract, served beside the first.** v1 keeps its unprefixed

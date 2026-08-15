@@ -314,7 +314,7 @@ describe('errorHandler', () => {
   });
 
   describe('handling Fastify framework errors', () => {
-    it('should respect the statusCode of a client validation error', () => {
+    it('reports a schema failure as VALIDATION_ERROR, not the Fastify code', () => {
       const error = Object.assign(new Error('body must be object'), {
         statusCode: 400,
         code: 'FST_ERR_VALIDATION',
@@ -324,11 +324,29 @@ describe('errorHandler', () => {
 
       expect(mockReply.status).toHaveBeenCalledWith(400);
       const sentPayload = mockReply.send.mock.calls[0][0];
-      expect(sentPayload.error.code).toBe('FST_ERR_VALIDATION');
+      // FST_ERR_* is the framework's, not this API's: leaking it would make a
+      // Fastify rename a change to our contract.
+      expect(sentPayload.error.code).toBe('VALIDATION_ERROR');
       expect(sentPayload.error.message).toBe('body must be object');
     });
 
-    it('should respect the statusCode of an empty-body error', () => {
+    it('passes ajv per-field detail through as details.validation', () => {
+      const validation = [{ keyword: 'type', instancePath: '/phone', message: 'must be string' }];
+      const error = Object.assign(new Error('body/phone must be string'), {
+        statusCode: 400,
+        code: 'FST_ERR_VALIDATION',
+        validation,
+      });
+
+      errorHandler(error, mockRequest, mockReply);
+
+      const sentPayload = mockReply.send.mock.calls[0][0];
+      // The only machine-readable part of a validation failure; without it a
+      // client can show the message but cannot point at the field.
+      expect(sentPayload.error.details).toEqual({ validation });
+    });
+
+    it('reports other framework rejections as INVALID_REQUEST', () => {
       const error = Object.assign(new Error('Body cannot be empty'), {
         statusCode: 400,
         code: 'FST_ERR_CTP_EMPTY_JSON_BODY',
@@ -337,6 +355,9 @@ describe('errorHandler', () => {
       errorHandler(error, mockRequest, mockReply);
 
       expect(mockReply.status).toHaveBeenCalledWith(400);
+      const sentPayload = mockReply.send.mock.calls[0][0];
+      expect(sentPayload.error.code).toBe('INVALID_REQUEST');
+      expect(sentPayload.error.details).toBeUndefined();
     });
 
     it('should NOT expose 5xx framework errors as client errors', () => {

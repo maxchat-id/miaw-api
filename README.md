@@ -2,7 +2,7 @@
 
 > REST API wrapper for miaw-core - Multiple Instance of App WhatsApp
 
-**Version:** 1.3.0 (see [CHANGELOG.md](./CHANGELOG.md) for releases after v0.9.0)
+**Version:** 1.4.0 (see [CHANGELOG.md](./CHANGELOG.md) for releases after v0.9.0)
 
 Miaw API provides a RESTful interface to manage multiple WhatsApp instances, send messages, and receive real-time webhook events. Built with Fastify and TypeScript.
 

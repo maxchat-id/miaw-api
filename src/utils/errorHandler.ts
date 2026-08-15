@@ -94,9 +94,18 @@ export function errorHandler(error: Error, request: any, reply: FastifyReply): v
     return;
   }
 
-  // Fastify framework errors (validation, empty body, etc.) carry their own
-  // statusCode/code. Preserve client errors (4xx) instead of masking them as 500.
-  const fastifyError = error as { statusCode?: number; code?: string };
+  // Fastify framework errors (validation, empty body, unsupported media type)
+  // carry their own statusCode. Preserve client errors (4xx) instead of masking
+  // them as 500, but translate the code: `FST_ERR_*` is an artefact of the
+  // framework, and putting it in the response would make a Fastify rename a
+  // change to this API's contract. The catalogue in docs/ERROR-CODES.md is the
+  // contract, so a schema failure is VALIDATION_ERROR and anything else the
+  // framework rejects is INVALID_REQUEST.
+  const fastifyError = error as {
+    statusCode?: number;
+    code?: string;
+    validation?: unknown[];
+  };
   if (
     typeof fastifyError.statusCode === 'number' &&
     fastifyError.statusCode >= 400 &&
@@ -105,11 +114,17 @@ export function errorHandler(error: Error, request: any, reply: FastifyReply): v
     const correlationId = crypto.randomUUID();
     request.log.error({ correlationId, error });
 
+    const isValidation =
+      Array.isArray(fastifyError.validation) || fastifyError.code === 'FST_ERR_VALIDATION';
+
     reply.status(fastifyError.statusCode).send({
       success: false,
       error: {
-        code: fastifyError.code || 'INVALID_REQUEST',
+        code: isValidation ? 'VALIDATION_ERROR' : 'INVALID_REQUEST',
         message: error.message,
+        // ajv's per-field report is the only machine-readable part of a
+        // validation failure; without it a client can only show the message.
+        ...(fastifyError.validation ? { details: { validation: fastifyError.validation } } : {}),
         correlationId,
       },
     });
