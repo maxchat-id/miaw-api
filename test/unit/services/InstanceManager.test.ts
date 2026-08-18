@@ -16,6 +16,7 @@ vi.mock('miaw-core', () => {
     });
     removeAllListeners = vi.fn();
     disconnect = vi.fn();
+    connect = vi.fn().mockResolvedValue(undefined);
     options: any;
     constructor(opts: unknown) {
       this.options = opts;
@@ -246,5 +247,57 @@ describe('InstanceManager proxy resolution', () => {
       downloadProxied: false,
     });
     expect(select).toHaveBeenCalledWith('bot');
+  });
+});
+
+describe('InstanceManager.connectIfIdle', () => {
+  let manager: InstanceManager;
+
+  beforeEach(async () => {
+    coreMock.clients.length = 0;
+    manager = new InstanceManager({
+      sessionPath: './sessions',
+      webhookSecret: 'test-secret',
+      webhookTimeout: 1000,
+      webhookMaxRetries: 3,
+      webhookRetryDelay: 1000,
+    });
+    await manager.createInstance({ instanceId: 'bot' });
+  });
+
+  it('connects when the instance is settled off', async () => {
+    const status = await manager.connectIfIdle('bot');
+
+    expect(coreMock.clients[0].connect).toHaveBeenCalledOnce();
+    expect(status).toBe('disconnected');
+  });
+
+  it('is a no-op once the socket is up or handshaking', async () => {
+    // The dashboard polls connect every ~10s; none of these may rebuild it.
+    for (const [event, arg] of [
+      ['qr', 'QR-STRING'],
+      ['reconnecting', 1],
+      ['connection', 'connected'],
+    ] as const) {
+      coreMock.clients[0].emitTest(event, arg);
+      await manager.connectIfIdle('bot');
+    }
+
+    expect(coreMock.clients[0].connect).not.toHaveBeenCalled();
+  });
+
+  it('connects again after a real disconnect', async () => {
+    coreMock.clients[0].emitTest('connection', 'connected');
+    await manager.connectIfIdle('bot');
+    expect(coreMock.clients[0].connect).not.toHaveBeenCalled();
+
+    coreMock.clients[0].emitTest('disconnected', 'socket closed');
+    await manager.connectIfIdle('bot');
+
+    expect(coreMock.clients[0].connect).toHaveBeenCalledOnce();
+  });
+
+  it('returns undefined for an unknown instance', async () => {
+    expect(await manager.connectIfIdle('nope')).toBeUndefined();
   });
 });

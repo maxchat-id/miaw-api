@@ -45,13 +45,15 @@ export async function connectionRoutesV2(server: FastifyInstance): Promise<void>
         throw new NotFoundError('Instance');
       }
 
+      let status;
       try {
-        await client.connect();
+        // No-op when already connected or mid-handshake; this endpoint is
+        // polled every ~10s by the dashboard.
+        status = (await server.instanceManager.connectIfIdle(instanceId)) ?? 'connecting';
       } catch (err: any) {
         throw new ServiceUnavailableError(err.message);
       }
 
-      const status = server.instanceManager.getInstance(instanceId)?.status ?? 'connecting';
       reply.send({
         success: true,
         data: { status: status === 'connected' ? 'connected' : status },

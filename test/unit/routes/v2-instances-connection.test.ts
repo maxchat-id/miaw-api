@@ -41,6 +41,14 @@ describe('v2 instances + connection', () => {
       updateWebhook: vi.fn(() => stateFor({ webhookUrl: 'https://example.test/hook' })),
       deleteInstance: vi.fn(async () => undefined),
       getClient: vi.fn(() => client),
+      // Mirrors the real gate: connect only from a settled-off state.
+      connectIfIdle: vi.fn(async () => {
+        const status = manager.getInstance()?.status;
+        if (status === 'disconnected') {
+          await client.connect();
+        }
+        return status;
+      }),
     };
 
     server = Fastify({ logger: false });
@@ -112,6 +120,19 @@ describe('v2 instances + connection', () => {
     // PUT connected once, the restart reconnected once. DELETE never connects.
     expect(client.connect).toHaveBeenCalledTimes(2);
     expect(client.disconnect).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not re-enter connect() while the socket is already up or handshaking', async () => {
+    for (const status of ['connected', 'connecting', 'qr_required', 'reconnecting']) {
+      manager.getInstance.mockReturnValue(stateFor({ status }));
+
+      const put = await call('PUT', '/instances/bot/connection');
+
+      expect(put.statusCode).toBe(200);
+      expect(put.json().data.status).toBe(status);
+    }
+    // The dashboard polls this endpoint; none of those states may rebuild the socket.
+    expect(client.connect).not.toHaveBeenCalled();
   });
 
   it('reports needsPairing only while a fresh scan is required', async () => {

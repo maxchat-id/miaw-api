@@ -16,7 +16,13 @@ import {
 import type { ProxyConfig } from 'miaw-core';
 import pino from 'pino';
 import { config } from '../config';
-import { InstanceConfig, InstanceState, WebhookEvent, WebhookPayload } from '../types';
+import {
+  InstanceClientOptions,
+  InstanceConfig,
+  InstanceState,
+  WebhookEvent,
+  WebhookPayload,
+} from '../types';
 import {
   describeProxy,
   type EffectiveProxyInfo,
@@ -24,6 +30,25 @@ import {
   type ProxyPoolService,
   type ProxySource,
 } from './ProxyService';
+
+/**
+ * Client options as written to the registry file: everything except `proxy`.
+ *
+ * The registry is plaintext on disk and a proxy URL can carry credentials. A
+ * pool-assigned proxy is re-derived on restore anyway (rendezvous hashing on
+ * instanceId is deterministic), so only an explicitly pinned proxy is lost —
+ * which is already the behaviour today.
+ */
+function persistableClientOptions(
+  options?: InstanceClientOptions,
+): InstanceClientOptions | undefined {
+  if (!options) {
+    return undefined;
+  }
+  const { proxy, ...rest } = options;
+  void proxy;
+  return Object.keys(rest).length > 0 ? rest : undefined;
+}
 
 interface InstanceManagerOptions {
   sessionPath: string;
@@ -62,9 +87,10 @@ export class InstanceManager extends EventEmitter {
   }
 
   /**
-   * Persist the instance registry (ids + webhook config) so instances survive a
-   * restart. Session auth already lives on disk; this restores the list and
-   * webhook targets that would otherwise be in-memory only.
+   * Persist the instance registry (ids, webhook config, client options) so
+   * instances survive a restart. Session auth already lives on disk; this
+   * restores the list, webhook targets, and per-instance client options that
+   * would otherwise be in-memory only.
    */
   private async persist(): Promise<void> {
     try {
@@ -73,6 +99,7 @@ export class InstanceManager extends EventEmitter {
         webhookUrl: m.state.webhookUrl,
         webhookEvents: m.state.webhookEvents,
         webhookEnabled: m.state.webhookEnabled,
+        clientOptions: persistableClientOptions(m.config.clientOptions),
       }));
       await fs.mkdir(path.dirname(this.registryPath), { recursive: true });
       await fs.writeFile(this.registryPath, JSON.stringify(registry, null, 2));
@@ -161,6 +188,31 @@ export class InstanceManager extends EventEmitter {
   getInstance(instanceId: string): InstanceState | null {
     const managed = this.instances.get(instanceId);
     return managed ? managed.state : null;
+  }
+
+  /**
+   * Connect an instance, but only from a settled-off state.
+   *
+   * The dashboard polls the connect endpoint every ~10s. Re-entering connect()
+   * on a client that is already connected, mid-handshake, waiting on a QR, or
+   * auto-reconnecting tears the socket back down and churns the state, so a
+   * repeat call is a no-op here. Forcing a socket rebuild is what the restart
+   * endpoint is for.
+   *
+   * Returns the status after the attempt, or undefined if there is no such
+   * instance.
+   */
+  async connectIfIdle(instanceId: string): Promise<ConnectionState | undefined> {
+    const managed = this.instances.get(instanceId);
+    if (!managed) {
+      return undefined;
+    }
+    if (managed.state.status === 'disconnected') {
+      await managed.client.connect();
+    }
+    // Re-read: updateState() replaces the state object, so the reference above
+    // is a stale snapshot once connect() has run.
+    return this.instances.get(instanceId)?.state.status;
   }
 
   /**

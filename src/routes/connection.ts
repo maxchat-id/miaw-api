@@ -98,13 +98,10 @@ export async function connectionRoutes(server: FastifyInstance): Promise<void> {
         throw new NotFoundError('Instance');
       }
 
-      const instance = instanceManager.getInstance(params.id);
-
       try {
-        await client.connect();
-
-        // Check current status
-        const currentState = instance?.status;
+        // No-op when already connected or mid-handshake; this endpoint is
+        // polled every ~10s by the dashboard.
+        const currentState = await instanceManager.connectIfIdle(params.id);
 
         if (currentState === 'connected') {
           reply.send({
