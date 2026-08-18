@@ -14,6 +14,7 @@ import { InstanceManager } from './services/InstanceManager';
 import { ProxyPoolService } from './services/ProxyService';
 import { WebhookDispatcher } from './services/WebhookDispatcher';
 import { errorHandler, notFoundHandler } from './utils/errorHandler';
+import { installUnhandledRejectionGuard } from './utils/processGuards';
 import { createShutdownHandler } from './utils/shutdown';
 
 /**
@@ -74,6 +75,11 @@ export async function createServer(): Promise<FastifyInstance> {
           : undefined,
     },
   });
+
+  // Installed before anything can reconnect an instance: a dropped socket in a
+  // background fetch would otherwise exit the process and take every session
+  // with it.
+  const uninstallRejectionGuard = installUnhandledRejectionGuard({ logger: server.log });
 
   // Register plugins
   await server.register(cors, {
@@ -223,6 +229,7 @@ export async function createServer(): Promise<FastifyInstance> {
   // instanceManager/webhookDispatcher are disposed by createShutdownHandler.
   server.addHook('onClose', () => {
     proxyPool.close();
+    uninstallRejectionGuard();
   });
 
   // Register API routes (pass instanceManager for v0.9.0 routes)
