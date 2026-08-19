@@ -57,6 +57,8 @@ interface InstanceManagerOptions {
   webhookMaxRetries: number;
   webhookRetryDelay: number;
   proxyPool?: ProxyPoolService;
+  /** Applied to instances that did not set `syncFullHistory` themselves. */
+  defaultSyncFullHistory?: boolean;
 }
 
 interface ManagedInstance {
@@ -426,11 +428,16 @@ export class InstanceManager extends EventEmitter {
   }
 
   private createClient(config: InstanceConfig, proxy?: ProxyInput): MiawClient {
+    // The per-instance value wins; the server-wide default only fills the gap,
+    // which is what makes it reachable for instances the gateway provisions.
+    const syncFullHistory =
+      config.clientOptions?.syncFullHistory ?? this.options.defaultSyncFullHistory;
     const clientOptions: MiawClientOptions = {
       ...config.clientOptions,
       instanceId: config.instanceId,
       sessionPath: this.options.sessionPath,
       debug: config.clientOptions?.debug ?? false,
+      ...(syncFullHistory !== undefined ? { syncFullHistory } : {}),
       ...(proxy !== undefined ? { proxy } : {}),
     };
     return new MiawClient(clientOptions);

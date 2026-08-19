@@ -31,6 +31,10 @@ interface Config {
   // Session Storage
   sessionPath: string;
 
+  // Default `syncFullHistory` for instances that do not set one themselves.
+  // Undefined leaves miaw-core's own default (full sync on) in place.
+  defaultSyncFullHistory?: boolean;
+
   // Proxy Pool
   proxyFile?: string;
   proxyStrategy: ProxyRotationStrategy;
@@ -56,6 +60,10 @@ function loadConfig(): Config {
     webhookSecret: process.env.WEBHOOK_SECRET || DEFAULT_WEBHOOK_SECRET,
     corsOrigin: process.env.CORS_ORIGIN || '*',
     sessionPath: process.env.SESSION_PATH || './sessions',
+    defaultSyncFullHistory: parseOptionalBoolean(
+      'MIAW_SYNC_FULL_HISTORY',
+      process.env.MIAW_SYNC_FULL_HISTORY,
+    ),
     proxyFile: process.env.MIAW_PROXY_FILE || undefined,
     proxyStrategy: parseProxyStrategy(process.env.MIAW_PROXY_STRATEGY),
     webhookTimeout: parseInt(process.env.WEBHOOK_TIMEOUT_MS || '10000', 10),
@@ -72,6 +80,20 @@ function loadConfig(): Config {
   validateConfig(config);
 
   return config;
+}
+
+function parseOptionalBoolean(name: string, value: string | undefined): boolean | undefined {
+  if (value === undefined || value.trim() === '') {
+    return undefined;
+  }
+  const normalised = value.trim().toLowerCase();
+  if (normalised === 'true') {
+    return true;
+  }
+  if (normalised === 'false') {
+    return false;
+  }
+  throw new Error(`Invalid ${name} "${value}". Expected "true" or "false".`);
 }
 
 function parseProxyStrategy(value: string | undefined): ProxyRotationStrategy {

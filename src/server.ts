@@ -202,6 +202,7 @@ export async function createServer(): Promise<FastifyInstance> {
     webhookMaxRetries: config.webhookMaxRetries,
     webhookRetryDelay: config.webhookRetryDelay,
     proxyPool,
+    defaultSyncFullHistory: config.defaultSyncFullHistory,
   });
 
   // Create webhook dispatcher
