@@ -55,7 +55,9 @@ describe('instance registry persistence', () => {
   });
 
   afterEach(async () => {
-    await fs.rm(sessionPath, { recursive: true, force: true });
+    // restore() leaves background connects/persists in flight, which can
+    // recreate files mid-teardown; retry rather than fail on ENOTEMPTY.
+    await fs.rm(sessionPath, { recursive: true, force: true, maxRetries: 5, retryDelay: 20 });
   });
 
   it('persists clientOptions so they survive a restart', async () => {

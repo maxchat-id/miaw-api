@@ -76,6 +76,7 @@ export class InstanceManager extends EventEmitter {
   private options: InstanceManagerOptions;
   private logger: pino.Logger;
   private registryPath: string;
+  private backupPath: string;
   /** Serialises registry writes; see persist(). */
   private persistQueue: Promise<void> = Promise.resolve();
 
@@ -86,6 +87,7 @@ export class InstanceManager extends EventEmitter {
     // made the service the loudest thing in a test run.
     this.logger = pino({ level: config.logLevel });
     this.registryPath = path.join(options.sessionPath, 'instances.json');
+    this.backupPath = `${this.registryPath}.bak`;
   }
 
   /**
@@ -114,9 +116,13 @@ export class InstanceManager extends EventEmitter {
       await fs.mkdir(path.dirname(this.registryPath), { recursive: true });
       // Write then rename: rename is atomic within a filesystem, so a reader
       // never observes a partially written registry.
+      const serialised = JSON.stringify(registry, null, 2);
       const tmpPath = `${this.registryPath}.tmp`;
-      await fs.writeFile(tmpPath, JSON.stringify(registry, null, 2));
+      await fs.writeFile(tmpPath, serialised);
       await fs.rename(tmpPath, this.registryPath);
+      // Last known good copy, so a damaged registry is recoverable without
+      // reaching for whatever manual backup happens to exist.
+      await fs.writeFile(this.backupPath, serialised);
     } catch (err) {
       this.logger.error({ err }, 'Failed to persist instance registry');
     }
@@ -128,10 +134,8 @@ export class InstanceManager extends EventEmitter {
    * background so a slow or failed one never blocks startup.
    */
   async restore(): Promise<void> {
-    let registry: InstanceConfig[];
-    try {
-      registry = JSON.parse(await fs.readFile(this.registryPath, 'utf8'));
-    } catch {
+    const registry = await this.readRegistry();
+    if (!registry) {
       return; // no registry yet (first boot)
     }
 
@@ -148,6 +152,42 @@ export class InstanceManager extends EventEmitter {
       }
     }
     this.logger.info({ count: registry.length }, 'Instances restored');
+  }
+
+  /**
+   * Read the registry, falling back to the backup when the file is damaged.
+   *
+   * A missing file is a first boot and returns undefined. A malformed one is an
+   * operator-visible fault: it is logged, the backup is tried, and if that is
+   * unusable the error propagates rather than letting the process come up with
+   * an empty registry and overwrite whatever is still on disk.
+   */
+  private async readRegistry(): Promise<InstanceConfig[] | undefined> {
+    try {
+      return JSON.parse(await fs.readFile(this.registryPath, 'utf8'));
+    } catch (err) {
+      if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
+        return undefined;
+      }
+      this.logger.error(
+        { err, registryPath: this.registryPath },
+        'Instance registry is unreadable; trying the backup',
+      );
+      try {
+        const backup: InstanceConfig[] = JSON.parse(await fs.readFile(this.backupPath, 'utf8'));
+        this.logger.warn(
+          { count: backup.length, backupPath: this.backupPath },
+          'Recovered the instance registry from its backup',
+        );
+        return backup;
+      } catch (backupErr) {
+        this.logger.error(
+          { err: backupErr, backupPath: this.backupPath },
+          'Backup registry is unusable; refusing to start with an empty registry',
+        );
+        throw err;
+      }
+    }
   }
 
   /**

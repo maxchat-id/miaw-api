@@ -86,7 +86,9 @@ describe('instance registry durability', () => {
 
   afterEach(async () => {
     vi.restoreAllMocks();
-    await fs.rm(sessionPath, { recursive: true, force: true });
+    // restore() leaves background connects/persists in flight, which can
+    // recreate files mid-teardown; retry rather than fail on ENOTEMPTY.
+    await fs.rm(sessionPath, { recursive: true, force: true, maxRetries: 5, retryDelay: 20 });
   });
 
   it('stays parseable when two writes overlap', async () => {
