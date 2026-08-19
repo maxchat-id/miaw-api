@@ -76,6 +76,8 @@ export class InstanceManager extends EventEmitter {
   private options: InstanceManagerOptions;
   private logger: pino.Logger;
   private registryPath: string;
+  /** Serialises registry writes; see persist(). */
+  private persistQueue: Promise<void> = Promise.resolve();
 
   constructor(options: InstanceManagerOptions) {
     super();
@@ -92,7 +94,15 @@ export class InstanceManager extends EventEmitter {
    * restores the list, webhook targets, and per-instance client options that
    * would otherwise be in-memory only.
    */
-  private async persist(): Promise<void> {
+  private persist(): Promise<void> {
+    // Serialised: callers fire this without awaiting, and two `fs.writeFile`
+    // calls each open their own O_TRUNC descriptor — if one truncates while the
+    // other is mid-write, the loser's tail survives and the file stops parsing.
+    this.persistQueue = this.persistQueue.then(() => this.writeRegistry());
+    return this.persistQueue;
+  }
+
+  private async writeRegistry(): Promise<void> {
     try {
       const registry: InstanceConfig[] = Array.from(this.instances.values()).map((m) => ({
         instanceId: m.state.instanceId,
@@ -102,7 +112,11 @@ export class InstanceManager extends EventEmitter {
         clientOptions: persistableClientOptions(m.config.clientOptions),
       }));
       await fs.mkdir(path.dirname(this.registryPath), { recursive: true });
-      await fs.writeFile(this.registryPath, JSON.stringify(registry, null, 2));
+      // Write then rename: rename is atomic within a filesystem, so a reader
+      // never observes a partially written registry.
+      const tmpPath = `${this.registryPath}.tmp`;
+      await fs.writeFile(tmpPath, JSON.stringify(registry, null, 2));
+      await fs.rename(tmpPath, this.registryPath);
     } catch (err) {
       this.logger.error({ err }, 'Failed to persist instance registry');
     }
