@@ -26,7 +26,10 @@ describe('Config', () => {
     delete process.env.WEBHOOK_TIMEOUT_MS;
     delete process.env.WEBHOOK_MAX_RETRIES;
     delete process.env.WEBHOOK_RETRY_DELAY_MS;
+    delete process.env.WEBHOOK_SSRF_ALLOWLIST;
     delete process.env.LOG_LEVEL;
+    delete process.env.MIAW_PROXY_FILE;
+    delete process.env.MIAW_PROXY_STRATEGY;
     delete process.env.NODE_ENV;
     resetModules();
   });
@@ -86,6 +89,12 @@ describe('Config', () => {
     it('should use default log level "info"', async () => {
       const { config } = await import('../../../src/config');
       expect(config.logLevel).toBe('info');
+    });
+
+    it('should disable the proxy file and use deterministic assignment', async () => {
+      const { config } = await import('../../../src/config/index.js');
+      expect(config.proxyFile).toBeUndefined();
+      expect(config.proxyStrategy).toBe('deterministic');
     });
   });
 
@@ -148,6 +157,30 @@ describe('Config', () => {
       process.env.LOG_LEVEL = 'debug';
       const { config } = await import('../../../src/config');
       expect(config.logLevel).toBe('debug');
+    });
+
+    it('should default the webhook SSRF allowlist to an empty array', async () => {
+      const { config } = await import('../../../src/config');
+      expect(config.webhookSsrfAllowlist).toEqual([]);
+    });
+
+    it('should parse WEBHOOK_SSRF_ALLOWLIST as a trimmed, comma-separated list', async () => {
+      process.env.WEBHOOK_SSRF_ALLOWLIST = 'localhost:4000, 127.0.0.1 ,';
+      const { config } = await import('../../../src/config');
+      expect(config.webhookSsrfAllowlist).toEqual(['localhost:4000', '127.0.0.1']);
+    });
+
+    it('should override proxy pool settings', async () => {
+      process.env.MIAW_PROXY_FILE = '/run/secrets/proxies.txt';
+      process.env.MIAW_PROXY_STRATEGY = 'weighted';
+      const { config } = await import('../../../src/config');
+      expect(config.proxyFile).toBe('/run/secrets/proxies.txt');
+      expect(config.proxyStrategy).toBe('weighted');
+    });
+
+    it('should reject an unknown proxy strategy', async () => {
+      process.env.MIAW_PROXY_STRATEGY = 'rotate-live';
+      await expect(import('../../../src/config')).rejects.toThrow('Invalid MIAW_PROXY_STRATEGY');
     });
   });
 
@@ -287,6 +320,8 @@ describe('Config', () => {
       expect(config).toHaveProperty('webhookMaxRetries');
       expect(config).toHaveProperty('webhookRetryDelay');
       expect(config).toHaveProperty('logLevel');
+      expect(config).toHaveProperty('proxyFile');
+      expect(config).toHaveProperty('proxyStrategy');
     });
   });
 });

@@ -8,8 +8,62 @@ import { FastifyInstance } from 'fastify';
  * Register all schemas
  */
 export function registerSchemas(server: FastifyInstance): void {
-  // Instance ID pattern
-  const instanceIdPattern = '^[a-z0-9_-]+$';
+  // Instance ID pattern. Uppercase allowed: maxchat tenant `domain` (used as
+  // the instanceId) is a mixed-case opaque token, e.g. `d0EpQi3K2Ipl...`.
+  const instanceIdPattern = '^[a-zA-Z0-9_-]+$';
+  const proxyUrlPattern = '^(?:https?|socks|socks4|socks4a|socks5|socks5h)://';
+
+  server.addSchema({
+    $id: 'proxyConfig',
+    oneOf: [
+      {
+        type: 'string',
+        format: 'uri',
+        pattern: proxyUrlPattern,
+      },
+      {
+        type: 'object',
+        additionalProperties: false,
+        required: ['url'],
+        properties: {
+          url: {
+            type: 'string',
+            format: 'uri',
+            pattern: proxyUrlPattern,
+          },
+          username: { type: 'string' },
+          password: { type: 'string' },
+        },
+      },
+    ],
+  });
+
+  // ============================================================================
+  // v2 Response Envelopes
+  // ============================================================================
+
+  // Stamped onto every 2xx of a `/api/v2` route by registerV2Routes(). `data`
+  // is intentionally unconstrained: serialization stays the handler's job.
+  server.addSchema({
+    $id: 'successEnvelope',
+    type: 'object',
+    required: ['success', 'data'],
+    properties: {
+      success: { const: true },
+      data: {},
+    },
+  });
+
+  // Collections put their pagination metadata inside `data`.
+  server.addSchema({
+    $id: 'collectionData',
+    type: 'object',
+    required: ['items', 'total'],
+    properties: {
+      items: { type: 'array', items: {} },
+      total: { type: 'integer', minimum: 0 },
+    },
+  });
 
   // ============================================================================
   // Instance Schemas
@@ -37,11 +91,14 @@ export function registerSchemas(server: FastifyInstance): void {
           type: 'string',
           enum: [
             'qr',
+            'pairing_code',
             'ready',
             'message',
+            'message_own',
             'message_edit',
             'message_delete',
             'message_reaction',
+            'message_receipt',
             'presence',
             'connection',
             'disconnected',
@@ -50,6 +107,34 @@ export function registerSchemas(server: FastifyInstance): void {
           ],
         },
         nullable: true,
+      },
+      clientOptions: {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          debug: { type: 'boolean' },
+          autoReconnect: { type: 'boolean' },
+          maxReconnectAttempts: { type: 'integer', minimum: 0 },
+          reconnectDelay: { type: 'integer', minimum: 0 },
+          syncFullHistory: { type: 'boolean' },
+          browser: {
+            type: 'array',
+            minItems: 3,
+            maxItems: 3,
+            items: { type: 'string' },
+          },
+          proxy: {
+            $ref: 'proxyConfig#',
+          },
+          usePairingCode: { type: 'boolean' },
+          phoneNumber: { type: 'string', pattern: '^[0-9]+$' },
+        },
+        allOf: [
+          {
+            if: { properties: { usePairingCode: { const: true } }, required: ['usePairingCode'] },
+            then: { required: ['phoneNumber'] },
+          },
+        ],
       },
     },
   });
@@ -70,11 +155,14 @@ export function registerSchemas(server: FastifyInstance): void {
           type: 'string',
           enum: [
             'qr',
+            'pairing_code',
             'ready',
             'message',
+            'message_own',
             'message_edit',
             'message_delete',
             'message_reaction',
+            'message_receipt',
             'presence',
             'connection',
             'disconnected',
@@ -127,8 +215,10 @@ export function registerSchemas(server: FastifyInstance): void {
         maxLength: 100,
       },
       media: {
+        // Accept a public URL, a local path, or a `data:` URI (base64). The
+        // strict `uri` format rejected data: URIs, so validate as a string.
         type: 'string',
-        format: 'uri',
+        minLength: 1,
       },
       caption: {
         type: 'string',
@@ -835,4 +925,91 @@ export function registerSchemas(server: FastifyInstance): void {
       },
     },
   });
+
+  registerStrictV2Schemas(server);
+}
+
+/**
+ * Schemas the v1 routes use, duplicated under a `v2` id and tightened.
+ *
+ * The originals stay lenient because v1 is frozen: `sendText` and its siblings
+ * do not set `additionalProperties` at all, so an unknown key is accepted and
+ * passed through, and callers may well be relying on that today. The v2 copies
+ * set it — and restate the keys under `propertyNames`, since Fastify's ajv runs
+ * with `removeAdditional` and would otherwise strip the key rather than reject
+ * it.
+ *
+ * Built by cloning what was just registered rather than by writing each schema
+ * twice, so the two cannot drift.
+ */
+function registerStrictV2Schemas(server: FastifyInstance): void {
+  // proxyConfig first: the clientOptions clone refers to it, and the rewrite
+  // below only redirects a $ref whose twin exists.
+  const shared = [
+    'proxyConfig',
+    'createInstance',
+    'updateInstance',
+    'sendText',
+    'sendImage',
+    'sendVideo',
+    'sendAudio',
+    'sendDocument',
+  ];
+  const twins = new Set(shared.map(v2IdFor));
+
+  for (const id of shared) {
+    const original = server.getSchema(id);
+    if (!original) {
+      continue;
+    }
+
+    const strict = tighten(structuredClone(original) as Record<string, any>, twins);
+    strict.$id = v2IdFor(id);
+    server.addSchema(strict);
+  }
+}
+
+function v2IdFor(id: string): string {
+  return `v2${id[0].toUpperCase()}${id.slice(1)}`;
+}
+
+/**
+ * Make every object in a schema reject keys it does not declare, and point any
+ * `$ref` at its v2 twin so the strictness reaches nested schemas too.
+ */
+function tighten(node: unknown, twins: Set<string>): any {
+  if (Array.isArray(node)) {
+    return node.map((item) => tighten(item, twins));
+  }
+  if (!node || typeof node !== 'object') {
+    return node;
+  }
+
+  const schema = node as Record<string, any>;
+
+  if (typeof schema.$ref === 'string') {
+    const target = v2IdFor(schema.$ref.replace(/#$/, ''));
+    if (twins.has(target)) {
+      schema.$ref = `${target}#`;
+    }
+  }
+
+  if (schema.properties && typeof schema.properties === 'object') {
+    schema.additionalProperties = false;
+    schema.propertyNames = { enum: Object.keys(schema.properties) };
+  }
+
+  for (const [key, value] of Object.entries(schema)) {
+    // Property names are keys, not schemas - recursing into them would treat a
+    // field called `properties` or `items` as a schema keyword.
+    if (key === 'properties') {
+      for (const [name, sub] of Object.entries(value as Record<string, unknown>)) {
+        (value as Record<string, unknown>)[name] = tighten(sub, twins);
+      }
+      continue;
+    }
+    schema[key] = tighten(value, twins);
+  }
+
+  return schema;
 }

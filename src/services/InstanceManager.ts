@@ -4,9 +4,51 @@
  */
 
 import { EventEmitter } from 'events';
-import { MiawClient, MiawClientOptions, ConnectionState } from 'miaw-core';
+import { promises as fs } from 'fs';
+import path from 'path';
+import {
+  MiawClient,
+  MiawClientOptions,
+  ConnectionState,
+  maskProxyUrl,
+  validateProxyConfig,
+} from 'miaw-core';
+import type { ProxyConfig } from 'miaw-core';
 import pino from 'pino';
-import { InstanceConfig, InstanceState, WebhookEvent, WebhookPayload } from '../types';
+import { config } from '../config';
+import {
+  InstanceClientOptions,
+  InstanceConfig,
+  InstanceState,
+  WebhookEvent,
+  WebhookPayload,
+} from '../types';
+import {
+  describeProxy,
+  type EffectiveProxyInfo,
+  type ProxyInput,
+  type ProxyPoolService,
+  type ProxySource,
+} from './ProxyService';
+
+/**
+ * Client options as written to the registry file: everything except `proxy`.
+ *
+ * The registry is plaintext on disk and a proxy URL can carry credentials. A
+ * pool-assigned proxy is re-derived on restore anyway (rendezvous hashing on
+ * instanceId is deterministic), so only an explicitly pinned proxy is lost —
+ * which is already the behaviour today.
+ */
+function persistableClientOptions(
+  options?: InstanceClientOptions,
+): InstanceClientOptions | undefined {
+  if (!options) {
+    return undefined;
+  }
+  const { proxy, ...rest } = options;
+  void proxy;
+  return Object.keys(rest).length > 0 ? rest : undefined;
+}
 
 interface InstanceManagerOptions {
   sessionPath: string;
@@ -14,6 +56,9 @@ interface InstanceManagerOptions {
   webhookTimeout: number;
   webhookMaxRetries: number;
   webhookRetryDelay: number;
+  proxyPool?: ProxyPoolService;
+  /** Applied to instances that did not set `syncFullHistory` themselves. */
+  defaultSyncFullHistory?: boolean;
 }
 
 interface ManagedInstance {
@@ -21,6 +66,8 @@ interface ManagedInstance {
   client: MiawClient;
   state: InstanceState;
   disconnectTimeout?: NodeJS.Timeout;
+  effectiveProxy?: ProxyInput;
+  proxySource: ProxySource;
 }
 
 /**
@@ -30,11 +77,119 @@ export class InstanceManager extends EventEmitter {
   private instances: Map<string, ManagedInstance> = new Map();
   private options: InstanceManagerOptions;
   private logger: pino.Logger;
+  private registryPath: string;
+  private backupPath: string;
+  /** Serialises registry writes; see persist(). */
+  private persistQueue: Promise<void> = Promise.resolve();
 
   constructor(options: InstanceManagerOptions) {
     super();
     this.options = options;
-    this.logger = pino({ level: 'info' });
+    // LOG_LEVEL applies here too; a hardcoded level ignored the setting and
+    // made the service the loudest thing in a test run.
+    this.logger = pino({ level: config.logLevel });
+    this.registryPath = path.join(options.sessionPath, 'instances.json');
+    this.backupPath = `${this.registryPath}.bak`;
+  }
+
+  /**
+   * Persist the instance registry (ids, webhook config, client options) so
+   * instances survive a restart. Session auth already lives on disk; this
+   * restores the list, webhook targets, and per-instance client options that
+   * would otherwise be in-memory only.
+   */
+  private persist(): Promise<void> {
+    // Serialised: callers fire this without awaiting, and two `fs.writeFile`
+    // calls each open their own O_TRUNC descriptor — if one truncates while the
+    // other is mid-write, the loser's tail survives and the file stops parsing.
+    this.persistQueue = this.persistQueue.then(() => this.writeRegistry());
+    return this.persistQueue;
+  }
+
+  private async writeRegistry(): Promise<void> {
+    try {
+      const registry: InstanceConfig[] = Array.from(this.instances.values()).map((m) => ({
+        instanceId: m.state.instanceId,
+        webhookUrl: m.state.webhookUrl,
+        webhookEvents: m.state.webhookEvents,
+        webhookEnabled: m.state.webhookEnabled,
+        clientOptions: persistableClientOptions(m.config.clientOptions),
+      }));
+      await fs.mkdir(path.dirname(this.registryPath), { recursive: true });
+      // Write then rename: rename is atomic within a filesystem, so a reader
+      // never observes a partially written registry.
+      const serialised = JSON.stringify(registry, null, 2);
+      const tmpPath = `${this.registryPath}.tmp`;
+      await fs.writeFile(tmpPath, serialised);
+      await fs.rename(tmpPath, this.registryPath);
+      // Last known good copy, so a damaged registry is recoverable without
+      // reaching for whatever manual backup happens to exist.
+      await fs.writeFile(this.backupPath, serialised);
+    } catch (err) {
+      this.logger.error({ err }, 'Failed to persist instance registry');
+    }
+  }
+
+  /**
+   * Recreate persisted instances on startup and reconnect them. Sessions live
+   * on disk, so connect() resumes without a new QR. Connects run in the
+   * background so a slow or failed one never blocks startup.
+   */
+  async restore(): Promise<void> {
+    const registry = await this.readRegistry();
+    if (!registry) {
+      return; // no registry yet (first boot)
+    }
+
+    for (const config of registry) {
+      try {
+        await this.createInstance(config);
+        this.getClient(config.instanceId)
+          ?.connect()
+          .catch((err) =>
+            this.logger.error({ instanceId: config.instanceId, err }, 'Restore connect failed'),
+          );
+      } catch (err) {
+        this.logger.error({ instanceId: config.instanceId, err }, 'Restore failed');
+      }
+    }
+    this.logger.info({ count: registry.length }, 'Instances restored');
+  }
+
+  /**
+   * Read the registry, falling back to the backup when the file is damaged.
+   *
+   * A missing file is a first boot and returns undefined. A malformed one is an
+   * operator-visible fault: it is logged, the backup is tried, and if that is
+   * unusable the error propagates rather than letting the process come up with
+   * an empty registry and overwrite whatever is still on disk.
+   */
+  private async readRegistry(): Promise<InstanceConfig[] | undefined> {
+    try {
+      return JSON.parse(await fs.readFile(this.registryPath, 'utf8'));
+    } catch (err) {
+      if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
+        return undefined;
+      }
+      this.logger.error(
+        { err, registryPath: this.registryPath },
+        'Instance registry is unreadable; trying the backup',
+      );
+      try {
+        const backup: InstanceConfig[] = JSON.parse(await fs.readFile(this.backupPath, 'utf8'));
+        this.logger.warn(
+          { count: backup.length, backupPath: this.backupPath },
+          'Recovered the instance registry from its backup',
+        );
+        return backup;
+      } catch (backupErr) {
+        this.logger.error(
+          { err: backupErr, backupPath: this.backupPath },
+          'Backup registry is unusable; refusing to start with an empty registry',
+        );
+        throw err;
+      }
+    }
   }
 
   /**
@@ -49,14 +204,9 @@ export class InstanceManager extends EventEmitter {
 
     this.logger.info({ instanceId }, 'Creating instance');
 
-    // Create MiawClient
-    const clientOptions: MiawClientOptions = {
-      instanceId,
-      sessionPath: this.options.sessionPath,
-      debug: false,
-    };
-
-    const client = new MiawClient(clientOptions);
+    const storedConfig = this.cloneConfig(config);
+    const { proxy: effectiveProxy, source: proxySource } = this.resolveEffectiveProxy(storedConfig);
+    const client = this.createClient(storedConfig, effectiveProxy);
 
     // Set up event handlers
     this.setupClientEvents(instanceId, client);
@@ -73,12 +223,15 @@ export class InstanceManager extends EventEmitter {
     };
 
     const managed: ManagedInstance = {
-      config,
+      config: storedConfig,
       client,
       state,
+      effectiveProxy,
+      proxySource,
     };
 
     this.instances.set(instanceId, managed);
+    void this.persist();
 
     this.logger.info({ instanceId }, 'Instance created');
 
@@ -91,6 +244,31 @@ export class InstanceManager extends EventEmitter {
   getInstance(instanceId: string): InstanceState | null {
     const managed = this.instances.get(instanceId);
     return managed ? managed.state : null;
+  }
+
+  /**
+   * Connect an instance, but only from a settled-off state.
+   *
+   * The dashboard polls the connect endpoint every ~10s. Re-entering connect()
+   * on a client that is already connected, mid-handshake, waiting on a QR, or
+   * auto-reconnecting tears the socket back down and churns the state, so a
+   * repeat call is a no-op here. Forcing a socket rebuild is what the restart
+   * endpoint is for.
+   *
+   * Returns the status after the attempt, or undefined if there is no such
+   * instance.
+   */
+  async connectIfIdle(instanceId: string): Promise<ConnectionState | undefined> {
+    const managed = this.instances.get(instanceId);
+    if (!managed) {
+      return undefined;
+    }
+    if (managed.state.status === 'disconnected') {
+      await managed.client.connect();
+    }
+    // Re-read: updateState() replaces the state object, so the reference above
+    // is a stale snapshot once connect() has run.
+    return this.instances.get(instanceId)?.state.status;
   }
 
   /**
@@ -112,16 +290,15 @@ export class InstanceManager extends EventEmitter {
 
     this.logger.info({ instanceId }, 'Deleting instance');
 
-    // Disconnect if connected
-    if (managed.state.status === 'connected') {
-      await managed.client.disconnect();
-    }
-
-    // Remove event listeners
-    managed.client.removeAllListeners();
+    // Fully tear down the client for ANY status (clears reconnect timer, closes
+    // socket, removes listeners). Deleting a still-connecting instance must stop
+    // its reconnect loop — otherwise it can emit 'error' after teardown and crash
+    // the whole (multi-tenant) process.
+    await managed.client.dispose();
 
     // Delete from map
     this.instances.delete(instanceId);
+    void this.persist();
 
     this.logger.info({ instanceId }, 'Instance deleted');
   }
@@ -154,6 +331,7 @@ export class InstanceManager extends EventEmitter {
     }
 
     this.updateState(instanceId, patch);
+    void this.persist();
     this.logger.info({ instanceId }, 'Webhook updated');
 
     return managed.state;
@@ -167,6 +345,54 @@ export class InstanceManager extends EventEmitter {
     return managed ? managed.client : null;
   }
 
+  getProxy(instanceId: string): EffectiveProxyInfo {
+    const managed = this.instances.get(instanceId);
+    if (!managed) throw new Error(`Instance ${instanceId} not found`);
+    return describeProxy(managed.effectiveProxy, managed.proxySource);
+  }
+
+  async replaceProxy(
+    instanceId: string,
+    proxy?: ProxyConfig | string,
+  ): Promise<EffectiveProxyInfo> {
+    const managed = this.instances.get(instanceId);
+    if (!managed) throw new Error(`Instance ${instanceId} not found`);
+    if (managed.state.status !== 'disconnected') {
+      throw new Error('Instance must be disconnected before changing its proxy');
+    }
+    if (proxy !== undefined && !validateProxyConfig(proxy)) {
+      throw new Error(`Invalid proxy configuration: ${maskProxyUrl(proxy)}`);
+    }
+
+    const nextClientOptions = { ...(managed.config.clientOptions || {}) };
+    if (proxy === undefined) {
+      delete nextClientOptions.proxy;
+    } else {
+      nextClientOptions.proxy = proxy;
+    }
+
+    const nextConfig: InstanceConfig = {
+      ...managed.config,
+      clientOptions: nextClientOptions,
+    };
+    const { proxy: effectiveProxy, source: proxySource } = this.resolveEffectiveProxy(nextConfig);
+    const nextClient = this.createClient(nextConfig, effectiveProxy);
+
+    await managed.client.disconnect();
+    managed.client.removeAllListeners();
+    this.setupClientEvents(instanceId, nextClient);
+    managed.client = nextClient;
+    managed.config = nextConfig;
+    managed.effectiveProxy = effectiveProxy;
+    managed.proxySource = proxySource;
+
+    this.logger.info(
+      { instanceId, proxy: describeProxy(effectiveProxy, proxySource) },
+      'Instance proxy replaced',
+    );
+    return this.getProxy(instanceId);
+  }
+
   /**
    * Update instance state
    */
@@ -175,6 +401,46 @@ export class InstanceManager extends EventEmitter {
     if (managed) {
       managed.state = { ...managed.state, ...updates, lastActivity: new Date() };
     }
+  }
+
+  private cloneConfig(config: InstanceConfig): InstanceConfig {
+    return {
+      ...config,
+      clientOptions: config.clientOptions ? { ...config.clientOptions } : undefined,
+      webhookEvents: config.webhookEvents ? [...config.webhookEvents] : undefined,
+    };
+  }
+
+  private resolveEffectiveProxy(config: InstanceConfig): {
+    proxy?: ProxyInput;
+    source: ProxySource;
+  } {
+    const explicit = config.clientOptions?.proxy;
+    if (explicit !== undefined) {
+      if (!validateProxyConfig(explicit)) {
+        throw new Error(`Invalid proxy configuration: ${maskProxyUrl(explicit)}`);
+      }
+      return { proxy: explicit, source: 'explicit' };
+    }
+
+    const pooled = this.options.proxyPool?.select(config.instanceId);
+    return pooled ? { proxy: pooled, source: 'pool' } : { source: 'none' };
+  }
+
+  private createClient(config: InstanceConfig, proxy?: ProxyInput): MiawClient {
+    // The per-instance value wins; the server-wide default only fills the gap,
+    // which is what makes it reachable for instances the gateway provisions.
+    const syncFullHistory =
+      config.clientOptions?.syncFullHistory ?? this.options.defaultSyncFullHistory;
+    const clientOptions: MiawClientOptions = {
+      ...config.clientOptions,
+      instanceId: config.instanceId,
+      sessionPath: this.options.sessionPath,
+      debug: config.clientOptions?.debug ?? false,
+      ...(syncFullHistory !== undefined ? { syncFullHistory } : {}),
+      ...(proxy !== undefined ? { proxy } : {}),
+    };
+    return new MiawClient(clientOptions);
   }
 
   /**
@@ -190,6 +456,8 @@ export class InstanceManager extends EventEmitter {
       this.emitWebhook(instanceId, 'connection', { state });
 
       if (state === 'connected') {
+        // Paired now → drop the cached challenges so a pull returns empty.
+        this.updateState(instanceId, { lastQr: undefined, lastPairingCode: undefined });
         const user = (client as any).socket?.user;
         if (user) {
           this.updateState(instanceId, {
@@ -211,8 +479,16 @@ export class InstanceManager extends EventEmitter {
     // QR code
     client.on('qr', (qr: string) => {
       this.logger.info({ instanceId }, 'QR code received');
-      this.updateState(instanceId, { status: 'qr_required' });
+      this.updateState(instanceId, { status: 'qr_required', lastQr: qr });
       this.emitWebhook(instanceId, 'qr', { qr });
+    });
+
+    // The pairing code is the alternative to a QR scan and is cached the same
+    // way: it expires, so a stale one is worse than none.
+    client.on('pairing_code', (code: string) => {
+      this.logger.info({ instanceId }, 'Pairing code received');
+      this.updateState(instanceId, { status: 'qr_required', lastPairingCode: code });
+      this.emitWebhook(instanceId, 'pairing_code', { code });
     });
 
     // Reconnecting
@@ -241,6 +517,12 @@ export class InstanceManager extends EventEmitter {
       this.emitWebhook(instanceId, 'message', message);
     });
 
+    // Own outgoing message not sent via the API (e.g. typed on the phone)
+    client.on('message_own', (message: any) => {
+      this.logger.debug({ instanceId, messageId: message.id }, 'Own message');
+      this.emitWebhook(instanceId, 'message_own', message);
+    });
+
     // Message edited
     client.on('message_edit', (edit: any) => {
       this.logger.debug({ instanceId, messageId: edit.messageId }, 'Message edited');
@@ -257,6 +539,12 @@ export class InstanceManager extends EventEmitter {
     client.on('message_reaction', (reaction: any) => {
       this.logger.debug({ instanceId, messageId: reaction.messageId }, 'Message reaction');
       this.emitWebhook(instanceId, 'message_reaction', reaction);
+    });
+
+    // Message receipt (delivery / read / played)
+    client.on('message_receipt', (receipt: any) => {
+      this.logger.debug({ instanceId, messageId: receipt.messageId }, 'Message receipt');
+      this.emitWebhook(instanceId, 'message_receipt', receipt);
     });
 
     // Presence update

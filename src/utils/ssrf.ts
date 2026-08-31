@@ -57,10 +57,30 @@ export function isBlockedAddress(ip: string): boolean {
 }
 
 /**
+ * True if the URL's host (or host:port) is in the operator-configured
+ * allowlist, letting it bypass the private/loopback address check. An entry
+ * with a port (`host:port`) matches only that exact port; a bare `host` entry
+ * matches any port.
+ */
+function isAllowlisted(url: URL, allowlist: string[]): boolean {
+  if (allowlist.length === 0) {
+    return false;
+  }
+  const host = url.hostname.replace(/^\[|\]$/g, '').toLowerCase();
+  const hostPort = url.port ? `${host}:${url.port}` : host;
+  const entries = new Set(allowlist.map((e) => e.trim().toLowerCase()).filter(Boolean));
+  return entries.has(host) || entries.has(hostPort);
+}
+
+/**
  * Validate a webhook URL for SSRF safety. Throws {@link BadRequestError} when
  * the scheme is not http(s) or the host is / resolves to a blocked address.
+ * Hosts in `allowlist` bypass the address check (scheme is still enforced).
  */
-export async function assertSafeWebhookUrl(rawUrl: string): Promise<void> {
+export async function assertSafeWebhookUrl(
+  rawUrl: string,
+  allowlist: string[] = [],
+): Promise<void> {
   let url: URL;
   try {
     url = new URL(rawUrl);
@@ -70,6 +90,11 @@ export async function assertSafeWebhookUrl(rawUrl: string): Promise<void> {
 
   if (!ALLOWED_PROTOCOLS.has(url.protocol)) {
     throw new BadRequestError(`webhookUrl must use http or https (got ${url.protocol})`);
+  }
+
+  // Operator-allowlisted hosts skip the private/loopback address check.
+  if (isAllowlisted(url, allowlist)) {
+    return;
   }
 
   const host = url.hostname.replace(/^\[|\]$/g, ''); // strip IPv6 brackets

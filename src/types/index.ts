@@ -2,6 +2,8 @@
  * API Type Definitions
  */
 
+import type { MiawClientOptions } from 'miaw-core';
+
 // ============================================================================
 // Instance Types
 // ============================================================================
@@ -13,11 +15,29 @@ export type ConnectionState =
   | 'reconnecting'
   | 'qr_required';
 
+/**
+ * Per-instance MiawClient options accepted over the API. Deliberately a subset:
+ * transport escape hatches (`agent`/`fetchAgent`) and paths are server-owned.
+ */
+export type InstanceClientOptions = Pick<
+  MiawClientOptions,
+  | 'debug'
+  | 'autoReconnect'
+  | 'maxReconnectAttempts'
+  | 'reconnectDelay'
+  | 'syncFullHistory'
+  | 'browser'
+  | 'proxy'
+  | 'usePairingCode'
+  | 'phoneNumber'
+>;
+
 export interface InstanceConfig {
   instanceId: string;
   webhookUrl?: string;
   webhookEvents?: WebhookEvent[];
   webhookEnabled?: boolean;
+  clientOptions?: InstanceClientOptions;
 }
 
 export interface InstanceState {
@@ -30,6 +50,10 @@ export interface InstanceState {
   lastActivity: Date;
   connectedAt?: Date;
   phoneNumber?: string;
+  /** Last QR string received (pullable via GET /instances/:id/qr); cleared on connect. */
+  lastQr?: string;
+  /** Last pairing code received; cleared on connect, like lastQr. */
+  lastPairingCode?: string;
 }
 
 // ============================================================================
@@ -38,11 +62,14 @@ export interface InstanceState {
 
 export type WebhookEvent =
   | 'qr'
+  | 'pairing_code'
   | 'ready'
   | 'message'
+  | 'message_own'
   | 'message_edit'
   | 'message_delete'
   | 'message_reaction'
+  | 'message_receipt'
   | 'presence'
   | 'connection'
   | 'disconnected'

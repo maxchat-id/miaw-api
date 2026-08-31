@@ -31,29 +31,69 @@ export class WebhookTestServer {
     this.port = port;
   }
 
-  start(): Promise<void> {
-    return new Promise((resolve) => {
-      this.server = createServer((req, res) => {
-        this.handleRequest(req, res);
+  /**
+   * Files share the port sequentially, and a socket can outlive the previous
+   * file's stop() by a few milliseconds. Without an 'error' listener that
+   * collision surfaced as an unhandled EADDRINUSE and failed the whole file -
+   * and once a file failed in beforeAll its server leaked, so the next one
+   * collided too. The preferred port is retried briefly, then any free port is
+   * taken; callers read the address back from getWebhookUrl().
+   */
+  start(timeoutMs = 5000): Promise<void> {
+    const deadline = Date.now() + timeoutMs;
+
+    const attempt = (port: number): Promise<void> =>
+      new Promise((resolve, reject) => {
+        const server = createServer((req, res) => {
+          this.handleRequest(req, res);
+        });
+
+        const onError = (err: NodeJS.ErrnoException) => {
+          server.close();
+          if (err.code === 'EADDRINUSE' && Date.now() < deadline) {
+            // A previous file's socket may still be closing. Retry the
+            // preferred port for a moment, then take any free one - the tests
+            // read the URL from getWebhookUrl(), so the number does not matter.
+            setTimeout(
+              () => attempt(Date.now() + 500 >= deadline ? 0 : port).then(resolve, reject),
+              100,
+            );
+            return;
+          }
+          reject(err);
+        };
+
+        server.once('error', onError);
+        server.listen(port, () => {
+          server.removeListener('error', onError);
+          const address = server.address();
+          if (address && typeof address === 'object') {
+            this.port = address.port;
+          }
+          this.server = server;
+          this.isRunning = true;
+          resolve();
+        });
       });
 
-      this.server.listen(this.port, () => {
-        this.isRunning = true;
-        resolve();
-      });
-    });
+    return attempt(this.port);
   }
 
   stop(): Promise<void> {
     return new Promise((resolve) => {
-      if (this.server) {
-        this.server.close(() => {
-          this.isRunning = false;
-          resolve();
-        });
-      } else {
+      if (!this.server) {
         resolve();
+        return;
       }
+
+      // close() alone waits for keep-alive sockets to go idle, which leaves the
+      // port held while the next file is already trying to listen on it.
+      this.server.closeAllConnections?.();
+      this.server.close(() => {
+        this.isRunning = false;
+        this.server = undefined;
+        resolve();
+      });
     });
   }
 

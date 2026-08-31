@@ -8,7 +8,7 @@
  * - Delete instance
  */
 
-import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { startTestServer, stopTestServer, createTestClient } from './helpers/server.js';
 import { HttpClient } from './helpers/http.js';
 import { TEST_CONFIG } from './fixtures/data.js';
@@ -73,7 +73,8 @@ describe('Instance Management Tests', () => {
 
       expect(response.status).toBe(400);
       expect(response.data.success).toBe(false);
-      expect(response.data.error.code).toBe('INVALID_REQUEST');
+      expect(response.data.error.code).toBe('VALIDATION_ERROR');
+      expect(response.data.error.details.validation).toBeDefined();
     });
 
     it('should reject empty instance ID', async () => {

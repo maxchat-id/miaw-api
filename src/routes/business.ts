@@ -1119,6 +1119,8 @@ export async function businessRoutes(server: FastifyInstance): Promise<void> {
                 properties: {
                   code: { type: 'string' },
                   message: { type: 'string' },
+                  // surface the failure reason instead of stripping it (ISSUE-06)
+                  details: { type: 'object', additionalProperties: true },
                 },
               },
             },

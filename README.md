@@ -2,9 +2,16 @@
 
 > REST API wrapper for miaw-core - Multiple Instance of App WhatsApp
 
-**Version:** 0.9.0 (Phase 9 - Basic GET Operations)
+**Version:** 1.4.0 (see [CHANGELOG.md](./CHANGELOG.md) for releases after v0.9.0)
 
 Miaw API provides a RESTful interface to manage multiple WhatsApp instances, send messages, and receive real-time webhook events. Built with Fastify and TypeScript.
+
+**Two contracts are served side by side.** The original one keeps its unprefixed
+paths and is frozen; the normalized one lives under `/api/v2`. They share one
+process and one WhatsApp connection, so you can port a client call by call. See
+the [API v2 Guide](./docs/API.md) and the
+[migration guide](./docs/MIGRATION-V1-V2.md). The endpoint tables further down
+this file describe the unprefixed contract.
 
 ## Features
 
@@ -18,7 +25,11 @@ Miaw API provides a RESTful interface to manage multiple WhatsApp instances, sen
 - **Authentication** - Simple API key authentication
 - **Docker Support** - Easy deployment with Docker and Docker Compose
 
-## Current Status (Phase 9 - Basic GET Operations)
+## Status
+
+The phase log below covers the feature build-out through v0.9.0. Releases
+v1.0.0–v1.2.1 (polish, tooling, CI, webhook SSRF allowlist) are in
+[CHANGELOG.md](./CHANGELOG.md).
 
 ### Implemented (Phase 1-9)
 
@@ -98,13 +109,10 @@ Miaw API provides a RESTful interface to manage multiple WhatsApp instances, sen
 - Get all chats
 - Get chat messages
 
-### Planned (Phase 10+)
+### Since v0.9.0
 
-- Polish & Testing
-- Performance optimization
-- Security audit
-
-See [docs/ROADMAP.md](./docs/ROADMAP.md) for the full roadmap.
+Polish, testing, and security hardening landed across v1.0.0–v1.2.1 — see
+[CHANGELOG.md](./CHANGELOG.md). Full roadmap: [docs/ROADMAP.md](./docs/ROADMAP.md).
 
 ## Quick Start
 
@@ -154,9 +162,23 @@ WEBHOOK_RETRY_DELAY_MS=1000
 # Session Storage
 SESSION_PATH=./sessions
 
+# Optional mounted proxy pool
+# MIAW_PROXY_FILE=/run/secrets/miaw-proxies.txt
+MIAW_PROXY_STRATEGY=deterministic
+
 # Logging
 LOG_LEVEL=info
 ```
+
+`MIAW_PROXY_FILE` accepts the TXT and JSON formats supported by
+`miaw-core` 1.10.0. Pool entries are assigned to new instances using
+`deterministic` selection by default, so a stable `instanceId` keeps a stable
+egress proxy. An explicit `clientOptions.proxy` supplied during instance
+creation takes precedence over the pool.
+
+Proxy passwords are never returned by the API. Manage the pool file as a
+mounted secret and use `POST /api/v1/proxy-pool/reloads` after replacing it
+when an immediate reload is required.
 
 ### Running
 
@@ -271,19 +293,19 @@ When events occur, POST requests are sent to your configured webhook URL:
 
 ### Event Types
 
-| Event               | Description                                   |
-| ------------------- | --------------------------------------------- |
-| `qr`                | QR code available for scanning                |
-| `ready`             | Instance connected and ready                  |
-| `message`           | New inbound message received                  |
-| `message_edit`      | A message was edited                          |
-| `message_delete`    | A message was deleted/revoked                 |
-| `message_reaction`  | A message received an emoji reaction          |
-| `presence`          | Subscribed contact's presence changed         |
-| `connection`        | Connection state changed                      |
-| `disconnected`      | Instance disconnected                         |
-| `reconnecting`      | Reconnection attempt in progress              |
-| `error`             | Error occurred                                |
+| Event              | Description                           |
+| ------------------ | ------------------------------------- |
+| `qr`               | QR code available for scanning        |
+| `ready`            | Instance connected and ready          |
+| `message`          | New inbound message received          |
+| `message_edit`     | A message was edited                  |
+| `message_delete`   | A message was deleted/revoked         |
+| `message_reaction` | A message received an emoji reaction  |
+| `presence`         | Subscribed contact's presence changed |
+| `connection`       | Connection state changed              |
+| `disconnected`     | Instance disconnected                 |
+| `reconnecting`     | Reconnection attempt in progress      |
+| `error`            | Error occurred                        |
 
 When creating an instance, `webhookEvents` acts as a whitelist: list specific
 events to receive only those, or omit it / pass `[]` to receive all events.
@@ -383,13 +405,13 @@ npm run test:integration -- setup
 
 ### Instance Management
 
-| Method | Endpoint         | Description          |
-| ------ | ---------------- | -------------------- |
-| POST   | `/instances`     | Create new instance          |
-| GET    | `/instances`     | List all instances           |
-| GET    | `/instances/:id` | Get instance details         |
-| PATCH  | `/instances/:id` | Update webhook URL/events    |
-| DELETE | `/instances/:id` | Delete instance              |
+| Method | Endpoint         | Description               |
+| ------ | ---------------- | ------------------------- |
+| POST   | `/instances`     | Create new instance       |
+| GET    | `/instances`     | List all instances        |
+| GET    | `/instances/:id` | Get instance details      |
+| PATCH  | `/instances/:id` | Update webhook URL/events |
+| DELETE | `/instances/:id` | Delete instance           |
 
 ### Connection
 
@@ -481,14 +503,14 @@ npm run test:integration -- setup
 
 ### Basic GET Operations
 
-| Method | Endpoint                                | Description                |
-| ------ | --------------------------------------- | -------------------------- |
-| GET    | `/instances/:id/contacts`              | Get all contacts           |
-| GET    | `/instances/:id/groups`                | Get all groups             |
-| GET    | `/instances/:id/profile`               | Get own profile            |
-| GET    | `/instances/:id/labels`                | Get all labels             |
-| GET    | `/instances/:id/chats`                 | Get all chats              |
-| GET    | `/instances/:id/chats/:jid/messages`   | Get chat messages          |
+| Method | Endpoint                             | Description       |
+| ------ | ------------------------------------ | ----------------- |
+| GET    | `/instances/:id/contacts`            | Get all contacts  |
+| GET    | `/instances/:id/groups`              | Get all groups    |
+| GET    | `/instances/:id/profile`             | Get own profile   |
+| GET    | `/instances/:id/labels`              | Get all labels    |
+| GET    | `/instances/:id/chats`               | Get all chats     |
+| GET    | `/instances/:id/chats/:jid/messages` | Get chat messages |
 
 ### Health
 
@@ -498,24 +520,31 @@ npm run test:integration -- setup
 
 ## Documentation
 
+- [API v2 Guide](./docs/API.md) - Conventions and the full endpoint index
+- [Migrating v1 to v2](./docs/MIGRATION-V1-V2.md) - What changes, and in what order
+- [Error Codes](./docs/ERROR-CODES.md) - Error catalogue
+- [Security](./docs/SECURITY.md) - Webhook signatures and SSRF rules
 - [Roadmap](./docs/ROADMAP.md) - Full development roadmap
 - [Integration Test Plan](./docs/INTEGRATION-TEST-PLAN.md) - Test strategy
 - [Testing Guide](./docs/TESTING.md) - How to run tests
 
 ## Configuration Reference
 
-| Variable                 | Default    | Description                          |
-| ------------------------ | ---------- | ------------------------------------ |
-| `PORT`               | 3000       | Server port                          |
-| `HOST`               | 0.0.0.0    | Server host                          |
-| `API_KEY`                | -          | API key for authentication           |
-| `WEBHOOK_SECRET`     | -          | Secret for webhook signature         |
-| `WEBHOOK_TIMEOUT_MS`     | 10000      | Webhook delivery timeout (ms)        |
-| `WEBHOOK_MAX_RETRIES`    | 6          | Max webhook retry attempts           |
-| `WEBHOOK_RETRY_DELAY_MS` | 60000      | Initial retry delay (ms)             |
-| `SESSION_PATH`           | ./sessions | Session storage path                 |
-| `LOG_LEVEL`              | info       | Log level (debug, info, warn, error) |
-| `CORS_ORIGIN`            | \*         | CORS allowed origin                  |
+| Variable                 | Default       | Description                                                                       |
+| ------------------------ | ------------- | --------------------------------------------------------------------------------- |
+| `PORT`                   | 3000          | Server port                                                                       |
+| `HOST`                   | 0.0.0.0       | Server host                                                                       |
+| `API_KEY`                | -             | API key for authentication                                                        |
+| `WEBHOOK_SECRET`         | -             | Secret for webhook signature                                                      |
+| `WEBHOOK_TIMEOUT_MS`     | 10000         | Webhook delivery timeout (ms)                                                     |
+| `WEBHOOK_MAX_RETRIES`    | 6             | Max webhook retry attempts                                                        |
+| `WEBHOOK_RETRY_DELAY_MS` | 60000         | Initial retry delay (ms)                                                          |
+| `WEBHOOK_SSRF_ALLOWLIST` | -             | Hosts exempt from the webhook SSRF check (comma-separated; `host` or `host:port`) |
+| `SESSION_PATH`           | ./sessions    | Session storage path                                                              |
+| `MIAW_PROXY_FILE`        | -             | Optional mounted TXT/JSON proxy pool                                              |
+| `MIAW_PROXY_STRATEGY`    | deterministic | Pool selection strategy                                                           |
+| `LOG_LEVEL`              | info          | Log level (debug, info, warn, error)                                              |
+| `CORS_ORIGIN`            | \*            | CORS allowed origin                                                               |
 
 ## Limitations
 
@@ -531,6 +560,7 @@ npm run test:integration -- setup
 3. **HTTPS**: Use HTTPS in production for all API communication
 4. **Firewall**: Restrict access to webhook endpoints
 5. **Session Files**: Protect `./sessions/` directory (contains auth credentials)
+6. **Proxy Credentials**: Mount proxy lists as secrets and never commit them
 
 ## Troubleshooting
 

@@ -8,6 +8,7 @@
 
 import { FastifyInstance } from 'fastify';
 import type { WebhookEvent } from '../types';
+import { config } from '../config';
 import { createAuthMiddleware } from '../middleware/auth';
 import { ConflictError, NotFoundError } from '../utils/errorHandler';
 import { assertSafeWebhookUrl } from '../utils/ssrf';
@@ -78,7 +79,7 @@ export async function instanceRoutes(server: FastifyInstance): Promise<void> {
       const instanceManager = server.instanceManager;
 
       if (body.webhookUrl) {
-        await assertSafeWebhookUrl(body.webhookUrl);
+        await assertSafeWebhookUrl(body.webhookUrl, config.webhookSsrfAllowlist);
       }
 
       try {
@@ -281,7 +282,7 @@ export async function instanceRoutes(server: FastifyInstance): Promise<void> {
       const instanceManager = server.instanceManager;
 
       if (body.webhookUrl) {
-        await assertSafeWebhookUrl(body.webhookUrl);
+        await assertSafeWebhookUrl(body.webhookUrl, config.webhookSsrfAllowlist);
       }
 
       try {

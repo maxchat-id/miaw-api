@@ -2,9 +2,17 @@
  * Environment configuration
  */
 
+import type { ProxyRotationStrategy } from 'miaw-core';
+
 // Default values that indicate insecure configuration
 const DEFAULT_API_KEY = 'miaw-api-key';
 const DEFAULT_WEBHOOK_SECRET = 'webhook-secret';
+const PROXY_STRATEGIES = new Set<ProxyRotationStrategy>([
+  'deterministic',
+  'round-robin',
+  'random',
+  'weighted',
+]);
 
 interface Config {
   // API Configuration
@@ -13,16 +21,30 @@ interface Config {
   apiKey: string;
   webhookSecret: string;
 
+  // Public base URL shown in API docs (supports `{subdomain}` template)
+  publicServerUrl: string;
+  publicServerSubdomain: string;
+
   // CORS
   corsOrigin: string;
 
   // Session Storage
   sessionPath: string;
 
+  // Default `syncFullHistory` for instances that do not set one themselves.
+  // Undefined leaves miaw-core's own default (full sync on) in place.
+  defaultSyncFullHistory?: boolean;
+
+  // Proxy Pool
+  proxyFile?: string;
+  proxyStrategy: ProxyRotationStrategy;
+
   // Webhook Configuration
   webhookTimeout: number;
   webhookMaxRetries: number;
   webhookRetryDelay: number;
+  // Hosts (or host:port) exempt from the webhook SSRF address check
+  webhookSsrfAllowlist: string[];
 
   // Logging
   logLevel: string;
@@ -32,13 +54,25 @@ function loadConfig(): Config {
   const config: Config = {
     port: parseInt(process.env.PORT || '3000', 10),
     host: process.env.HOST || '0.0.0.0',
+    publicServerUrl: process.env.PUBLIC_SERVER_URL || '',
+    publicServerSubdomain: process.env.PUBLIC_SERVER_SUBDOMAIN || 'api',
     apiKey: process.env.API_KEY || DEFAULT_API_KEY,
     webhookSecret: process.env.WEBHOOK_SECRET || DEFAULT_WEBHOOK_SECRET,
     corsOrigin: process.env.CORS_ORIGIN || '*',
     sessionPath: process.env.SESSION_PATH || './sessions',
+    defaultSyncFullHistory: parseOptionalBoolean(
+      'MIAW_SYNC_FULL_HISTORY',
+      process.env.MIAW_SYNC_FULL_HISTORY,
+    ),
+    proxyFile: process.env.MIAW_PROXY_FILE || undefined,
+    proxyStrategy: parseProxyStrategy(process.env.MIAW_PROXY_STRATEGY),
     webhookTimeout: parseInt(process.env.WEBHOOK_TIMEOUT_MS || '10000', 10),
     webhookMaxRetries: parseInt(process.env.WEBHOOK_MAX_RETRIES || '6', 10),
     webhookRetryDelay: parseInt(process.env.WEBHOOK_RETRY_DELAY_MS || '60000', 10),
+    webhookSsrfAllowlist: (process.env.WEBHOOK_SSRF_ALLOWLIST || '')
+      .split(',')
+      .map((h) => h.trim())
+      .filter(Boolean),
     logLevel: process.env.LOG_LEVEL || 'info',
   };
 
@@ -46,6 +80,30 @@ function loadConfig(): Config {
   validateConfig(config);
 
   return config;
+}
+
+function parseOptionalBoolean(name: string, value: string | undefined): boolean | undefined {
+  if (value === undefined || value.trim() === '') {
+    return undefined;
+  }
+  const normalised = value.trim().toLowerCase();
+  if (normalised === 'true') {
+    return true;
+  }
+  if (normalised === 'false') {
+    return false;
+  }
+  throw new Error(`Invalid ${name} "${value}". Expected "true" or "false".`);
+}
+
+function parseProxyStrategy(value: string | undefined): ProxyRotationStrategy {
+  const strategy = value || 'deterministic';
+  if (!PROXY_STRATEGIES.has(strategy as ProxyRotationStrategy)) {
+    throw new Error(
+      `Invalid MIAW_PROXY_STRATEGY "${strategy}". Expected one of: ${Array.from(PROXY_STRATEGIES).join(', ')}`,
+    );
+  }
+  return strategy as ProxyRotationStrategy;
 }
 
 /**

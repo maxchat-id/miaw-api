@@ -394,12 +394,9 @@ describe('Phase 10 Enhanced Contact Operations Tests', () => {
     });
 
     it('should return 401 for unauthenticated requests', async () => {
-      const unauthClient = createTestClient();
-      // Override authorization header
-      (unauthClient as any).headers = {
-        'Content-Type': 'application/json',
-        Authorization: 'Bearer invalid-key',
-      };
+      // withApiKey() rebuilds the client properly; assigning to .headers hit a
+      // field that does not exist, so the request stayed authenticated.
+      const unauthClient = createTestClient().withApiKey('invalid-key');
 
       const jid = `${TEST_CONFIG.TEST_CONTACT_A}@s.whatsapp.net`;
       const response = await unauthClient.get(

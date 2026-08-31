@@ -4,6 +4,7 @@
  */
 
 import pino from 'pino';
+import { config } from '../config';
 import crypto from 'crypto';
 
 interface WebhookDispatcherOptions {
@@ -36,6 +37,9 @@ export class WebhookDispatcher {
   private logger: pino.Logger;
   private deliveryQueue: Map<string, WebhookDelivery>;
   private processingInterval?: NodeJS.Timeout;
+  // Guards against overlapping ticks: a delivery slower than the 1s interval
+  // stays in the queue while awaited, so the next tick would re-send it.
+  private processing = false;
   // Stats tracking
   private stats: WebhookDeliveryStats = {
     queued: 0,
@@ -45,7 +49,7 @@ export class WebhookDispatcher {
 
   constructor(options: WebhookDispatcherOptions) {
     this.options = options;
-    this.logger = pino({ level: 'info' });
+    this.logger = pino({ level: config.logLevel });
     this.deliveryQueue = new Map();
     this.startProcessing();
   }
@@ -79,6 +83,10 @@ export class WebhookDispatcher {
    * Process delivery queue
    */
   private async processQueue(): Promise<void> {
+    // A previous tick is still delivering; skip so an in-flight entry (not yet
+    // removed from the queue) is not delivered again.
+    if (this.processing) return;
+    this.processing = true;
     try {
       const now = Date.now();
 
@@ -113,6 +121,8 @@ export class WebhookDispatcher {
         { error: err instanceof Error ? err.message : 'Unknown error' },
         'Error in webhook processing queue',
       );
+    } finally {
+      this.processing = false;
     }
   }
 

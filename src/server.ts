@@ -11,9 +11,49 @@ import { config } from './config';
 import { registerRoutes } from './routes';
 import { registerSchemas } from './schemas';
 import { InstanceManager } from './services/InstanceManager';
+import { ProxyPoolService } from './services/ProxyService';
 import { WebhookDispatcher } from './services/WebhookDispatcher';
-import { errorHandler } from './utils/errorHandler';
+import { errorHandler, notFoundHandler } from './utils/errorHandler';
+import { installUnhandledRejectionGuard } from './utils/processGuards';
 import { createShutdownHandler } from './utils/shutdown';
+
+/**
+ * Build the OpenAPI `servers` list shown in the docs.
+ *
+ * - Always includes the local development server.
+ * - If PUBLIC_SERVER_URL is set, adds it as the primary server.
+ *   When the URL contains a `{subdomain}` template, it is exposed as an
+ *   editable OpenAPI server variable so users can pick their own subdomain
+ *   (e.g. `https://{subdomain}.maxchat.id`).
+ */
+function buildServers() {
+  type ServerVariable = { default: string; description?: string };
+  type Server = { url: string; description?: string; variables?: Record<string, ServerVariable> };
+  const servers: Server[] = [];
+
+  if (config.publicServerUrl) {
+    const server: Server = {
+      url: config.publicServerUrl,
+      description: 'Production server',
+    };
+    if (config.publicServerUrl.includes('{subdomain}')) {
+      server.variables = {
+        subdomain: {
+          default: config.publicServerSubdomain,
+          description: 'Tenant subdomain',
+        },
+      };
+    }
+    servers.push(server);
+  }
+
+  servers.push({
+    url: `http://localhost:${config.port}`,
+    description: 'Development server',
+  });
+
+  return servers;
+}
 
 /**
  * Create and configure Fastify server
@@ -36,6 +76,11 @@ export async function createServer(): Promise<FastifyInstance> {
     },
   });
 
+  // Installed before anything can reconnect an instance: a dropped socket in a
+  // background fetch would otherwise exit the process and take every session
+  // with it.
+  const uninstallRejectionGuard = installUnhandledRejectionGuard({ logger: server.log });
+
   // Register plugins
   await server.register(cors, {
     origin: config.corsOrigin,
@@ -49,12 +94,7 @@ export async function createServer(): Promise<FastifyInstance> {
         description: 'REST API wrapper for miaw-core - Multiple Instance of App WhatsApp',
         version: '1.0.0',
       },
-      servers: [
-        {
-          url: `http://localhost:${config.port}`,
-          description: 'Development server',
-        },
-      ],
+      servers: buildServers(),
       tags: [
         { name: 'Instances', description: 'Create and manage WhatsApp instances' },
         { name: 'Connection', description: 'Connect, disconnect, and check instance status' },
@@ -76,6 +116,8 @@ export async function createServer(): Promise<FastifyInstance> {
           name: 'Business',
           description: 'WhatsApp Business features (labels, catalog, newsletters)',
         },
+        { name: 'Proxies', description: 'Inspect, reload, and test outbound proxies' },
+        { name: 'Communities', description: 'Create and manage WhatsApp communities' },
         { name: 'Health', description: 'API health check' },
       ],
       components: {
@@ -113,6 +155,9 @@ export async function createServer(): Promise<FastifyInstance> {
   // Register error handler
   setErrorHandler(server);
 
+  // Register not-found handler (consistent error shape for unknown routes)
+  server.setNotFoundHandler(notFoundHandler);
+
   // Register health check
   server.get(
     '/health',
@@ -143,6 +188,12 @@ export async function createServer(): Promise<FastifyInstance> {
     return server.swagger();
   });
 
+  const proxyPool = await ProxyPoolService.create({
+    filePath: config.proxyFile,
+    strategy: config.proxyStrategy,
+    logger: server.log,
+  });
+
   // Create instance manager (shared across requests)
   const instanceManager = new InstanceManager({
     sessionPath: config.sessionPath,
@@ -150,6 +201,8 @@ export async function createServer(): Promise<FastifyInstance> {
     webhookTimeout: config.webhookTimeout,
     webhookMaxRetries: config.webhookMaxRetries,
     webhookRetryDelay: config.webhookRetryDelay,
+    proxyPool,
+    defaultSyncFullHistory: config.defaultSyncFullHistory,
   });
 
   // Create webhook dispatcher
@@ -165,9 +218,20 @@ export async function createServer(): Promise<FastifyInstance> {
     webhookDispatcher.queue(url, payload);
   });
 
+  // Restore persisted instances (recreate + reconnect) after a restart
+  await instanceManager.restore();
+
   // Decorate server with instance manager
   server.decorate('instanceManager', instanceManager);
+  server.decorate('proxyPool', proxyPool);
   server.decorate('webhookDispatcher', webhookDispatcher);
+
+  // The proxy pool may hold a file watcher; release it when the server closes.
+  // instanceManager/webhookDispatcher are disposed by createShutdownHandler.
+  server.addHook('onClose', () => {
+    proxyPool.close();
+    uninstallRejectionGuard();
+  });
 
   // Register API routes (pass instanceManager for v0.9.0 routes)
   await registerRoutes(server, instanceManager);

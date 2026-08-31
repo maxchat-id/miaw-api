@@ -36,7 +36,15 @@ export class HttpClient {
     const { method = 'GET', headers = {}, body, timeout = this.defaultTimeout } = options;
 
     const url = `${this.baseUrl}${path}`;
-    const requestHeaders = { ...this.defaultHeaders, ...headers };
+    const requestHeaders: Record<string, string> = { ...this.defaultHeaders, ...headers };
+
+    // Fastify rejects a bodyless request that still declares a JSON body
+    // (FST_ERR_CTP_EMPTY_JSON_BODY), which is exactly what a DELETE looks like
+    // once the default Content-Type is applied.
+    if (body === undefined) {
+      delete requestHeaders['Content-Type'];
+      delete requestHeaders['content-type'];
+    }
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeout);
@@ -84,6 +92,10 @@ export class HttpClient {
 
   async put(path: string, body?: any, options?: HttpRequestOptions): Promise<HttpResponse> {
     return this.request(path, { ...options, method: 'PUT', body });
+  }
+
+  async patch(path: string, body?: any, options?: HttpRequestOptions): Promise<HttpResponse> {
+    return this.request(path, { ...options, method: 'PATCH', body });
   }
 
   async delete(path: string, options?: HttpRequestOptions): Promise<HttpResponse> {

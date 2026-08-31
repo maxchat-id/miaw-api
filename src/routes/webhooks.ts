@@ -35,6 +35,10 @@ export async function webhookRoutes(server: FastifyInstance): Promise<void> {
         },
         body: {
           type: 'object',
+          // Every field is optional, so the whole body is too. Without
+          // nullable, Fastify rejects a bodyless POST with 'body must be
+          // object' before the handler runs.
+          nullable: true,
           properties: {
             event: {
               type: 'string',
@@ -53,7 +57,9 @@ export async function webhookRoutes(server: FastifyInstance): Promise<void> {
                 properties: {
                   sent: { type: 'boolean' },
                   webhookUrl: { type: 'string' },
-                  testEvent: { type: 'object' },
+                  // additionalProperties so the sample payload survives
+                  // serialization instead of being stripped to {} (ISSUE-03)
+                  testEvent: { type: 'object', additionalProperties: true },
                 },
               },
             },
@@ -102,7 +108,9 @@ export async function webhookRoutes(server: FastifyInstance): Promise<void> {
     },
     async (request, reply) => {
       const params = request.params as { id: string };
-      const body = request.body as { event?: string };
+      // The schema marks every field optional, so a bodyless POST is valid.
+      // Reading .event off an undefined body threw before reaching the handler.
+      const body = (request.body ?? {}) as { event?: string };
 
       const instanceManager = server.instanceManager;
       const instance = instanceManager.getInstance(params.id);
@@ -181,7 +189,9 @@ export async function webhookRoutes(server: FastifyInstance): Promise<void> {
                 type: 'object',
                 properties: {
                   instanceId: { type: 'string' },
-                  webhookUrl: { type: 'string' },
+                  // The handler answers null when no webhook is configured;
+                  // without nullable the serializer coerced that to ''.
+                  webhookUrl: { type: 'string', nullable: true },
                   webhookEvents: {
                     type: 'array',
                     items: { type: 'string' },

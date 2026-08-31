@@ -510,21 +510,33 @@ describe('WebhookDispatcher', () => {
         timestamp: 1,
       });
 
-      // Process multiple times to exhaust retries
-      // Attempt 1
-      vi.advanceTimersByTime(1000);
-      await Promise.resolve();
+      // Exhaust retries. calculateRetryDelay hardcodes [0, 60000, ...], so each
+      // retry is gated to its scheduled time — advance past it, not just a tick.
+      await vi.advanceTimersByTimeAsync(1000); // attempt 1 fails → retry scheduled at +60s
+      await vi.advanceTimersByTimeAsync(60000); // attempt 2 reaches maxRetries → removed
 
-      // Attempt 2
-      vi.advanceTimersByTime(1000);
-      await Promise.resolve();
-
-      // Attempt 3 (reaches max)
-      vi.advanceTimersByTime(1000);
-      await Promise.resolve();
-
-      // Should be removed after max retries
       expect(dispatcher.getQueueSize()).toBe(0);
+    });
+  });
+
+  describe('Concurrent processing', () => {
+    it('does not re-deliver an entry while its previous delivery is still in flight', async () => {
+      // A delivery slower than the 1s processing tick must not be sent twice:
+      // the next setInterval tick fires before the entry is removed. Regression
+      // for duplicate webhook delivery to slow (but healthy) endpoints.
+      mockFetch.mockImplementation(() => new Promise(() => {})); // never resolves
+
+      await dispatcher.queue('https://slow.com/hook', {
+        event: 'message',
+        instanceId: 'i1',
+        timestamp: 1,
+      });
+
+      await vi.advanceTimersByTimeAsync(1000); // tick 1: deliver starts, fetch pending
+      await vi.advanceTimersByTimeAsync(1000); // tick 2: entry still queued, must be skipped
+      await vi.advanceTimersByTimeAsync(1000); // tick 3: still skipped
+
+      expect(mockFetch).toHaveBeenCalledTimes(1);
     });
   });
 

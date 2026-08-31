@@ -1,6 +1,19 @@
 /**
  * Routes Registry
  * Register all API routes
+ *
+ * Two contracts are served side by side:
+ *
+ * - **v1** — the historical shape, mounted unprefixed at the root. Frozen:
+ *   existing consumers depend on these exact paths and payloads.
+ * - **v2** — the normalized contract, mounted under `/api/v2`. Every 2xx
+ *   response is wrapped in `successEnvelope`, and collections carry their
+ *   pagination metadata inside `data`.
+ *
+ * A route module is shared by both mounts when its v1 shape already matches
+ * the v2 contract; otherwise the v2 variant lives under `./v2/`. Modules are
+ * ported one at a time, so `registerV2Routes` is deliberately shorter than
+ * `registerV1Routes` until the port completes.
  */
 
 import { FastifyInstance } from 'fastify';
@@ -17,11 +30,39 @@ import { businessRoutes } from './business';
 import { newsletterRoutes } from './newsletters';
 import { basicGetsRoutes } from './basic-gets';
 import { sessionRoutes } from './session';
+import { proxyRoutes } from './proxies';
+import { instanceRoutesV2 } from './v2/instances';
+import { connectionRoutesV2 } from './v2/connection';
+import { messagingSendRoutesV2 } from './v2/messaging-send';
+import { messagingMutationRoutesV2 } from './v2/messaging-mutations';
+import { webhookRoutesV2 } from './v2/webhooks';
+import { contactRoutesV2 } from './v2/contacts';
+import { chatRoutesV2 } from './v2/chats';
+import { profileRoutesV2 } from './v2/profile';
+import { groupRoutesV2 } from './v2/groups';
+import { labelRoutesV2 } from './v2/labels';
+import { catalogRoutesV2 } from './v2/catalog';
+import { sessionRoutesV2 } from './v2/session';
+import { newsletterRoutesV2 } from './v2/newsletters';
+import { communityRoutesV2 } from './v2/communities';
+
+export const V2_PREFIX = '/api/v2';
 
 /**
- * Register all routes
+ * Register both contracts.
  */
 export async function registerRoutes(
+  server: FastifyInstance,
+  instanceManager: InstanceManager,
+): Promise<void> {
+  await registerV1Routes(server, instanceManager);
+  await registerV2Routes(server);
+}
+
+/**
+ * v1 — unprefixed, unchanged.
+ */
+export async function registerV1Routes(
   server: FastifyInstance,
   instanceManager: InstanceManager,
 ): Promise<void> {
@@ -62,4 +103,103 @@ export async function registerRoutes(
 
   // Session lifecycle & stats routes (v0.15.0)
   await server.register(sessionRoutes);
+
+  // Proxy pool inspection and per-instance proxy management
+  await server.register(proxyRoutes);
+}
+
+/**
+ * v2 — normalized contract under `/api/v2`.
+ *
+ * The `onRoute` hook stamps `successEnvelope` onto every 2xx response so a
+ * ported handler cannot accidentally ship a bare payload. It only fires for
+ * routes registered inside this scope.
+ */
+/**
+ * Fastify runs ajv with `removeAdditional`, so `additionalProperties: false`
+ * does not reject an unknown key — it strips it and lets the request through.
+ * A caller who misspells a field, or sends one this route does not accept, is
+ * told the request succeeded while that part of it was silently discarded.
+ *
+ * `propertyNames` is not subject to removal, so restating the allowed keys
+ * there turns the same schema into a rejection. Applied by walking the schema
+ * rather than by hand at each route, so a schema added later is covered too.
+ *
+ * Bodies declared as `$ref` are left alone: those schemas are shared with v1,
+ * and tightening them there would change a frozen contract.
+ */
+function rejectUnknownProperties(node: unknown): void {
+  if (Array.isArray(node)) {
+    node.forEach(rejectUnknownProperties);
+    return;
+  }
+  if (!node || typeof node !== 'object') {
+    return;
+  }
+
+  const schema = node as Record<string, any>;
+
+  if (
+    schema.additionalProperties === false &&
+    schema.properties &&
+    typeof schema.properties === 'object' &&
+    !schema.propertyNames
+  ) {
+    const allowed = Object.keys(schema.properties);
+    if (allowed.length > 0) {
+      schema.propertyNames = { enum: allowed };
+    }
+  }
+
+  for (const value of Object.values(schema)) {
+    rejectUnknownProperties(value);
+  }
+}
+
+export async function registerV2Routes(server: FastifyInstance): Promise<void> {
+  await server.register(
+    async (api) => {
+      api.addHook('onRoute', (route) => {
+        // Inline request schemas reject unknown keys instead of dropping them.
+        for (const part of ['body', 'querystring', 'params'] as const) {
+          rejectUnknownProperties(route.schema?.[part]);
+        }
+
+        const response = (route.schema?.response ?? {}) as Record<string, unknown>;
+
+        // A route that declares its own success response opts out: the media
+        // download answers with a raw binary body, which the envelope
+        // serializer would mangle into an empty object.
+        if ('2xx' in response || '200' in response) {
+          return;
+        }
+
+        route.schema = {
+          ...route.schema,
+          response: { ...response, '2xx': { $ref: 'successEnvelope#' } },
+        };
+      });
+
+      // Proxy management: its v1 paths already match the v2 contract, so the
+      // same module serves both mounts.
+      await api.register(proxyRoutes);
+
+      // Ported to the v2 shape.
+      await api.register(instanceRoutesV2);
+      await api.register(connectionRoutesV2);
+      await api.register(messagingSendRoutesV2);
+      await api.register(messagingMutationRoutesV2);
+      await api.register(webhookRoutesV2);
+      await api.register(contactRoutesV2);
+      await api.register(chatRoutesV2);
+      await api.register(profileRoutesV2);
+      await api.register(groupRoutesV2);
+      await api.register(labelRoutesV2);
+      await api.register(catalogRoutesV2);
+      await api.register(sessionRoutesV2);
+      await api.register(newsletterRoutesV2);
+      await api.register(communityRoutesV2);
+    },
+    { prefix: V2_PREFIX },
+  );
 }
