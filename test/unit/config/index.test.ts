@@ -25,7 +25,6 @@ describe('Config', () => {
     delete process.env.SESSION_PATH;
     delete process.env.WEBHOOK_TIMEOUT_MS;
     delete process.env.WEBHOOK_MAX_RETRIES;
-    delete process.env.WEBHOOK_RETRY_DELAY_MS;
     delete process.env.WEBHOOK_SSRF_ALLOWLIST;
     delete process.env.LOG_LEVEL;
     delete process.env.MIAW_PROXY_FILE;
@@ -79,11 +78,6 @@ describe('Config', () => {
     it('should use default webhook max retries 6', async () => {
       const { config } = await import('../../../src/config');
       expect(config.webhookMaxRetries).toBe(6);
-    });
-
-    it('should use default webhook retry delay 60000ms', async () => {
-      const { config } = await import('../../../src/config');
-      expect(config.webhookRetryDelay).toBe(60000);
     });
 
     it('should use default log level "info"', async () => {
@@ -147,12 +141,6 @@ describe('Config', () => {
       expect(config.webhookMaxRetries).toBe(3);
     });
 
-    it('should override retry delay from WEBHOOK_RETRY_DELAY_MS', async () => {
-      process.env.WEBHOOK_RETRY_DELAY_MS = '30000';
-      const { config } = await import('../../../src/config');
-      expect(config.webhookRetryDelay).toBe(30000);
-    });
-
     it('should override log level from LOG_LEVEL', async () => {
       process.env.LOG_LEVEL = 'debug';
       const { config } = await import('../../../src/config');
@@ -204,13 +192,6 @@ describe('Config', () => {
       const { config } = await import('../../../src/config');
       expect(typeof config.webhookMaxRetries).toBe('number');
       expect(config.webhookMaxRetries).toBe(10);
-    });
-
-    it('should convert retry delay string to number', async () => {
-      process.env.WEBHOOK_RETRY_DELAY_MS = '120000';
-      const { config } = await import('../../../src/config');
-      expect(typeof config.webhookRetryDelay).toBe('number');
-      expect(config.webhookRetryDelay).toBe(120000);
     });
   });
 
@@ -318,7 +299,6 @@ describe('Config', () => {
       expect(config).toHaveProperty('sessionPath');
       expect(config).toHaveProperty('webhookTimeout');
       expect(config).toHaveProperty('webhookMaxRetries');
-      expect(config).toHaveProperty('webhookRetryDelay');
       expect(config).toHaveProperty('logLevel');
       expect(config).toHaveProperty('proxyFile');
       expect(config).toHaveProperty('proxyStrategy');

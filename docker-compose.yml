@@ -13,7 +13,6 @@ services:
       - WEBHOOK_SECRET=${WEBHOOK_SECRET:-change-me-in-production}
       - WEBHOOK_TIMEOUT=10000
       - WEBHOOK_MAX_RETRIES=5
-      - WEBHOOK_RETRY_DELAY=1000
       - CORS_ORIGIN=*
       - SESSION_PATH=/app/sessions
       - LOG_LEVEL=info
