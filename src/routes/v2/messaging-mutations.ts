@@ -441,6 +441,12 @@ export async function messagingMutationRoutesV2(server: FastifyInstance): Promis
 
       try {
         const result = await client.loadMoreMessages(chatJid, count, timeoutMs);
+        if (!result.success) {
+          if (result.timedOut) {
+            throw new ServiceUnavailableError('WhatsApp did not answer the history request');
+          }
+          throw new BadRequestError('Failed to load more messages', { error: result.error });
+        }
         reply.send({
           success: true,
           data: { messagesLoaded: result.messagesLoaded, hasMore: result.hasMore },

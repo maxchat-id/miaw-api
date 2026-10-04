@@ -39,7 +39,7 @@ describe('v2 message mutations', () => {
       forwardMessage: vi.fn(async () => ({ messageId: 'FWD-1' })),
       downloadMedia: vi.fn(async () => Buffer.from('binary-bytes')),
       markAsRead: vi.fn(async () => true),
-      loadMoreMessages: vi.fn(async () => ({ messagesLoaded: 20, hasMore: true })),
+      loadMoreMessages: vi.fn(async () => ({ success: true, messagesLoaded: 20, hasMore: true })),
     };
 
     server = Fastify({ logger: false });
@@ -141,6 +141,39 @@ describe('v2 message mutations', () => {
 
     expect(res.json().data).toEqual({ messagesLoaded: 20, hasMore: true });
     expect(client.loadMoreMessages).toHaveBeenCalledWith(CHAT, 20, 15000);
+  });
+
+  it('answers 503 when WhatsApp does not answer the history request', async () => {
+    client.loadMoreMessages.mockResolvedValue({
+      success: false,
+      error: 'Timeout waiting for history (15000ms)',
+      timedOut: true,
+    });
+
+    const res = await call(
+      'POST',
+      `/instances/bot/chats/${encodeURIComponent(CHAT)}/message-history-loads`,
+    );
+
+    expect(res.statusCode).toBe(503);
+    expect(res.json().error.message).toBe('WhatsApp did not answer the history request');
+  });
+
+  it('answers 400 with the reason when the history request cannot be made', async () => {
+    client.loadMoreMessages.mockResolvedValue({
+      success: false,
+      error: 'No messages in store to paginate from. Send or receive a message first.',
+    });
+
+    const res = await call(
+      'POST',
+      `/instances/bot/chats/${encodeURIComponent(CHAT)}/message-history-loads`,
+    );
+
+    expect(res.statusCode).toBe(400);
+    expect(res.json().error.details).toEqual({
+      error: 'No messages in store to paginate from. Send or receive a message first.',
+    });
   });
 
   it('keeps media raw when mounted behind the real v2 envelope hook', async () => {
