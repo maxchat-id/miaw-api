@@ -140,7 +140,36 @@ describe('v2 message mutations', () => {
     );
 
     expect(res.json().data).toEqual({ messagesLoaded: 20, hasMore: true });
-    expect(client.loadMoreMessages).toHaveBeenCalledWith(CHAT, 20, 15000);
+    expect(client.loadMoreMessages).toHaveBeenCalledWith(CHAT, 20, 15000, undefined);
+  });
+
+  it('passes the anchor of a history load on to the client', async () => {
+    const anchor = { id: 'MSG-OLD', fromMe: true, timestamp: 1788000000 };
+
+    const res = await call(
+      'POST',
+      `/instances/bot/chats/${encodeURIComponent(CHAT)}/message-history-loads`,
+      { anchor },
+    );
+
+    expect(res.statusCode).toBe(200);
+    expect(client.loadMoreMessages).toHaveBeenCalledWith(CHAT, 50, 15000, anchor);
+  });
+
+  it.each([
+    ['a timestamp that is not an integer', { id: 'M', fromMe: true, timestamp: 1788000000.5 }],
+    ['a missing id', { fromMe: true, timestamp: 1788000000 }],
+    ['an empty id', { id: '', fromMe: true, timestamp: 1788000000 }],
+    ['a fromMe that is not a boolean', { id: 'M', fromMe: 'yes', timestamp: 1788000000 }],
+  ])('rejects a history load anchor with %s', async (_label, anchor) => {
+    const res = await call(
+      'POST',
+      `/instances/bot/chats/${encodeURIComponent(CHAT)}/message-history-loads`,
+      { anchor },
+    );
+
+    expect(res.statusCode).toBe(400);
+    expect(client.loadMoreMessages).not.toHaveBeenCalled();
   });
 
   it('answers 503 when WhatsApp does not answer the history request', async () => {
