@@ -11,10 +11,10 @@ interface WebhookDispatcherOptions {
   secret: string;
   timeout: number;
   maxRetries: number;
-  retryDelay: number;
 }
 
 interface WebhookDelivery {
+  deliveryId: string;
   url: string;
   payload: any;
   attempt: number;
@@ -40,6 +40,12 @@ export class WebhookDispatcher {
   // Guards against overlapping ticks: a delivery slower than the 1s interval
   // stays in the queue while awaited, so the next tick would re-send it.
   private processing = false;
+  // Queue keys must be unique per queued event. Deriving them from the payload
+  // collided whenever two events shared an instance and a millisecond, and
+  // Map.set then dropped the first one silently. A counter cannot collide, and
+  // the boot prefix keeps ids from a restarted process apart from the old ones.
+  private readonly bootId = crypto.randomUUID();
+  private deliverySeq = 0;
   // Stats tracking
   private stats: WebhookDeliveryStats = {
     queued: 0,
@@ -58,9 +64,10 @@ export class WebhookDispatcher {
    * Queue webhook for delivery
    */
   async queue(url: string, payload: any): Promise<void> {
-    const deliveryId = this.generateDeliveryId(payload);
+    const deliveryId = `${this.bootId}-${++this.deliverySeq}`;
 
     this.deliveryQueue.set(deliveryId, {
+      deliveryId,
       url,
       payload,
       attempt: 0,
@@ -134,7 +141,7 @@ export class WebhookDispatcher {
 
     this.logger.debug(
       {
-        deliveryId: this.generateDeliveryId(delivery.payload),
+        deliveryId: delivery.deliveryId,
         attempt: delivery.attempt,
         url: delivery.url,
       },
@@ -154,6 +161,9 @@ export class WebhookDispatcher {
           'Content-Type': 'application/json',
           'X-Miaw-Signature': signature,
           'X-Miaw-Timestamp': timestamp.toString(),
+          // Stable across retries of the same queued event, so a receiver (or a
+          // human reading both sides' logs) can tie the attempts together.
+          'X-Miaw-Delivery-Id': delivery.deliveryId,
           'User-Agent': 'Miaw-Webhook/1.0',
         },
         body: JSON.stringify(delivery.payload),
@@ -170,7 +180,7 @@ export class WebhookDispatcher {
         this.stats.lastDeliveryTime = timestamp;
         this.logger.info(
           {
-            deliveryId: this.generateDeliveryId(delivery.payload),
+            deliveryId: delivery.deliveryId,
             attempt: delivery.attempt,
             status: response.status,
           },
@@ -181,7 +191,7 @@ export class WebhookDispatcher {
 
       this.logger.warn(
         {
-          deliveryId: this.generateDeliveryId(delivery.payload),
+          deliveryId: delivery.deliveryId,
           attempt: delivery.attempt,
           status: response.status,
         },
@@ -193,7 +203,7 @@ export class WebhookDispatcher {
       this.stats.lastFailureTime = Date.now();
       this.logger.warn(
         {
-          deliveryId: this.generateDeliveryId(delivery.payload),
+          deliveryId: delivery.deliveryId,
           attempt: delivery.attempt,
           error: err.message,
         },
@@ -261,13 +271,6 @@ export class WebhookDispatcher {
       return false;
     }
     return crypto.timingSafeEqual(Buffer.from(expectedSignature), Buffer.from(computedSignature));
-  }
-
-  /**
-   * Generate unique delivery ID
-   */
-  private generateDeliveryId(payload: any): string {
-    return `${payload.event}-${payload.instanceId}-${payload.timestamp}`;
   }
 
   /**

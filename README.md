@@ -157,7 +157,6 @@ API_KEY=your-secret-api-key-here
 WEBHOOK_SECRET=your-webhook-secret-here
 WEBHOOK_TIMEOUT_MS=10000
 WEBHOOK_MAX_RETRIES=5
-WEBHOOK_RETRY_DELAY_MS=1000
 
 # Session Storage
 SESSION_PATH=./sessions
@@ -538,7 +537,6 @@ npm run test:integration -- setup
 | `WEBHOOK_SECRET`         | -             | Secret for webhook signature                                                      |
 | `WEBHOOK_TIMEOUT_MS`     | 10000         | Webhook delivery timeout (ms)                                                     |
 | `WEBHOOK_MAX_RETRIES`    | 6             | Max webhook retry attempts                                                        |
-| `WEBHOOK_RETRY_DELAY_MS` | 60000         | Initial retry delay (ms)                                                          |
 | `WEBHOOK_SSRF_ALLOWLIST` | -             | Hosts exempt from the webhook SSRF check (comma-separated; `host` or `host:port`) |
 | `SESSION_PATH`           | ./sessions    | Session storage path                                                              |
 | `MIAW_PROXY_FILE`        | -             | Optional mounted TXT/JSON proxy pool                                              |

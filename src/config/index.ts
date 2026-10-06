@@ -42,7 +42,6 @@ interface Config {
   // Webhook Configuration
   webhookTimeout: number;
   webhookMaxRetries: number;
-  webhookRetryDelay: number;
   // Hosts (or host:port) exempt from the webhook SSRF address check
   webhookSsrfAllowlist: string[];
 
@@ -68,7 +67,6 @@ function loadConfig(): Config {
     proxyStrategy: parseProxyStrategy(process.env.MIAW_PROXY_STRATEGY),
     webhookTimeout: parseInt(process.env.WEBHOOK_TIMEOUT_MS || '10000', 10),
     webhookMaxRetries: parseInt(process.env.WEBHOOK_MAX_RETRIES || '6', 10),
-    webhookRetryDelay: parseInt(process.env.WEBHOOK_RETRY_DELAY_MS || '60000', 10),
     webhookSsrfAllowlist: (process.env.WEBHOOK_SSRF_ALLOWLIST || '')
       .split(',')
       .map((h) => h.trim())
