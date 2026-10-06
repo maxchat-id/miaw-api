@@ -423,6 +423,18 @@ export async function messagingMutationRoutesV2(server: FastifyInstance): Promis
           properties: {
             count: { type: 'integer', minimum: 1, maximum: 500, default: 50 },
             timeoutMs: { type: 'integer', minimum: 1000, maximum: 60000, default: 15000 },
+            // The message to load older ones than; without it, the oldest
+            // message the store holds for the chat.
+            anchor: {
+              type: 'object',
+              required: ['id', 'fromMe', 'timestamp'],
+              additionalProperties: false,
+              properties: {
+                id: { type: 'string', minLength: 1 },
+                fromMe: { type: 'boolean' },
+                timestamp: { type: 'integer', minimum: 1, description: 'Unix time in seconds' },
+              },
+            },
           },
         },
       },
@@ -432,15 +444,26 @@ export async function messagingMutationRoutesV2(server: FastifyInstance): Promis
         instanceId: string;
         chatJid: string;
       };
-      const { count = 50, timeoutMs = 15000 } = (request.body ?? {}) as {
+      const {
+        count = 50,
+        timeoutMs = 15000,
+        anchor,
+      } = (request.body ?? {}) as {
         count?: number;
         timeoutMs?: number;
+        anchor?: { id: string; fromMe: boolean; timestamp: number };
       };
 
       const client = requireConnectedClient(server, instanceId);
 
       try {
-        const result = await client.loadMoreMessages(chatJid, count, timeoutMs);
+        const result = await client.loadMoreMessages(chatJid, count, timeoutMs, anchor);
+        if (!result.success) {
+          if (result.timedOut) {
+            throw new ServiceUnavailableError('WhatsApp did not answer the history request');
+          }
+          throw new BadRequestError('Failed to load more messages', { error: result.error });
+        }
         reply.send({
           success: true,
           data: { messagesLoaded: result.messagesLoaded, hasMore: result.hasMore },
