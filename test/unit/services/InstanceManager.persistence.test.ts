@@ -11,7 +11,10 @@ import { promises as fs } from 'fs';
 import os from 'os';
 import path from 'path';
 
-const coreMock = vi.hoisted(() => ({ options: [] as any[] }));
+const coreMock = vi.hoisted(() => ({
+  options: [] as any[],
+  onConnect: undefined as (() => Promise<void>) | undefined,
+}));
 
 vi.mock('miaw-core', () => {
   class MiawClient {
@@ -19,7 +22,7 @@ vi.mock('miaw-core', () => {
     removeAllListeners = vi.fn();
     disconnect = vi.fn();
     dispose = vi.fn().mockResolvedValue(undefined);
-    connect = vi.fn().mockResolvedValue(undefined);
+    connect = vi.fn(() => coreMock.onConnect?.() ?? Promise.resolve());
     constructor(opts: unknown) {
       coreMock.options.push(opts);
     }
@@ -52,6 +55,7 @@ async function readRegistry(): Promise<any[]> {
 describe('instance registry persistence', () => {
   beforeEach(async () => {
     coreMock.options.length = 0;
+    coreMock.onConnect = undefined;
     sessionPath = await fs.mkdtemp(path.join(os.tmpdir(), 'miaw-registry-'));
   });
 
@@ -130,6 +134,46 @@ describe('instance registry persistence', () => {
 
     // No syncFullHistory key at all — miaw-core then defaults it to true.
     expect(coreMock.options[0].syncFullHistory).toBeUndefined();
+  });
+
+  it('yields to health checks between restored client connects', async () => {
+    await fs.writeFile(
+      path.join(sessionPath, 'instances.json'),
+      JSON.stringify([{ instanceId: 'bot-a' }, { instanceId: 'bot-b' }, { instanceId: 'bot-c' }]),
+    );
+    const events: string[] = [];
+    let connectCount = 0;
+    coreMock.onConnect = async () => {
+      events.push(`connect-${++connectCount}`);
+      if (connectCount === 1) {
+        setImmediate(() => events.push('health'));
+      }
+    };
+
+    await makeManager().restore();
+
+    expect(events).toEqual([]);
+    await vi.waitFor(() => {
+      expect(events).toEqual(['connect-1', 'health', 'connect-2', 'connect-3']);
+    });
+  });
+
+  it('cancels background restore connects when disposal begins', async () => {
+    await fs.writeFile(
+      path.join(sessionPath, 'instances.json'),
+      JSON.stringify([{ instanceId: 'bot-a' }, { instanceId: 'bot-b' }]),
+    );
+    const connects: string[] = [];
+    coreMock.onConnect = async () => {
+      connects.push('connected');
+    };
+    const manager = makeManager();
+
+    await manager.restore();
+    await manager.dispose();
+    await new Promise((resolve) => setImmediate(resolve));
+
+    expect(connects).toEqual([]);
   });
 
   it('drains queued registry writes before clearing shutdown state', async () => {
