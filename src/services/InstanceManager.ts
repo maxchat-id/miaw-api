@@ -592,19 +592,38 @@ export class InstanceManager extends EventEmitter {
   async dispose(): Promise<void> {
     this.logger.info('Disposing InstanceManager');
 
-    const disconnectPromises = Array.from(this.instances.values()).map(async (managed) => {
-      if (managed.state.status === 'connected') {
+    const managedInstances = Array.from(this.instances.values());
+    const disposalErrors: unknown[] = [];
+    let nextIndex = 0;
+
+    const disposeNext = async (): Promise<void> => {
+      while (nextIndex < managedInstances.length) {
+        const managed = managedInstances[nextIndex++];
         try {
-          await managed.client.disconnect();
+          await managed.client.dispose();
         } catch (err) {
-          this.logger.error({ instanceId: managed.config.instanceId, err }, 'Error disconnecting');
+          disposalErrors.push(err);
+          this.logger.error(
+            { instanceId: managed.config.instanceId, err },
+            'Error disposing client',
+          );
+        } finally {
+          managed.client.removeAllListeners();
         }
       }
-      managed.client.removeAllListeners();
-    });
+    };
 
-    await Promise.all(disconnectPromises);
-    this.instances.clear();
-    this.removeAllListeners();
+    try {
+      const workerCount = Math.min(2, managedInstances.length);
+      await Promise.all(Array.from({ length: workerCount }, () => disposeNext()));
+      await this.persistQueue;
+
+      if (disposalErrors.length > 0) {
+        throw new AggregateError(disposalErrors, 'Failed to dispose one or more clients');
+      }
+    } finally {
+      this.instances.clear();
+      this.removeAllListeners();
+    }
   }
 }

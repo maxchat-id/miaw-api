@@ -47,9 +47,31 @@ export function createShutdownHandler(deps: ShutdownDeps): (signal: string) => P
     }
 
     try {
-      await deps.server.close();
-      await deps.instanceManager.dispose();
-      deps.webhookDispatcher.dispose();
+      const cleanupErrors: unknown[] = [];
+
+      try {
+        await deps.server.close();
+      } catch (err) {
+        cleanupErrors.push(err);
+      }
+      try {
+        await deps.instanceManager.dispose();
+      } catch (err) {
+        cleanupErrors.push(err);
+      }
+      try {
+        deps.webhookDispatcher.dispose();
+      } catch (err) {
+        cleanupErrors.push(err);
+      }
+
+      if (cleanupErrors.length === 1) {
+        throw cleanupErrors[0];
+      }
+      if (cleanupErrors.length > 1) {
+        throw new AggregateError(cleanupErrors, 'Multiple errors during graceful shutdown');
+      }
+
       clearTimeout(watchdog);
       deps.logger.info({ signal }, 'Graceful shutdown complete');
       deps.exit(0);

@@ -18,6 +18,7 @@ vi.mock('miaw-core', () => {
     on = vi.fn().mockReturnThis();
     removeAllListeners = vi.fn();
     disconnect = vi.fn();
+    dispose = vi.fn().mockResolvedValue(undefined);
     connect = vi.fn().mockResolvedValue(undefined);
     constructor(opts: unknown) {
       coreMock.options.push(opts);
@@ -55,6 +56,7 @@ describe('instance registry persistence', () => {
   });
 
   afterEach(async () => {
+    vi.restoreAllMocks();
     // restore() leaves background connects/persists in flight, which can
     // recreate files mid-teardown; retry rather than fail on ENOTEMPTY.
     await fs.rm(sessionPath, { recursive: true, force: true, maxRetries: 5, retryDelay: 20 });
@@ -128,5 +130,37 @@ describe('instance registry persistence', () => {
 
     // No syncFullHistory key at all — miaw-core then defaults it to true.
     expect(coreMock.options[0].syncFullHistory).toBeUndefined();
+  });
+
+  it('drains queued registry writes before clearing shutdown state', async () => {
+    const manager = makeManager();
+    const rename = fs.rename.bind(fs);
+    let releaseRename!: () => void;
+    let markRenameStarted!: () => void;
+    const renameStarted = new Promise<void>((resolve) => {
+      markRenameStarted = resolve;
+    });
+    const renameGate = new Promise<void>((resolve) => {
+      releaseRename = resolve;
+    });
+
+    vi.spyOn(fs, 'rename').mockImplementationOnce(async (oldPath, newPath) => {
+      markRenameStarted();
+      await renameGate;
+      return rename(oldPath, newPath);
+    });
+
+    await manager.createInstance({ instanceId: 'bot-a' });
+    await renameStarted;
+    await manager.createInstance({ instanceId: 'bot-b' });
+
+    const disposal = manager.dispose();
+    await new Promise((resolve) => setImmediate(resolve));
+    releaseRename();
+    await disposal;
+
+    await vi.waitFor(async () => {
+      expect((await readRegistry()).map((entry) => entry.instanceId)).toEqual(['bot-a', 'bot-b']);
+    });
   });
 });
