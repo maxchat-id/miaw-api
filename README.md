@@ -534,6 +534,7 @@ npm run test:integration -- setup
 | ------------------------ | ------------- | --------------------------------------------------------------------------------- |
 | `PORT`                   | 3000          | Server port                                                                       |
 | `HOST`                   | 0.0.0.0       | Server host                                                                       |
+| `SHUTDOWN_TIMEOUT_MS`    | 10000         | Graceful shutdown watchdog (ms); tune from measured dirty-shutdown duration       |
 | `API_KEY`                | -             | API key for authentication                                                        |
 | `WEBHOOK_SECRET`         | -             | Secret for webhook signature                                                      |
 | `WEBHOOK_TIMEOUT_MS`     | 10000         | Webhook delivery timeout (ms)                                                     |

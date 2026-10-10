@@ -271,6 +271,7 @@ export async function startServer(): Promise<void> {
     webhookDispatcher: server.webhookDispatcher,
     logger: server.log,
     exit: (code) => process.exit(code),
+    timeoutMs: config.shutdownTimeout,
   });
   process.on('SIGTERM', () => shutdown('SIGTERM'));
   process.on('SIGINT', () => shutdown('SIGINT'));
