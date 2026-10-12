@@ -31,6 +31,9 @@ interface Config {
   // Session Storage
   sessionPath: string;
 
+  // Graceful shutdown
+  shutdownTimeout: number;
+
   // Default `syncFullHistory` for instances that do not set one themselves.
   // Undefined leaves miaw-core's own default (full sync on) in place.
   defaultSyncFullHistory?: boolean;
@@ -50,6 +53,14 @@ interface Config {
   logLevel: string;
 }
 
+function parseShutdownTimeout(value: string | undefined): number {
+  const timeout = Number(value || '10000');
+  if (!Number.isInteger(timeout) || timeout <= 0 || timeout > 2_147_483_647) {
+    throw new Error(`Invalid SHUTDOWN_TIMEOUT_MS "${value}". Expected a positive integer.`);
+  }
+  return timeout;
+}
+
 function loadConfig(): Config {
   const config: Config = {
     port: parseInt(process.env.PORT || '3000', 10),
@@ -60,6 +71,7 @@ function loadConfig(): Config {
     webhookSecret: process.env.WEBHOOK_SECRET || DEFAULT_WEBHOOK_SECRET,
     corsOrigin: process.env.CORS_ORIGIN || '*',
     sessionPath: process.env.SESSION_PATH || './sessions',
+    shutdownTimeout: parseShutdownTimeout(process.env.SHUTDOWN_TIMEOUT_MS),
     defaultSyncFullHistory: parseOptionalBoolean(
       'MIAW_SYNC_FULL_HISTORY',
       process.env.MIAW_SYNC_FULL_HISTORY,

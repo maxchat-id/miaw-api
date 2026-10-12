@@ -23,6 +23,7 @@ describe('Config', () => {
     delete process.env.WEBHOOK_SECRET;
     delete process.env.CORS_ORIGIN;
     delete process.env.SESSION_PATH;
+    delete process.env.SHUTDOWN_TIMEOUT_MS;
     delete process.env.WEBHOOK_TIMEOUT_MS;
     delete process.env.WEBHOOK_MAX_RETRIES;
     delete process.env.WEBHOOK_RETRY_DELAY_MS;
@@ -74,6 +75,11 @@ describe('Config', () => {
     it('should use default webhook timeout 10000ms', async () => {
       const { config } = await import('../../../src/config');
       expect(config.webhookTimeout).toBe(10000);
+    });
+
+    it('should use default shutdown timeout 10000ms', async () => {
+      const { config } = await import('../../../src/config');
+      expect(config.shutdownTimeout).toBe(10000);
     });
 
     it('should use default webhook max retries 6', async () => {
@@ -140,6 +146,20 @@ describe('Config', () => {
       const { config } = await import('../../../src/config');
       expect(config.webhookTimeout).toBe(5000);
     });
+
+    it('should override shutdown timeout from SHUTDOWN_TIMEOUT_MS', async () => {
+      process.env.SHUTDOWN_TIMEOUT_MS = '25000';
+      const { config } = await import('../../../src/config');
+      expect(config.shutdownTimeout).toBe(25000);
+    });
+
+    it.each(['0', '-1', '1.5', 'invalid', '2147483648'])(
+      'should reject invalid shutdown timeout %s',
+      async (value) => {
+        process.env.SHUTDOWN_TIMEOUT_MS = value;
+        await expect(import('../../../src/config')).rejects.toThrow('Invalid SHUTDOWN_TIMEOUT_MS');
+      },
+    );
 
     it('should override max retries from WEBHOOK_MAX_RETRIES', async () => {
       process.env.WEBHOOK_MAX_RETRIES = '3';
@@ -316,6 +336,7 @@ describe('Config', () => {
       expect(config).toHaveProperty('webhookSecret');
       expect(config).toHaveProperty('corsOrigin');
       expect(config).toHaveProperty('sessionPath');
+      expect(config).toHaveProperty('shutdownTimeout');
       expect(config).toHaveProperty('webhookTimeout');
       expect(config).toHaveProperty('webhookMaxRetries');
       expect(config).toHaveProperty('webhookRetryDelay');

@@ -16,6 +16,7 @@ vi.mock('miaw-core', () => {
     });
     removeAllListeners = vi.fn();
     disconnect = vi.fn();
+    dispose = vi.fn().mockResolvedValue(undefined);
     connect = vi.fn().mockResolvedValue(undefined);
     options: any;
     constructor(opts: unknown) {
@@ -247,6 +248,103 @@ describe('InstanceManager proxy resolution', () => {
       downloadProxied: false,
     });
     expect(select).toHaveBeenCalledWith('bot');
+  });
+});
+
+describe('InstanceManager.dispose', () => {
+  let manager: InstanceManager;
+
+  beforeEach(() => {
+    coreMock.clients.length = 0;
+    manager = new InstanceManager({
+      sessionPath: './sessions',
+      webhookSecret: 'test-secret',
+      webhookTimeout: 1000,
+      webhookMaxRetries: 3,
+      webhookRetryDelay: 1000,
+    });
+  });
+
+  it('disposes every managed client exactly once regardless of connection state', async () => {
+    const statuses = ['connected', 'connecting', 'reconnecting', 'qr_required', 'disconnected'];
+
+    for (const [index, status] of statuses.entries()) {
+      await manager.createInstance({ instanceId: `bot-${index}` });
+      if (status === 'qr_required') {
+        coreMock.clients[index].emitTest('qr', 'QR-STRING');
+      } else if (status !== 'disconnected') {
+        coreMock.clients[index].emitTest('connection', status);
+      }
+    }
+
+    await manager.dispose();
+
+    for (const client of coreMock.clients) {
+      expect(client.dispose).toHaveBeenCalledOnce();
+      expect(client.disconnect).not.toHaveBeenCalled();
+      expect(client.removeAllListeners).toHaveBeenCalledOnce();
+    }
+    expect(manager.listInstances()).toEqual([]);
+  });
+
+  it('runs at most two client disposals concurrently', async () => {
+    let active = 0;
+    let maxActive = 0;
+    const releases: (() => void)[] = [];
+
+    for (let index = 0; index < 5; index += 1) {
+      await manager.createInstance({ instanceId: `bot-${index}` });
+      coreMock.clients[index].dispose.mockImplementation(
+        () =>
+          new Promise<void>((resolve) => {
+            active += 1;
+            maxActive = Math.max(maxActive, active);
+            releases[index] = () => {
+              active -= 1;
+              resolve();
+            };
+          }),
+      );
+    }
+
+    const disposal = manager.dispose();
+    await vi.waitFor(() => expect(releases.filter(Boolean)).toHaveLength(2));
+
+    for (let index = 0; index < 5; index += 1) {
+      releases[index]();
+      if (index < 4) {
+        await vi.waitFor(() => expect(releases[index + 1]).toBeTypeOf('function'));
+      }
+    }
+    await disposal;
+
+    expect(maxActive).toBe(2);
+  });
+
+  it('attempts every client, cleans state, and rejects with all disposal failures', async () => {
+    const logger = { info: vi.fn(), error: vi.fn() };
+    (manager as any).logger = logger;
+    manager.on('webhook', vi.fn());
+
+    for (let index = 0; index < 4; index += 1) {
+      await manager.createInstance({ instanceId: `bot-${index}` });
+    }
+    coreMock.clients[0].dispose.mockRejectedValue(new Error('first failure'));
+    coreMock.clients[2].dispose.mockRejectedValue(new Error('second failure'));
+
+    const disposal = manager.dispose();
+
+    await expect(disposal).rejects.toMatchObject({
+      name: 'AggregateError',
+      errors: [expect.any(Error), expect.any(Error)],
+    });
+    for (const client of coreMock.clients) {
+      expect(client.dispose).toHaveBeenCalledOnce();
+      expect(client.removeAllListeners).toHaveBeenCalledOnce();
+    }
+    expect(logger.error).toHaveBeenCalledTimes(2);
+    expect(manager.listInstances()).toEqual([]);
+    expect(manager.listenerCount('webhook')).toBe(0);
   });
 });
 

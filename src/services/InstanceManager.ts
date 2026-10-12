@@ -81,6 +81,8 @@ export class InstanceManager extends EventEmitter {
   private backupPath: string;
   /** Serialises registry writes; see persist(). */
   private persistQueue: Promise<void> = Promise.resolve();
+  private restoreConnectCancelled = new Set<string>();
+  private disposing = false;
 
   constructor(options: InstanceManagerOptions) {
     super();
@@ -141,19 +143,38 @@ export class InstanceManager extends EventEmitter {
       return; // no registry yet (first boot)
     }
 
+    const restoredClients: Array<{ instanceId: string; client: MiawClient }> = [];
     for (const config of registry) {
       try {
         await this.createInstance(config);
-        this.getClient(config.instanceId)
-          ?.connect()
-          .catch((err) =>
-            this.logger.error({ instanceId: config.instanceId, err }, 'Restore connect failed'),
-          );
+        const client = this.getClient(config.instanceId);
+        if (client) {
+          restoredClients.push({ instanceId: config.instanceId, client });
+        }
       } catch (err) {
         this.logger.error({ instanceId: config.instanceId, err }, 'Restore failed');
       }
     }
     this.logger.info({ count: registry.length }, 'Instances restored');
+    void this.connectRestoredClients(restoredClients);
+  }
+
+  private async connectRestoredClients(
+    restoredClients: Array<{ instanceId: string; client: MiawClient }>,
+  ): Promise<void> {
+    for (const { instanceId, client } of restoredClients) {
+      // connect() synchronously hydrates its message store after its first
+      // await. Start after restore returns, then give health requests a turn
+      // between clients.
+      await new Promise<void>((resolve) => setImmediate(resolve));
+      if (this.disposing) return;
+      if (this.restoreConnectCancelled.has(instanceId)) continue;
+      if (this.instances.get(instanceId)?.client !== client) continue;
+
+      void Promise.resolve(client.connect()).catch((err) =>
+        this.logger.error({ instanceId, err }, 'Restore connect failed'),
+      );
+    }
   }
 
   /**
@@ -289,6 +310,7 @@ export class InstanceManager extends EventEmitter {
     }
 
     this.logger.info({ instanceId }, 'Deleting instance');
+    this.restoreConnectCancelled.add(instanceId);
 
     // Fully tear down the client for ANY status (clears reconnect timer, closes
     // socket, removes listeners). Deleting a still-connecting instance must stop
@@ -363,6 +385,7 @@ export class InstanceManager extends EventEmitter {
     if (proxy !== undefined && !validateProxyConfig(proxy)) {
       throw new Error(`Invalid proxy configuration: ${maskProxyUrl(proxy)}`);
     }
+    this.restoreConnectCancelled.add(instanceId);
 
     const nextClientOptions = { ...(managed.config.clientOptions || {}) };
     if (proxy === undefined) {
@@ -590,21 +613,41 @@ export class InstanceManager extends EventEmitter {
    * Cleanup all instances
    */
   async dispose(): Promise<void> {
+    this.disposing = true;
     this.logger.info('Disposing InstanceManager');
 
-    const disconnectPromises = Array.from(this.instances.values()).map(async (managed) => {
-      if (managed.state.status === 'connected') {
+    const managedInstances = Array.from(this.instances.values());
+    const disposalErrors: unknown[] = [];
+    let nextIndex = 0;
+
+    const disposeNext = async (): Promise<void> => {
+      while (nextIndex < managedInstances.length) {
+        const managed = managedInstances[nextIndex++];
         try {
-          await managed.client.disconnect();
+          await managed.client.dispose();
         } catch (err) {
-          this.logger.error({ instanceId: managed.config.instanceId, err }, 'Error disconnecting');
+          disposalErrors.push(err);
+          this.logger.error(
+            { instanceId: managed.config.instanceId, err },
+            'Error disposing client',
+          );
+        } finally {
+          managed.client.removeAllListeners();
         }
       }
-      managed.client.removeAllListeners();
-    });
+    };
 
-    await Promise.all(disconnectPromises);
-    this.instances.clear();
-    this.removeAllListeners();
+    try {
+      const workerCount = Math.min(2, managedInstances.length);
+      await Promise.all(Array.from({ length: workerCount }, () => disposeNext()));
+      await this.persistQueue;
+
+      if (disposalErrors.length > 0) {
+        throw new AggregateError(disposalErrors, 'Failed to dispose one or more clients');
+      }
+    } finally {
+      this.instances.clear();
+      this.removeAllListeners();
+    }
   }
 }

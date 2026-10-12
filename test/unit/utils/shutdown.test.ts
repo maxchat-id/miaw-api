@@ -47,7 +47,7 @@ describe('createShutdownHandler', () => {
     expect(deps.exit).toHaveBeenCalledOnce();
   });
 
-  it('exits 1 when cleanup throws', async () => {
+  it('exits 1 and still disposes later services when manager cleanup throws', async () => {
     const deps = makeDeps({
       instanceManager: { dispose: vi.fn().mockRejectedValue(new Error('boom')) },
     });
@@ -55,6 +55,20 @@ describe('createShutdownHandler', () => {
 
     await shutdown('SIGTERM');
 
+    expect(deps.webhookDispatcher.dispose).toHaveBeenCalledOnce();
+    expect(deps.exit).toHaveBeenCalledWith(1);
+  });
+
+  it('attempts every cleanup stage when server close throws', async () => {
+    const deps = makeDeps({
+      server: { close: vi.fn().mockRejectedValue(new Error('close failed')) },
+    });
+    const shutdown = createShutdownHandler(deps as never);
+
+    await shutdown('SIGTERM');
+
+    expect(deps.instanceManager.dispose).toHaveBeenCalledOnce();
+    expect(deps.webhookDispatcher.dispose).toHaveBeenCalledOnce();
     expect(deps.exit).toHaveBeenCalledWith(1);
   });
 
