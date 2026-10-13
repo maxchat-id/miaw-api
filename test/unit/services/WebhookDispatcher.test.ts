@@ -16,7 +16,6 @@ describe('WebhookDispatcher', () => {
     secret: 'test-webhook-secret',
     timeout: 5000,
     maxRetries: 3,
-    retryDelay: 1000,
   };
 
   beforeEach(() => {
@@ -516,6 +515,93 @@ describe('WebhookDispatcher', () => {
       await vi.advanceTimersByTimeAsync(60000); // attempt 2 reaches maxRetries → removed
 
       expect(dispatcher.getQueueSize()).toBe(0);
+    });
+  });
+
+  describe('Delivery id', () => {
+    it('keeps both entries when event, instance and timestamp collide', async () => {
+      // Two events on the same instance within the same millisecond used to
+      // produce the same queue key, so Map.set silently overwrote the first
+      // and its webhook was never delivered.
+      await dispatcher.queue('https://a.com/hook', {
+        event: 'message',
+        instanceId: 'i1',
+        timestamp: 1,
+        data: { id: 'msg-a' },
+      });
+      await dispatcher.queue('https://a.com/hook', {
+        event: 'message',
+        instanceId: 'i1',
+        timestamp: 1,
+        data: { id: 'msg-b' },
+      });
+
+      expect(dispatcher.getQueueSize()).toBe(2);
+    });
+
+    it('keeps receipts for the same message apart', async () => {
+      // One message legitimately produces several receipts (delivered, read,
+      // played). Keying by message id would drop all but the last.
+      await dispatcher.queue('https://a.com/hook', {
+        event: 'message_receipt',
+        instanceId: 'i1',
+        timestamp: 1,
+        data: { messageId: 'msg-a', status: 'delivered' },
+      });
+      await dispatcher.queue('https://a.com/hook', {
+        event: 'message_receipt',
+        instanceId: 'i1',
+        timestamp: 1,
+        data: { messageId: 'msg-a', status: 'read' },
+      });
+
+      expect(dispatcher.getQueueSize()).toBe(2);
+    });
+
+    it('sends a delivery id header that stays the same across retries', async () => {
+      mockFetch.mockResolvedValue({ ok: false, status: 500 });
+
+      await dispatcher.queue('https://a.com/hook', {
+        event: 'message',
+        instanceId: 'i1',
+        timestamp: 1,
+        data: { id: 'msg-a' },
+      });
+
+      await vi.advanceTimersByTimeAsync(1000); // attempt 1
+      await vi.advanceTimersByTimeAsync(60000); // attempt 2, after the 1min backoff
+
+      expect(mockFetch).toHaveBeenCalledTimes(2);
+      const first = mockFetch.mock.calls[0][1].headers['X-Miaw-Delivery-Id'];
+      const second = mockFetch.mock.calls[1][1].headers['X-Miaw-Delivery-Id'];
+
+      expect(first).toBeTruthy();
+      expect(second).toBe(first);
+    });
+
+    it('gives different deliveries different ids', async () => {
+      mockFetch.mockResolvedValue({ ok: true, status: 200 });
+
+      await dispatcher.queue('https://a.com/hook', {
+        event: 'message',
+        instanceId: 'i1',
+        timestamp: 1,
+        data: { id: 'msg-a' },
+      });
+      await dispatcher.queue('https://a.com/hook', {
+        event: 'message',
+        instanceId: 'i1',
+        timestamp: 1,
+        data: { id: 'msg-b' },
+      });
+
+      await vi.advanceTimersByTimeAsync(1000);
+
+      expect(mockFetch).toHaveBeenCalledTimes(2);
+      const first = mockFetch.mock.calls[0][1].headers['X-Miaw-Delivery-Id'];
+      const second = mockFetch.mock.calls[1][1].headers['X-Miaw-Delivery-Id'];
+
+      expect(second).not.toBe(first);
     });
   });
 

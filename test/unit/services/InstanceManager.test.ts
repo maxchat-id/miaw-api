@@ -55,7 +55,6 @@ describe('InstanceManager.updateWebhook', () => {
       webhookSecret: 'test-secret',
       webhookTimeout: 1000,
       webhookMaxRetries: 3,
-      webhookRetryDelay: 1000,
     });
   });
 
@@ -131,7 +130,6 @@ describe('InstanceManager QR caching (C4/C5)', () => {
       webhookSecret: 'test-secret',
       webhookTimeout: 1000,
       webhookMaxRetries: 3,
-      webhookRetryDelay: 1000,
     });
     await manager.createInstance({ instanceId: 'bot' });
     const client = manager.getClient('bot');
@@ -151,7 +149,6 @@ describe('InstanceManager QR caching (C4/C5)', () => {
       webhookSecret: 'test-secret',
       webhookTimeout: 1000,
       webhookMaxRetries: 3,
-      webhookRetryDelay: 1000,
     });
     await manager.createInstance({ instanceId: 'bot' });
     const client = manager.getClient('bot');
@@ -177,7 +174,6 @@ describe('InstanceManager proxy resolution', () => {
       webhookSecret: 'test-secret',
       webhookTimeout: 1000,
       webhookMaxRetries: 3,
-      webhookRetryDelay: 1000,
     });
   });
 
@@ -230,7 +226,6 @@ describe('InstanceManager proxy resolution', () => {
       webhookSecret: 'test-secret',
       webhookTimeout: 1000,
       webhookMaxRetries: 3,
-      webhookRetryDelay: 1000,
       proxyPool: { select } as any,
     });
 
@@ -358,7 +353,6 @@ describe('InstanceManager.connectIfIdle', () => {
       webhookSecret: 'test-secret',
       webhookTimeout: 1000,
       webhookMaxRetries: 3,
-      webhookRetryDelay: 1000,
     });
     await manager.createInstance({ instanceId: 'bot' });
   });

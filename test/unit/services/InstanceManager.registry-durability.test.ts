@@ -47,7 +47,6 @@ function makeManager(): InstanceManager {
     webhookSecret: 'test-secret',
     webhookTimeout: 1000,
     webhookMaxRetries: 3,
-    webhookRetryDelay: 1000,
   });
 }
 

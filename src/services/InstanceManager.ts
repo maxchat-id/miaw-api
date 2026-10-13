@@ -55,7 +55,6 @@ interface InstanceManagerOptions {
   webhookSecret: string;
   webhookTimeout: number;
   webhookMaxRetries: number;
-  webhookRetryDelay: number;
   proxyPool?: ProxyPoolService;
   /** Applied to instances that did not set `syncFullHistory` themselves. */
   defaultSyncFullHistory?: boolean;

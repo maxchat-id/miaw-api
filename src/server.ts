@@ -200,7 +200,6 @@ export async function createServer(): Promise<FastifyInstance> {
     webhookSecret: config.webhookSecret,
     webhookTimeout: config.webhookTimeout,
     webhookMaxRetries: config.webhookMaxRetries,
-    webhookRetryDelay: config.webhookRetryDelay,
     proxyPool,
     defaultSyncFullHistory: config.defaultSyncFullHistory,
   });
@@ -210,7 +209,6 @@ export async function createServer(): Promise<FastifyInstance> {
     secret: config.webhookSecret,
     timeout: config.webhookTimeout,
     maxRetries: config.webhookMaxRetries,
-    retryDelay: config.webhookRetryDelay,
   });
 
   // Connect instance manager webhook events to dispatcher
