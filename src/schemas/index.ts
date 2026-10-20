@@ -201,6 +201,13 @@ export function registerSchemas(server: FastifyInstance): void {
         type: 'string',
         nullable: true,
       },
+      // Phones or JIDs to tag; the text must also contain each `@<number>`.
+      mentions: {
+        type: 'array',
+        items: { type: 'string', minLength: 1, maxLength: 100 },
+        maxItems: 1024,
+        nullable: true,
+      },
     },
   });
 
@@ -250,6 +257,13 @@ export function registerSchemas(server: FastifyInstance): void {
       },
       quoted: {
         type: 'string',
+        nullable: true,
+      },
+      // Phones or JIDs to tag; the text must also contain each `@<number>`.
+      mentions: {
+        type: 'array',
+        items: { type: 'string', minLength: 1, maxLength: 100 },
+        maxItems: 1024,
         nullable: true,
       },
     },
@@ -345,6 +359,13 @@ export function registerSchemas(server: FastifyInstance): void {
         type: 'string',
         nullable: true,
       },
+      // Phones or JIDs to tag; the text must also contain each `@<number>`.
+      mentions: {
+        type: 'array',
+        items: { type: 'string', minLength: 1, maxLength: 100 },
+        maxItems: 1024,
+        nullable: true,
+      },
     },
   });
 
@@ -385,6 +406,13 @@ export function registerSchemas(server: FastifyInstance): void {
       },
       quoted: {
         type: 'string',
+        nullable: true,
+      },
+      // Phones or JIDs to tag; the text must also contain each `@<number>`.
+      mentions: {
+        type: 'array',
+        items: { type: 'string', minLength: 1, maxLength: 100 },
+        maxItems: 1024,
         nullable: true,
       },
     },

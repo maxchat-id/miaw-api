@@ -87,6 +87,19 @@ async function resolveQuotedMessage(
 }
 
 /**
+ * Send options for a text: an optional quote and the people to tag.
+ */
+function textOptions(
+  quoted: MiawMessage | undefined,
+  mentions: string[] | null | undefined,
+): { quoted?: MiawMessage; mentions?: string[] } | undefined {
+  if (!quoted && !mentions?.length) {
+    return undefined;
+  }
+  return { ...(quoted && { quoted }), ...(mentions?.length ? { mentions } : {}) };
+}
+
+/**
  * Register messaging routes
  */
 export async function messagingRoutes(server: FastifyInstance): Promise<void> {
@@ -179,6 +192,7 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
         text: string;
         chatJid?: string;
         quoted?: string;
+        mentions?: string[] | null;
       };
 
       const instanceManager = server.instanceManager;
@@ -196,7 +210,11 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
       const quoted = await resolveQuotedMessage(client, body.quoted, body.chatJid);
 
       try {
-        const result = await client.sendText(body.to, body.text, quoted ? { quoted } : undefined);
+        const result = await client.sendText(
+          body.to,
+          body.text,
+          textOptions(quoted, body.mentions),
+        );
 
         if (!result.success) {
           throw new BadRequestError('Failed to send message', { error: result.error });
@@ -311,6 +329,7 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
         gifPlayback?: boolean;
         chatJid?: string;
         quoted?: string;
+        mentions?: string[] | null;
       };
 
       const instanceManager = server.instanceManager;
@@ -336,6 +355,7 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
             caption: body.caption,
             viewOnce: body.viewOnce,
             quoted,
+            mentions: body.mentions || undefined,
           });
         } else if (mime.startsWith('video/')) {
           result = await client.sendVideo(body.to, body.media, {
@@ -343,6 +363,7 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
             viewOnce: body.viewOnce,
             gifPlayback: body.gifPlayback,
             quoted,
+            mentions: body.mentions || undefined,
           });
         } else if (mime.startsWith('audio/')) {
           result = await client.sendAudio(body.to, body.media, {
@@ -1452,6 +1473,7 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
         viewOnce?: boolean;
         chatJid?: string;
         quoted?: string;
+        mentions?: string[] | null;
       };
 
       const instanceManager = server.instanceManager;
@@ -1473,6 +1495,7 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
           caption: body.caption,
           viewOnce: body.viewOnce,
           quoted,
+          mentions: body.mentions || undefined,
         });
 
         if (!result.success) {
@@ -1586,6 +1609,7 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
         ptv?: boolean;
         chatJid?: string;
         quoted?: string;
+        mentions?: string[] | null;
       };
 
       const instanceManager = server.instanceManager;
@@ -1609,6 +1633,7 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
           gifPlayback: body.gifPlayback,
           ptv: body.ptv,
           quoted,
+          mentions: body.mentions || undefined,
         });
 
         if (!result.success) {

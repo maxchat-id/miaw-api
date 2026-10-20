@@ -39,6 +39,7 @@ interface SendBody {
   to: string;
   chatJid?: string;
   quoted?: string;
+  mentions?: string[] | null;
 }
 
 /**
@@ -135,7 +136,13 @@ export async function messagingSendRoutesV2(server: FastifyInstance): Promise<vo
       const quoted = await resolveQuoted(client, body.quoted, body.chatJid);
 
       const data = await send('message', body.to, () =>
-        client.sendText(body.to, body.text, quoted ? { quoted } : undefined),
+        client.sendText(
+          body.to,
+          body.text,
+          quoted || body.mentions?.length
+            ? { quoted, mentions: body.mentions || undefined }
+            : undefined,
+        ),
       );
       reply.send({ success: true, data });
     },
@@ -168,6 +175,7 @@ export async function messagingSendRoutesV2(server: FastifyInstance): Promise<vo
           caption: body.caption,
           viewOnce: body.viewOnce,
           quoted,
+          mentions: body.mentions || undefined,
         }),
       );
       reply.send({ success: true, data });
@@ -205,6 +213,7 @@ export async function messagingSendRoutesV2(server: FastifyInstance): Promise<vo
           gifPlayback: body.gifPlayback,
           ptv: body.ptv,
           quoted,
+          mentions: body.mentions || undefined,
         }),
       );
       reply.send({ success: true, data });
