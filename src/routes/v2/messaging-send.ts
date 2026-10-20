@@ -282,6 +282,7 @@ export async function messagingSendRoutesV2(server: FastifyInstance): Promise<vo
           fileName: body.fileName,
           mimetype: body.mimetype,
           quoted,
+          mentions: body.mentions || undefined,
         }),
       );
       reply.send({ success: true, data });

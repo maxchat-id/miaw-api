@@ -34,6 +34,15 @@ describe('tagging people in groups', () => {
         messages: [{ id: 'QUOTED-1', raw: {} }],
       })),
       getMessageCounts: vi.fn(() => new Map([[GROUP, 1]])),
+      getGroupParticipants: vi.fn(async () => [
+        {
+          jid: '6281100000001@s.whatsapp.net',
+          role: 'admin',
+          phone: '6281100000001',
+          lid: '111@lid',
+          name: 'Toko',
+        },
+      ]),
       getGroupInfo: vi.fn(async () => ({
         jid: GROUP,
         name: 'Grup LID',
@@ -138,6 +147,32 @@ describe('tagging people in groups', () => {
     );
   });
 
+  it('v1 send-media passes tags for a document caption', async () => {
+    await call('POST', '/instances/bot/send-media', {
+      to: GROUP,
+      media: 'https://x.test/a.pdf',
+      mimetype: 'application/pdf',
+      caption: '@6281100000001 filenya',
+      mentions: ['6281100000001'],
+    });
+
+    expect(client.sendDocument).toHaveBeenCalledWith(
+      GROUP,
+      'https://x.test/a.pdf',
+      expect.objectContaining({ mentions: ['6281100000001'] }),
+    );
+  });
+
+  it('accepts a tag given as a JID', async () => {
+    const res = await call('POST', '/instances/bot/send-text', {
+      to: GROUP,
+      text: '@111 halo',
+      mentions: ['111111@lid', '6281100000001@s.whatsapp.net'],
+    });
+
+    expect(res.statusCode).toBe(200);
+  });
+
   it('v2 text passes the tagged people', async () => {
     const res = await call('POST', '/api/v2/instances/bot/messages/text', {
       to: GROUP,
@@ -153,15 +188,28 @@ describe('tagging people in groups', () => {
     );
   });
 
-  it('rejects tags that are not a list of strings', async () => {
+  it.each([
+    ['an object', { phone: '6281100000001' }],
+    ['a formatted phone', '+62 811-0000-0001'],
+    ['a name', 'Budi'],
+    ['another JID kind', '6281100000001@c.us'],
+  ])('rejects a tag given as %s, instead of sending no tag', async (_, mention) => {
     const res = await call('POST', '/instances/bot/send-text', {
       to: GROUP,
       text: 'halo',
-      mentions: [{ phone: '6281100000001' }],
+      mentions: [mention],
     });
 
     expect(res.statusCode).toBe(400);
     expect(client.sendText).not.toHaveBeenCalled();
+  });
+
+  it('v1 group participants keep member phone, LID and name', async () => {
+    const res = await call('GET', `/instances/bot/groups/${GROUP}/participants`);
+
+    expect(res.statusCode).toBe(200);
+    expect(JSON.stringify(res.json())).toContain('"phone":"6281100000001"');
+    expect(JSON.stringify(res.json())).toContain('"lid":"111@lid"');
   });
 
   it('v1 group info returns member phone, LID and addressing mode', async () => {

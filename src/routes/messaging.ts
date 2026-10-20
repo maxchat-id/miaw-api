@@ -377,6 +377,7 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
             fileName: body.fileName,
             mimetype: body.mimetype,
             quoted,
+            mentions: body.mentions || undefined,
           });
         }
 
@@ -1878,6 +1879,7 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
         mimetype?: string;
         chatJid?: string;
         quoted?: string;
+        mentions?: string[] | null;
       };
 
       const instanceManager = server.instanceManager;
@@ -1900,6 +1902,7 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
           fileName: body.fileName,
           mimetype: body.mimetype,
           quoted,
+          mentions: body.mentions || undefined,
         });
 
         if (!result.success) {

@@ -204,7 +204,8 @@ export function registerSchemas(server: FastifyInstance): void {
       // Phones or JIDs to tag; the text must also contain each `@<number>`.
       mentions: {
         type: 'array',
-        items: { type: 'string', minLength: 1, maxLength: 100 },
+        // A phone (digits only) or its JID: <phone>@s.whatsapp.net or <lid>@lid.
+        items: { type: 'string', pattern: '^[0-9]{5,20}(@(s\\.whatsapp\\.net|lid))?$' },
         maxItems: 1024,
         nullable: true,
       },
@@ -262,7 +263,8 @@ export function registerSchemas(server: FastifyInstance): void {
       // Phones or JIDs to tag; the text must also contain each `@<number>`.
       mentions: {
         type: 'array',
-        items: { type: 'string', minLength: 1, maxLength: 100 },
+        // A phone (digits only) or its JID: <phone>@s.whatsapp.net or <lid>@lid.
+        items: { type: 'string', pattern: '^[0-9]{5,20}(@(s\\.whatsapp\\.net|lid))?$' },
         maxItems: 1024,
         nullable: true,
       },
@@ -362,7 +364,8 @@ export function registerSchemas(server: FastifyInstance): void {
       // Phones or JIDs to tag; the text must also contain each `@<number>`.
       mentions: {
         type: 'array',
-        items: { type: 'string', minLength: 1, maxLength: 100 },
+        // A phone (digits only) or its JID: <phone>@s.whatsapp.net or <lid>@lid.
+        items: { type: 'string', pattern: '^[0-9]{5,20}(@(s\\.whatsapp\\.net|lid))?$' },
         maxItems: 1024,
         nullable: true,
       },
@@ -411,7 +414,8 @@ export function registerSchemas(server: FastifyInstance): void {
       // Phones or JIDs to tag; the text must also contain each `@<number>`.
       mentions: {
         type: 'array',
-        items: { type: 'string', minLength: 1, maxLength: 100 },
+        // A phone (digits only) or its JID: <phone>@s.whatsapp.net or <lid>@lid.
+        items: { type: 'string', pattern: '^[0-9]{5,20}(@(s\\.whatsapp\\.net|lid))?$' },
         maxItems: 1024,
         nullable: true,
       },
@@ -484,6 +488,14 @@ export function registerSchemas(server: FastifyInstance): void {
       },
       quoted: {
         type: 'string',
+        nullable: true,
+      },
+      // Phones or JIDs to tag; the caption must also contain each `@<number>`.
+      mentions: {
+        type: 'array',
+        // A phone (digits only) or its JID: <phone>@s.whatsapp.net or <lid>@lid.
+        items: { type: 'string', pattern: '^[0-9]{5,20}(@(s\\.whatsapp\\.net|lid))?$' },
+        maxItems: 1024,
         nullable: true,
       },
     },
