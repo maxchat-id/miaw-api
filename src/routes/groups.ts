@@ -429,6 +429,9 @@ export async function groupRoutes(server: FastifyInstance): Promise<void> {
                       properties: {
                         jid: { type: 'string' },
                         role: { type: 'string', enum: ['admin', 'superadmin', 'member'] },
+                        phone: { type: 'string' },
+                        lid: { type: 'string' },
+                        name: { type: 'string' },
                       },
                     },
                   },
