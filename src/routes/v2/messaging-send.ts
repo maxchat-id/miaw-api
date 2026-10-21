@@ -28,6 +28,7 @@ import { FastifyInstance } from 'fastify';
 import type { ContactCard, MiawClient, MiawMessage, SendMessageResult } from 'miaw-core';
 import { createAuthMiddleware } from '../../middleware/auth';
 import { NotFoundError, BadRequestError, ServiceUnavailableError } from '../../utils/errorHandler';
+import { assertTagsAllowed } from '../../utils/mentions';
 
 const instanceParams = {
   type: 'object',
@@ -166,6 +167,7 @@ export async function messagingSendRoutesV2(server: FastifyInstance): Promise<vo
         caption?: string;
         viewOnce?: boolean;
       };
+      assertTagsAllowed(body.viewOnce, body.mentions);
 
       const client = requireConnectedClient(server, instanceId);
       const quoted = await resolveQuoted(client, body.quoted, body.chatJid);
@@ -202,6 +204,7 @@ export async function messagingSendRoutesV2(server: FastifyInstance): Promise<vo
         gifPlayback?: boolean;
         ptv?: boolean;
       };
+      assertTagsAllowed(body.viewOnce, body.mentions);
 
       const client = requireConnectedClient(server, instanceId);
       const quoted = await resolveQuoted(client, body.quoted, body.chatJid);

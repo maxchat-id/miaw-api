@@ -4,7 +4,8 @@
  * v1 `/send-text` and `/send-media` (what the MaxChat gateway calls) and the
  * v2 text/image/video paths pass `mentions` through to miaw-core instead of
  * dropping it. v1 group info returns each member's phone and LID plus the
- * group's addressing mode, which the "@" picker needs.
+ * group's addressing mode, which the "@" picker needs. A view-once image or
+ * video with tags is rejected, since WhatsApp would drop the tags.
  */
 
 import Fastify, { type FastifyInstance } from 'fastify';
@@ -231,5 +232,71 @@ describe('tagging people in groups', () => {
         { jid: '222@lid', role: 'member', lid: '222@lid' },
       ],
     });
+  });
+
+  it.each([
+    [
+      'v1 send-media image',
+      '/instances/bot/send-media',
+      { media: 'https://x.test/a.png', mimetype: 'image/png' },
+      'sendImage',
+    ],
+    [
+      'v1 send-media video',
+      '/instances/bot/send-media',
+      { media: 'https://x.test/a.mp4', mimetype: 'video/mp4' },
+      'sendVideo',
+    ],
+    ['v1 image', '/instances/bot/messages/image', { image: 'https://x.test/a.png' }, 'sendImage'],
+    ['v1 video', '/instances/bot/messages/video', { video: 'https://x.test/a.mp4' }, 'sendVideo'],
+    [
+      'v2 image',
+      '/api/v2/instances/bot/messages/image',
+      { image: 'https://x.test/a.png' },
+      'sendImage',
+    ],
+    [
+      'v2 video',
+      '/api/v2/instances/bot/messages/video',
+      { video: 'https://x.test/a.mp4' },
+      'sendVideo',
+    ],
+  ])('%s rejects tags on a view-once send', async (_, url, media, method) => {
+    const res = await call('POST', url, {
+      to: GROUP,
+      ...media,
+      caption: '@6281100000001 lihat',
+      viewOnce: true,
+      mentions: ['6281100000001'],
+    });
+
+    expect(res.statusCode).toBe(400);
+    expect(res.json().error.message).toBe('mentions cannot be combined with viewOnce');
+    expect(client[method]).not.toHaveBeenCalled();
+  });
+
+  it('still sends a view-once image without tags, and a document that ignores view-once', async () => {
+    const image = await call('POST', '/instances/bot/send-media', {
+      to: GROUP,
+      media: 'https://x.test/a.png',
+      mimetype: 'image/png',
+      viewOnce: true,
+      mentions: [],
+    });
+    const document = await call('POST', '/instances/bot/send-media', {
+      to: GROUP,
+      media: 'https://x.test/a.pdf',
+      mimetype: 'application/pdf',
+      viewOnce: true,
+      mentions: ['6281100000001'],
+    });
+
+    expect(image.statusCode).toBe(200);
+    expect(document.statusCode).toBe(200);
+    expect(client.sendDocument).toHaveBeenCalledWith(
+      GROUP,
+      'https://x.test/a.pdf',
+      expect.objectContaining({ mentions: ['6281100000001'] }),
+    );
   });
 });

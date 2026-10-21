@@ -20,6 +20,7 @@ import { FastifyInstance } from 'fastify';
 import type { MiawClient, MiawMessage } from 'miaw-core';
 import { createAuthMiddleware } from '../middleware/auth';
 import { NotFoundError, BadRequestError, ServiceUnavailableError } from '../utils/errorHandler';
+import { assertTagsAllowed } from '../utils/mentions';
 
 /**
  * Helper to find a message by ID across all chats or within a specific chat.
@@ -331,6 +332,12 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
         quoted?: string;
         mentions?: string[] | null;
       };
+      const mime = body.mimetype || '';
+      // Only images and videos are sent view-once; documents ignore the flag.
+      assertTagsAllowed(
+        body.viewOnce && (mime.startsWith('image/') || mime.startsWith('video/')),
+        body.mentions,
+      );
 
       const instanceManager = server.instanceManager;
       const client: MiawClient | null = instanceManager.getClient(params.id);
@@ -345,7 +352,6 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
       }
 
       const quoted = await resolveQuotedMessage(client, body.quoted, body.chatJid);
-      const mime = body.mimetype || '';
 
       try {
         // miaw-core has no generic sendMedia; dispatch by mimetype.
@@ -1476,6 +1482,7 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
         quoted?: string;
         mentions?: string[] | null;
       };
+      assertTagsAllowed(body.viewOnce, body.mentions);
 
       const instanceManager = server.instanceManager;
       const client: MiawClient | null = instanceManager.getClient(params.id);
@@ -1612,6 +1619,7 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
         quoted?: string;
         mentions?: string[] | null;
       };
+      assertTagsAllowed(body.viewOnce, body.mentions);
 
       const instanceManager = server.instanceManager;
       const client: MiawClient | null = instanceManager.getClient(params.id);
