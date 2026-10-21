@@ -187,6 +187,8 @@ export async function groupRoutes(server: FastifyInstance): Promise<void> {
                   description: { type: 'string', nullable: true },
                   owner: { type: 'string', nullable: true },
                   createdAt: { type: 'number' },
+                  participantCount: { type: 'number' },
+                  addressingMode: { type: 'string', enum: ['pn', 'lid'] },
                   participants: {
                     type: 'array',
                     items: {
@@ -195,6 +197,9 @@ export async function groupRoutes(server: FastifyInstance): Promise<void> {
                         jid: { type: 'string' },
                         name: { type: 'string', nullable: true },
                         admin: { type: 'string' },
+                        role: { type: 'string' },
+                        phone: { type: 'string' },
+                        lid: { type: 'string' },
                       },
                     },
                   },
@@ -424,6 +429,9 @@ export async function groupRoutes(server: FastifyInstance): Promise<void> {
                       properties: {
                         jid: { type: 'string' },
                         role: { type: 'string', enum: ['admin', 'superadmin', 'member'] },
+                        phone: { type: 'string' },
+                        lid: { type: 'string' },
+                        name: { type: 'string' },
                       },
                     },
                   },

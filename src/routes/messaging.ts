@@ -20,6 +20,7 @@ import { FastifyInstance } from 'fastify';
 import type { MiawClient, MiawMessage } from 'miaw-core';
 import { createAuthMiddleware } from '../middleware/auth';
 import { NotFoundError, BadRequestError, ServiceUnavailableError } from '../utils/errorHandler';
+import { assertTagsAllowed } from '../utils/mentions';
 
 /**
  * Helper to find a message by ID across all chats or within a specific chat.
@@ -84,6 +85,19 @@ async function resolveQuotedMessage(
     return undefined;
   }
   return requireMessage(client, quotedId, chatJid);
+}
+
+/**
+ * Send options for a text: an optional quote and the people to tag.
+ */
+function textOptions(
+  quoted: MiawMessage | undefined,
+  mentions: string[] | null | undefined,
+): { quoted?: MiawMessage; mentions?: string[] } | undefined {
+  if (!quoted && !mentions?.length) {
+    return undefined;
+  }
+  return { ...(quoted && { quoted }), ...(mentions?.length ? { mentions } : {}) };
 }
 
 /**
@@ -179,6 +193,7 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
         text: string;
         chatJid?: string;
         quoted?: string;
+        mentions?: string[] | null;
       };
 
       const instanceManager = server.instanceManager;
@@ -196,7 +211,11 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
       const quoted = await resolveQuotedMessage(client, body.quoted, body.chatJid);
 
       try {
-        const result = await client.sendText(body.to, body.text, quoted ? { quoted } : undefined);
+        const result = await client.sendText(
+          body.to,
+          body.text,
+          textOptions(quoted, body.mentions),
+        );
 
         if (!result.success) {
           throw new BadRequestError('Failed to send message', { error: result.error });
@@ -311,7 +330,14 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
         gifPlayback?: boolean;
         chatJid?: string;
         quoted?: string;
+        mentions?: string[] | null;
       };
+      const mime = body.mimetype || '';
+      // Only images and videos are sent view-once; documents ignore the flag.
+      assertTagsAllowed(
+        body.viewOnce && (mime.startsWith('image/') || mime.startsWith('video/')),
+        body.mentions,
+      );
 
       const instanceManager = server.instanceManager;
       const client: MiawClient | null = instanceManager.getClient(params.id);
@@ -326,7 +352,6 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
       }
 
       const quoted = await resolveQuotedMessage(client, body.quoted, body.chatJid);
-      const mime = body.mimetype || '';
 
       try {
         // miaw-core has no generic sendMedia; dispatch by mimetype.
@@ -336,6 +361,7 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
             caption: body.caption,
             viewOnce: body.viewOnce,
             quoted,
+            mentions: body.mentions || undefined,
           });
         } else if (mime.startsWith('video/')) {
           result = await client.sendVideo(body.to, body.media, {
@@ -343,6 +369,7 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
             viewOnce: body.viewOnce,
             gifPlayback: body.gifPlayback,
             quoted,
+            mentions: body.mentions || undefined,
           });
         } else if (mime.startsWith('audio/')) {
           result = await client.sendAudio(body.to, body.media, {
@@ -356,6 +383,7 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
             fileName: body.fileName,
             mimetype: body.mimetype,
             quoted,
+            mentions: body.mentions || undefined,
           });
         }
 
@@ -1452,7 +1480,9 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
         viewOnce?: boolean;
         chatJid?: string;
         quoted?: string;
+        mentions?: string[] | null;
       };
+      assertTagsAllowed(body.viewOnce, body.mentions);
 
       const instanceManager = server.instanceManager;
       const client: MiawClient | null = instanceManager.getClient(params.id);
@@ -1473,6 +1503,7 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
           caption: body.caption,
           viewOnce: body.viewOnce,
           quoted,
+          mentions: body.mentions || undefined,
         });
 
         if (!result.success) {
@@ -1586,7 +1617,9 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
         ptv?: boolean;
         chatJid?: string;
         quoted?: string;
+        mentions?: string[] | null;
       };
+      assertTagsAllowed(body.viewOnce, body.mentions);
 
       const instanceManager = server.instanceManager;
       const client: MiawClient | null = instanceManager.getClient(params.id);
@@ -1609,6 +1642,7 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
           gifPlayback: body.gifPlayback,
           ptv: body.ptv,
           quoted,
+          mentions: body.mentions || undefined,
         });
 
         if (!result.success) {
@@ -1853,6 +1887,7 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
         mimetype?: string;
         chatJid?: string;
         quoted?: string;
+        mentions?: string[] | null;
       };
 
       const instanceManager = server.instanceManager;
@@ -1875,6 +1910,7 @@ export async function messagingRoutes(server: FastifyInstance): Promise<void> {
           fileName: body.fileName,
           mimetype: body.mimetype,
           quoted,
+          mentions: body.mentions || undefined,
         });
 
         if (!result.success) {

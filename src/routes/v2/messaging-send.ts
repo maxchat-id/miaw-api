@@ -28,6 +28,7 @@ import { FastifyInstance } from 'fastify';
 import type { ContactCard, MiawClient, MiawMessage, SendMessageResult } from 'miaw-core';
 import { createAuthMiddleware } from '../../middleware/auth';
 import { NotFoundError, BadRequestError, ServiceUnavailableError } from '../../utils/errorHandler';
+import { assertTagsAllowed } from '../../utils/mentions';
 
 const instanceParams = {
   type: 'object',
@@ -39,6 +40,7 @@ interface SendBody {
   to: string;
   chatJid?: string;
   quoted?: string;
+  mentions?: string[] | null;
 }
 
 /**
@@ -135,7 +137,13 @@ export async function messagingSendRoutesV2(server: FastifyInstance): Promise<vo
       const quoted = await resolveQuoted(client, body.quoted, body.chatJid);
 
       const data = await send('message', body.to, () =>
-        client.sendText(body.to, body.text, quoted ? { quoted } : undefined),
+        client.sendText(
+          body.to,
+          body.text,
+          quoted || body.mentions?.length
+            ? { quoted, mentions: body.mentions || undefined }
+            : undefined,
+        ),
       );
       reply.send({ success: true, data });
     },
@@ -159,6 +167,7 @@ export async function messagingSendRoutesV2(server: FastifyInstance): Promise<vo
         caption?: string;
         viewOnce?: boolean;
       };
+      assertTagsAllowed(body.viewOnce, body.mentions);
 
       const client = requireConnectedClient(server, instanceId);
       const quoted = await resolveQuoted(client, body.quoted, body.chatJid);
@@ -168,6 +177,7 @@ export async function messagingSendRoutesV2(server: FastifyInstance): Promise<vo
           caption: body.caption,
           viewOnce: body.viewOnce,
           quoted,
+          mentions: body.mentions || undefined,
         }),
       );
       reply.send({ success: true, data });
@@ -194,6 +204,7 @@ export async function messagingSendRoutesV2(server: FastifyInstance): Promise<vo
         gifPlayback?: boolean;
         ptv?: boolean;
       };
+      assertTagsAllowed(body.viewOnce, body.mentions);
 
       const client = requireConnectedClient(server, instanceId);
       const quoted = await resolveQuoted(client, body.quoted, body.chatJid);
@@ -205,6 +216,7 @@ export async function messagingSendRoutesV2(server: FastifyInstance): Promise<vo
           gifPlayback: body.gifPlayback,
           ptv: body.ptv,
           quoted,
+          mentions: body.mentions || undefined,
         }),
       );
       reply.send({ success: true, data });
@@ -273,6 +285,7 @@ export async function messagingSendRoutesV2(server: FastifyInstance): Promise<vo
           fileName: body.fileName,
           mimetype: body.mimetype,
           quoted,
+          mentions: body.mentions || undefined,
         }),
       );
       reply.send({ success: true, data });
